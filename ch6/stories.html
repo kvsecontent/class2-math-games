@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .story { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+  .story .e { font-size: 4.6rem; line-height: 1; }
+  .story .t { font-family: var(--read); font-size: 2.1rem; font-weight: 700; line-height: 1.4; max-width: 70rem; }
+  .story .eq { font-size: 3.6rem; font-weight: 800; color: var(--purple); min-height: 4.6rem; }
+  .story .eq .m-box { height: 4.6rem; min-width: 6rem; font-size: 3.2rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .choice { font-size: 2.6rem; min-width: 7rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card story"><div class="e" id="e"></div><div class="t" id="t"></div><div class="row"><button class="say" id="again">🔊</button></div><div class="q" id="q" style="font-size:1.8rem;font-weight:800"></div><div class="row" id="ops"></div><div class="eq" id="eq"></div></div>
+    <div class="card side"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+const ADD = !/sub/.test(location.search);
+G.init({ title: ADD ? 'Adding Stories' : 'Taking Away Stories', subtitle: 'Decoration for Festival · Let us do', back: '../index.html#ch6' });
+
+/* Story sums from the book. op: which sign; eq: the number sentence; a: answer. */
+const ITEMS = ADD ? [
+  { e: '🏏', t: 'Rahim made 43 runs in one match and 58 runs in another match. How many runs did he make in the two matches together?', op: '+', eq: [43, 58], a: 101 },
+  { e: '🖍️', t: 'Simarpreet had 12 colour pencils. Her mother gifted her 36 more colour pencils. How many colour pencils does she have now?', op: '+', eq: [12, 36], a: 48 },
+  { e: '🔴🔵', t: 'Heena collected 34 red marbles and 57 blue marbles. How many marbles does she have now?', op: '+', eq: [34, 57], a: 91 },
+  { e: '🎡', t: 'Sarika spent ₹56 in the fair, while Manish spent ₹35. What is the total money they both spent?', op: '+', eq: [56, 35], a: 91 },
+  { e: '🚌', t: 'There are 36 men and 47 women in the bus. How many people are there in the bus?', op: '+', eq: [36, 47], a: 83 },
+  { e: '🎁', t: 'Hania and Mansi bought a gift wrapper for ₹24 and ribbons for ₹37. How much money did they spend?', op: '+', eq: [24, 37], a: 61 },
+] : [
+  { e: '🐚', t: 'Anushka collected 63 shells. She gave 26 shells to her brother. How many shells are left with her?', op: '−', eq: [63, 26], a: 37 },
+  { e: '🚌', t: '54 passengers were sitting in the bus and 16 got down at the bus stand. How many are there in the bus now?', op: '−', eq: [54, 16], a: 38 },
+  { e: '🎈', t: 'There were 40 balloons and 13 balloons got burst. How many balloons are left?', op: '−', eq: [40, 13], a: 27 },
+  { e: '📿', t: 'Kanika made 72 bangles. She sold 36 bangles. How many bangles are left with Kanika now?', op: '−', eq: [72, 36], a: 36 },
+  { e: '🐦', t: '56 birds were sitting on the tree. A few more birds joined them. Now there are 87 birds. How many birds came later?', op: '−', eq: [87, 56], a: 31 },
+  { e: '⛹️', t: 'Arman dribbled the ball 18 times. How many more times should he dribble the ball to complete 35 taps?', op: '−', eq: [35, 18], a: 17 },
+  { e: '✏️', t: 'Shikha has ₹82. She bought pencils for ₹22. How much money is she left with?', op: '−', eq: [82, 22], a: 60 },
+  { e: '📒', t: 'Ruby has ₹60. She bought a notebook for ₹20. How much money is she left with?', op: '−', eq: [60, 20], a: 40 },
+  { e: '🎁', t: 'Hania and Mansi had ₹78. They spent ₹61 on the gift wrapper and ribbons. How much money is left with them?', op: '−', eq: [78, 61], a: 17 },
+];
+G.$('#hint').textContent = 'Read the story. Choose + or −, then work out the answer. You can use the ginladi, number line or blocks!';
+let k = 0, chose;
+function show() {
+  if (k >= ITEMS.length) { G.end({ title: 'Story solver!', msg: 'You read the stories and found the answers.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, ITEMS.length);
+  const it = ITEMS[k]; chose = false;
+  G.$('#e').textContent = it.e; G.$('#t').textContent = it.t; G.$('#eq').innerHTML = ''; G.$('#fb').innerHTML = ''; pad.clear();
+  G.$('#q').textContent = 'Do we add (+) or take away (−)?';
+  G.$('#ops').innerHTML = '<button class="choice" data-v="+">+</button><button class="choice" data-v="−">−</button>';
+  G.$$('#ops .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== it.op) { b.classList.add('wrong'); G.sfx('bad'); G.say(it.op === '+' ? 'We are putting together. Add!' : 'We are taking away or finding what is left. Subtract!'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.sfx('good'); chose = true;
+    G.$('#q').textContent = 'Now find the answer.';
+    G.$('#eq').innerHTML = `${it.eq[0]} ${it.op} ${it.eq[1]} = <span class="m-box on">?</span>`;
+    G.say(`${it.eq[0]} ${it.op === '+' ? 'plus' : 'minus'} ${it.eq[1]}`);
+  }));
+  G.say(it.t);
+}
+G.$('#again').onclick = () => G.say(ITEMS[k].t);
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const it = ITEMS[k];
+    if (!chose) { G.say('First choose plus or minus.'); return; }
+    if (v !== it.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Try again. Ones first, then tens.'); return; }
+    G.$('#eq .m-box').textContent = v; G.$('#eq .m-box').className = 'm-box good';
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(`${it.eq[0]} ${it.op === '+' ? 'plus' : 'minus'} ${it.eq[1]} is ${it.a}.`);
+    k++; setTimeout(show, 3000);
+  },
+});
+show();
+</script>
+</body>
+</html>

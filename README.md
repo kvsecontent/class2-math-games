@@ -9,5 +9,6 @@ Interactive games for a 75" smartboard. Open `index.html` → pick a chapter tab
 - `ch3/` – Chapter 3 "Fun with Numbers" (13 games)
 - `ch4/` – Chapter 4 "Shadow Story" (13 games)
 - `ch5/` – Chapter 5 "Playing with Lines" (9 games)
+- `ch6/` – Chapter 6 "Decoration for Festival" (12 games; `jump-line`, `columns` and `stories` take `?add` or `?sub`)
 
 Chapter PDFs: Google Drive › Lesson Plan Organiser Class 1-5 › Class 2 Math.

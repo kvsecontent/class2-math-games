@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .yard { position: relative; background: linear-gradient(#bfe6ff 0 60%, #8fd67e 60%); border-radius: var(--radius); border: 0.25rem solid var(--line); height: 24rem; overflow: hidden; }
+  .kid { position: absolute; left: 50%; bottom: 3rem; transform: translateX(-50%); font-size: 8rem; line-height: 1; transition: bottom 0.15s; }
+  .kid.up { bottom: 5.4rem; }
+  .rope { position: absolute; left: 50%; bottom: 2.2rem; width: 16rem; height: 10rem; margin-left: -8rem; border: 0.5rem solid #e63946; border-top-color: transparent; border-radius: 0 0 50% 50%; transform-origin: 50% 0; }
+  .rope.swing { animation: swing 0.6s linear infinite; }
+  @keyframes swing { 0% { transform: scaleY(1); } 50% { transform: scaleY(-1.2) translateY(9rem); } 100% { transform: scaleY(1); } }
+  .count { position: absolute; top: 0.8rem; left: 1rem; font-size: 2.4rem; font-weight: 800; background: #fff; border-radius: 1rem; padding: 0.2rem 1rem; }
+  .name { position: absolute; top: 0.8rem; right: 1rem; font-size: 2.2rem; font-weight: 800; }
+  #nl { width: 100%; display: block; margin-top: 0.6rem; background: #fff; border-radius: 1rem; }
+  .q { font-family: var(--read); font-size: 2.2rem; font-weight: 700; margin: 0.6rem 0; }
+  .eqs { font-size: 2.8rem; font-weight: 800; }
+  .eqs .m-box { height: 4rem; min-width: 5rem; font-size: 2.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Skip the rope! Aman and Avni have to complete 20 skips. If they miss, they get one more chance to finish.</p>
+  <div class="wrap">
+    <div><div class="yard"><div class="count" id="count">0</div><div class="name" id="name"></div><div class="rope" id="rope"></div><div class="kid" id="kid"></div></div>
+      <svg id="nl" viewBox="0 0 1000 120"></svg><div class="q" id="q"></div><div class="eqs" id="eqs"></div></div>
+    <div class="card side"><button class="big-btn orange" id="go">▶ Watch the skips</button><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Skip the Rope', subtitle: 'Decoration for Festival · How many more?', back: '../index.html#ch6' });
+
+/* From the book: Aman skipped 14 times, Avni 12 times, in the first chance. */
+const KIDS = [{ n: 'Aman', e: '🧒🏽', did: 14 }, { n: 'Avni', e: '👧🏽', did: 12 }];
+let k = 0, b = 0;
+function line(did, more) {
+  const x = (n) => 30 + n * 47;
+  let h = '<line x1="20" y1="80" x2="980" y2="80" stroke="#2b2140" stroke-width="3"/>';
+  for (let n = 0; n <= 20; n++) h += `<line x1="${x(n)}" y1="72" x2="${x(n)}" y2="88" stroke="#2b2140" stroke-width="${n % 5 ? 2 : 4}"/><text x="${x(n)}" y="110" font-size="18" font-weight="800" text-anchor="middle">${n}</text>`;
+  h += `<rect x="${x(0)}" y="60" width="${x(did) - x(0)}" height="12" fill="#2f7de1" rx="5"/>`;
+  if (more) h += `<rect x="${x(did)}" y="60" width="${x(20) - x(did)}" height="12" fill="#ff8a3d" rx="5"/><text x="${(x(did) + x(20)) / 2}" y="50" font-size="22" font-weight="800" text-anchor="middle" fill="#ff8a3d">${20 - did} more</text>`;
+  G.$('#nl').innerHTML = h;
+}
+function show() {
+  if (k >= KIDS.length) { G.end({ title: 'Twenty skips!', msg: '20 − 14 = 6 and 14 + 6 = 20. Now skip with your friends!', onReplay: () => { k = 0; show(); } }); return; }
+  const K = KIDS[k]; b = 0;
+  G.$('#kid').textContent = K.e; G.$('#name').textContent = K.n; G.$('#count').textContent = '0';
+  G.$('#q').textContent = ''; G.$('#eqs').innerHTML = ''; G.$('#fb').innerHTML = ''; G.$('#go').style.display = ''; line(0);
+  G.say(`Watch ${K.n} skip!`);
+}
+G.$('#go').onclick = () => {
+  const K = KIDS[k]; let c = 0; G.$('#go').style.display = 'none'; G.$('#rope').classList.add('swing');
+  const t = setInterval(() => {
+    c++; G.$('#count').textContent = c; G.$('#kid').classList.add('up'); setTimeout(() => G.$('#kid').classList.remove('up'), 200); G.tone(600 + c * 20, 0, 0.08, 'sine', 0.15); line(c);
+    if (c >= K.did) {
+      clearInterval(t); G.$('#rope').classList.remove('swing'); G.sfx('bad');
+      G.$('#q').textContent = `Oops! ${K.n} skipped ${K.did} times in the first chance. How many more skips to complete 20?`;
+      G.$('#eqs').innerHTML = `20 − ${K.did} = <span class="m-box on" data-i="0">?</span> &nbsp; ${K.did} + <span class="m-box" data-i="1">?</span> = 20`;
+      G.say(G.$('#q').textContent);
+    }
+  }, 600);
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    pad.clear(); const K = KIDS[k]; if (!G.$('#eqs .m-box')) return;
+    if (v !== 20 - K.did) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count on from ' + K.did + ' to 20.'); return; }
+    const box = G.$(`#eqs .m-box[data-i="${b}"]`); box.textContent = v; box.className = 'm-box good'; G.sfx('good');
+    if (++b < 2) { G.$(`#eqs .m-box[data-i="1"]`).classList.add('on'); return; }
+    line(K.did, true); G.star();
+    const msg = `${K.n} needs ${v} more skips. 20 minus ${K.did} is ${v}, and ${K.did} plus ${v} is 20.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + v + ' more skips!'); G.say(msg);
+    k++; setTimeout(show, 4200);
+  },
+});
+show();
+</script>
+</body>
+</html>

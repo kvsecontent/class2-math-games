@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .sum { font-size: 4.4rem; font-weight: 800; margin: 0.2rem 0; }
+  .sum .m-box { height: 5rem; min-width: 7rem; font-size: 3.6rem; }
+  .line { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); width: 100%; max-width: 120rem; padding: 0.3rem; }
+  #nl { width: 100%; display: block; }
+  .left { font-size: 2rem; font-weight: 800; color: var(--purple); min-height: 2.8rem; }
+  .jumps button { font-size: 2.6rem; min-width: 10rem; }
+  .low { display: flex; gap: 1rem; align-items: center; justify-content: center; margin-top: 0.4rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="sum" id="sum"></div>
+  <div class="line"><svg id="nl" viewBox="0 0 1200 220"></svg></div>
+  <div class="left" id="left"></div>
+  <div class="row jumps" id="jumps"></div>
+  <div class="low" id="padbox" style="display:none"><div class="m-box on" id="show">?</div><div id="pad"></div></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+const ADD = !/sub/.test(location.search);
+G.init({ title: ADD ? 'Count Ahead' : 'Count Back', subtitle: 'Decoration for Festival · ' + (ADD ? 'Adding on the ginladi and number line' : 'Taking away on the ginladi and number line'), back: '../index.html#ch6' });
+
+/* All sums are from the book (ginladi and number line pages). */
+const ITEMS = ADD
+  ? [[25, 12], [57, 34], [24, 43], [23, 14], [24, 16], [11, 22]]
+  : [[75, 35], [32, 12], [18, 9], [12, 8], [30, 18], [23, 14], [26, 17], [19, 15], [39, 28], [38, 11], [35, 12], [22, 22], [14, 0]];
+G.$('#hint').textContent = ADD ? 'Start at the first number. Jump ahead in tens, then in ones!' : 'Start at the first number. Jump back in tens, then in ones!';
+const X0 = 40, X1 = 1160, Y = 140;
+let k = 0, cur, left, lo, hi, arcs, n1, n2, ans;
+const xOf = (n) => X0 + ((n - lo) / (hi - lo)) * (X1 - X0);
+function draw() {
+  const step = hi - lo > 50 ? 2 : 1;
+  let h = `<line x1="${X0 - 20}" y1="${Y}" x2="${X1 + 20}" y2="${Y}" stroke="#2b2140" stroke-width="4"/>`;
+  for (let n = lo; n <= hi; n++) {
+    const x = xOf(n), big = n % 10 === 0, lab = big || (hi - lo <= 40 && n % (step === 1 && hi - lo <= 25 ? 1 : 5) === 0);
+    h += `<line x1="${x}" y1="${Y - (big ? 16 : 9)}" x2="${x}" y2="${Y + (big ? 16 : 9)}" stroke="#2b2140" stroke-width="${big ? 4 : 2}"/>`;
+    if (lab || n === n1) h += `<text x="${x}" y="${Y + 46}" font-size="${big ? 28 : 22}" font-weight="800" text-anchor="middle" fill="${n === n1 ? '#e63946' : '#2b2140'}">${n}</text>`;
+  }
+  arcs.forEach(([a, b]) => { const xa = xOf(a), xb = xOf(b), up = Math.min(90, Math.abs(xb - xa) * 0.55 + 18); h += `<path d="M${xa} ${Y - 10} Q${(xa + xb) / 2} ${Y - 10 - up} ${xb} ${Y - 10}" fill="none" stroke="${Math.abs(b - a) === 10 ? '#2f7de1' : '#ff8a3d'}" stroke-width="5"/><text x="${(xa + xb) / 2}" y="${Y - 14 - up * 0.55}" font-size="20" font-weight="800" text-anchor="middle">${b > a ? '+' : '−'}${Math.abs(b - a)}</text>`; });
+  h += `<text x="${xOf(cur)}" y="${Y - 14}" font-size="46" text-anchor="middle">🐸</text>`;
+  G.$('#nl').innerHTML = h;
+}
+function show() {
+  if (k >= ITEMS.length) { G.end({ title: ADD ? 'Super adder!' : 'Super subtractor!', msg: ADD ? 'Jump the tens first, then the ones.' : 'Jump back the tens first, then the ones.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, ITEMS.length);
+  [n1, n2] = ITEMS[k]; ans = ADD ? n1 + n2 : n1 - n2; cur = n1; left = n2; arcs = [];
+  lo = Math.max(0, Math.floor(Math.min(n1, ans) / 10) * 10); hi = Math.ceil(Math.max(n1, ans) / 10) * 10; if (hi === lo) hi = lo + 10;
+  G.$('#sum').innerHTML = `${n1} ${ADD ? '+' : '−'} ${n2} = <span class="m-box">?</span>`;
+  G.$('#fb').innerHTML = ''; G.$('#padbox').style.display = 'none';
+  const s = ADD ? '+' : '−';
+  G.$('#jumps').innerHTML = `<button class="big-btn" id="j10">${s}10</button><button class="big-btn orange" id="j1">${s}1</button>`;
+  G.$('#j10').onclick = () => jump(10); G.$('#j1').onclick = () => jump(1);
+  status(); draw();
+  G.say(`${n1} ${ADD ? 'plus' : 'take away'} ${n2}. Start at ${n1}.`);
+  if (n2 === 0) setTimeout(done, 1200);
+}
+function status() { G.$('#left').textContent = left ? `Still to ${ADD ? 'add' : 'take away'}: ${left}  (${Math.floor(left / 10)} ten${Math.floor(left / 10) === 1 ? '' : 's'} and ${left % 10} one${left % 10 === 1 ? '' : 's'})` : ''; }
+function jump(d) {
+  if (!left) return;
+  if (d > left) { G.sfx('bad'); G.say(`Only ${left} left. Jump ${ADD ? 'plus' : 'minus'} 1.`); return; }
+  const nx = ADD ? cur + d : cur - d; arcs.push([cur, nx]); cur = nx; left -= d;
+  G.sfx('pop'); G.say(String(cur), { rate: 1.1 }); status(); draw();
+  if (!left) setTimeout(done, 600);
+}
+function done() {
+  G.$('#jumps').innerHTML = ''; G.$('#padbox').style.display = ''; pad.clear();
+  G.$('#left').textContent = 'Where did the frog land? Write the answer.';
+  G.say(`So, ${n1} ${ADD ? 'plus' : 'take away'} ${n2} is…`);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), row: true,
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== ans) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Look where the frog is.'); return; }
+    G.$('#sum .m-box').textContent = v; G.$('#sum .m-box').className = 'm-box good';
+    G.star(); G.sfx('good');
+    const msg = `${n1} ${ADD ? 'plus' : 'take away'} ${n2} is ${ans}.` + (!ADD && n2 === 0 ? ' Taking away zero leaves the same number!' : !ADD && n1 === n2 ? ' Taking away all leaves zero!' : '');
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+    k++; setTimeout(show, 3000);
+  },
+});
+show();
+</script>
+</body>
+</html>

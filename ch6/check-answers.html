@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 110rem; align-items: center; }
+  .sheet { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); background-image: repeating-linear-gradient(#fff 0 3rem, #e7f1ff 3rem 3.1rem); padding: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-height: 22rem; justify-content: center; }
+  .who { font-size: 1.8rem; font-weight: 800; color: var(--muted); }
+  .work { display: grid; grid-template-columns: 3rem 4rem 4rem 4rem; font-size: 3.4rem; font-weight: 800; text-align: center; font-family: var(--read); }
+  .work .bar { grid-column: 1 / -1; height: 0.35rem; background: var(--ink); }
+  .work .ans { color: #2f7de1; }
+  .stamp { font-size: 2.6rem; font-weight: 800; min-height: 3.4rem; }
+  .choice { font-size: 3.2rem; min-width: 9rem; min-height: 4.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Daljeet has solved some questions. Are the answers correct? Check them – and correct the wrong ones!</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="sheet"><div class="who">✏️ Daljeet's work</div><div class="work" id="work"></div><div class="stamp" id="stamp"></div><div class="row" id="opts"></div></div>
+    <div class="card side"><div class="q" id="q"></div><div id="padbox" style="display:none" class="side"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Check the Answers', subtitle: 'Decoration for Festival · Project work', back: '../index.html#ch6' });
+
+/* Daljeet's answers as written in the book. why = the mistake he made. */
+const WORK = [
+  { a: 25, op: '+', b: 36, d: 511, why: 'Daljeet wrote 11 ones. 11 ones is 1 ten and 1 one – shift the ten!' },
+  { a: 37, op: '+', b: 58, d: 131, why: 'The ones make 15: write 5 and shift 1 ten. 3 + 5 + 1 = 9 tens.' },
+  { a: 35, op: '−', b: 17, d: 22, why: 'Daljeet took 5 from 7. We cannot take 7 from 5 – open a ten!' },
+  { a: 78, op: '−', b: 57, d: 21, why: '' },
+  { a: 30, op: '−', b: 17, d: 27, why: 'Daljeet took 0 from 7. Open a ten: 10 − 7 = 3, then 2 − 1 = 1.' },
+];
+let k = 0;
+const right = (w) => (w.op === '+' ? w.a + w.b : w.a - w.b);
+const digits = (n) => String(n).padStart(3, ' ').split('');
+function show() {
+  if (k >= WORK.length) { G.end({ title: 'Great checking!', msg: 'Always check: ones first, then tens!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, WORK.length);
+  const w = WORK[k];
+  const row = (cells) => cells.map((c) => `<span>${c === ' ' ? '' : c}</span>`).join('');
+  G.$('#work').innerHTML = `<span></span>${row(digits(w.a))}<span>${w.op}</span>${row(digits(w.b))}<span class="bar"></span><span></span>${row(digits(w.d)).replaceAll('<span>', '<span class="ans">')}`;
+  G.$('#stamp').textContent = ''; G.$('#fb').innerHTML = ''; G.$('#padbox').style.display = 'none';
+  G.$('#q').textContent = `Is ${w.a} ${w.op} ${w.b} = ${w.d} correct?`;
+  G.$('#opts').innerHTML = '<button class="choice" data-v="1" style="color:var(--green)">✓</button><button class="choice" data-v="0" style="color:var(--red)">✘</button>';
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => judge(b)));
+  G.say(`${w.a} ${w.op === '+' ? 'plus' : 'minus'} ${w.b} equals ${w.d}. Is it correct?`);
+}
+function judge(b) {
+  const w = WORK[k], ok = right(w) === w.d;
+  if ((b.dataset.v === '1') !== ok) { b.classList.add('wrong'); G.sfx('bad'); G.say('Work it out yourself and check again.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+  b.classList.add('right'); G.sfx('good');
+  if (ok) { G.$('#stamp').innerHTML = '<span style="color:var(--green)">✓ Correct!</span>'; G.star(); G.say('Yes, it is correct!'); k++; setTimeout(show, 2400); return; }
+  G.$('#stamp').innerHTML = '<span style="color:var(--red)">✘ Wrong</span>';
+  G.$('#q').textContent = `What is the correct answer for ${w.a} ${w.op} ${w.b}?`; G.$('#padbox').style.display = ''; pad.clear();
+  G.say('It is wrong. What is the correct answer?');
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const w = WORK[k];
+    if (v !== right(w)) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Try again. Ones first!'); return; }
+    G.star(); G.sfx('good');
+    G.$('#stamp').innerHTML = `<span style="color:var(--green)">Correct answer: ${v}</span>`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + w.why); G.say(`${v}! ${w.why}`);
+    k++; setTimeout(show, 5000);
+  },
+});
+show();
+</script>
+</body>
+</html>

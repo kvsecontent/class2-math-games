@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 22rem 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .col { display: grid; grid-template-columns: 3rem 6rem 6rem; gap: 0.3rem; font-size: 4rem; font-weight: 800; text-align: center; align-items: center; justify-items: center; }
+  .col .h { font-size: 1.6rem; color: var(--muted); }
+  .col .carry { font-size: 2rem; color: var(--red); min-height: 2.6rem; }
+  .col .bar { grid-column: 1 / -1; width: 100%; height: 0.35rem; background: var(--ink); }
+  .col .m-box { height: 5rem; min-width: 5.4rem; }
+  .col .cut { position: relative; }
+  .col .cut::after { content: ''; position: absolute; left: -0.2rem; right: -0.2rem; top: 50%; height: 0.3rem; background: var(--red); transform: rotate(-20deg); }
+  .blocks { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); min-height: 18rem; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.8rem; align-items: center; justify-content: center; }
+  .blocks .grp { display: flex; align-items: center; gap: 0.8rem; }
+  .blocks .tag { font-size: 1.5rem; font-weight: 800; min-width: 4rem; }
+  .q { font-family: var(--read); font-size: 2.1rem; font-weight: 700; margin-bottom: 0.4rem; min-height: 3rem; text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card"><div class="col" id="col"></div></div>
+    <div><div class="q" id="q"></div><div class="row" id="act"></div><div class="blocks" id="blocks"></div></div>
+    <div class="card side"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+const ADD = !/sub/.test(location.search);
+G.init({ title: ADD ? 'Add with Tens and Ones' : 'Subtract with Tens and Ones', subtitle: 'Decoration for Festival · Playing with blocks' + (ADD ? '' : ' and garlands'), back: '../index.html#ch6' });
+
+/* Sums from the book (Add these numbers, Playing with blocks, Let us do; Decorating with garlands). */
+const ITEMS = ADD ? [[44, 23], [52, 30], [23, 38], [46, 37], [36, 47], [46, 39], [56, 19], [36, 8], [45, 35]]
+  : [[45, 12], [37, 24], [46, 34], [28, 5], [46, 18], [54, 28], [73, 47], [93, 48], [84, 37], [27, 27]];
+G.$('#hint').textContent = ADD ? 'Add the ones first. 10 ones make 1 ten – shift it to the tens!' : 'Take away the ones first. Not enough ones? Open a garland of 10 flowers!';
+const BLK = { col: '#2f7de1', unit: '#2f7de1', size: 1.05 }, BLK2 = { col: '#ff8a3d', unit: '#ff8a3d', size: 1.05 }, FL = { col: '#ffc93c', unit: '#ff6fa8', size: 1.2 };
+let k = 0, a, b, step, carry, opened, ones, tens;
+function table() {
+  const at = Math.floor(a / 10), ao = a % 10, bt = Math.floor(b / 10), bo = b % 10;
+  const tTop = opened ? `<span class="cut">${at}</span>` : at, oTop = opened ? `<span class="cut">${ao}</span>` : ao;
+  G.$('#col').innerHTML = `<span></span><span class="h">T</span><span class="h">O</span>
+    <span></span><span class="carry">${ADD ? (carry ? '1' : '') : opened ? at - 1 : ''}</span><span class="carry">${!ADD && opened ? ao + 10 : ''}</span>
+    <span></span><span>${tTop}</span><span>${oTop}</span>
+    <span>${ADD ? '+' : '−'}</span><span>${bt || ''}</span><span>${bo}</span>
+    <span class="bar"></span>
+    <span></span><span class="m-box ${step === 1 ? 'on' : ''}">${tens ?? '?'}</span><span class="m-box ${step === 0 ? 'on' : ''}">${ones ?? '?'}</span>`;
+}
+function blocks() {
+  let h;
+  if (ADD) h = `<div class="grp"><span class="tag">${a}</span>${M.strips(a, BLK)}</div><div class="grp"><span class="tag">${b}</span>${M.strips(b, BLK2)}</div>`;
+  else {
+    const t = Math.floor(a / 10) - (opened ? 1 : 0), o = (a % 10) + (opened ? 10 : 0);
+    h = `<div class="grp"><span class="tag">🌼</span>${M.strips(t * 10, FL)}<span class="m-units" style="grid-template-columns:repeat(5,auto)">${'<span class="m-unit" style="--c:#ff6fa8;--s:1.2rem"></span>'.repeat(o)}</span></div><div style="font-size:1.6rem;font-weight:800">${t} garlands and ${o} flowers · give away ${b}</div>`;
+  }
+  G.$('#blocks').innerHTML = h;
+}
+function show() {
+  if (k >= ITEMS.length) { G.end({ title: 'Column champion!', msg: ADD ? 'Ones first, then tens. Shift a ten when ones make 10 or more!' : 'Ones first, then tens. Open a garland when you need more ones!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, ITEMS.length);
+  [a, b] = ITEMS[k]; step = 0; carry = 0; opened = false; ones = null; tens = null;
+  G.$('#fb').innerHTML = ''; G.$('#act').innerHTML = ''; pad.clear();
+  table(); blocks(); ask();
+}
+function ask() {
+  const ao = a % 10, bo = b % 10;
+  if (step === 0) {
+    if (!ADD && ao < bo && !opened) {
+      G.$('#q').textContent = `${ao} ones take away ${bo} ones? There are not enough ones!`;
+      G.$('#act').innerHTML = '<button class="big-btn orange" id="open">🌼 Open a garland</button>';
+      G.$('#open').onclick = () => { opened = true; G.$('#act').innerHTML = ''; G.sfx('pop'); G.say(`Open one garland. Now we have ${ao + 10} loose flowers.`); table(); blocks(); ask(); };
+      G.say(G.$('#q').textContent); return;
+    }
+    G.$('#q').textContent = ADD ? `Add the ones: ${ao} + ${bo} = ?` : `Take away the ones: ${ao + (opened ? 10 : 0)} − ${bo} = ?`;
+  } else {
+    const at = Math.floor(a / 10) - (opened ? 1 : 0), bt = Math.floor(b / 10);
+    G.$('#q').textContent = ADD ? `Add the tens: ${carry ? '1 + ' : ''}${at} + ${bt} = ?` : `Take away the tens: ${at} − ${bt} = ?`;
+  }
+  G.say(G.$('#q').textContent.replace('−', 'minus').replace('?', ''));
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    pad.clear();
+    const ao = a % 10, bo = b % 10, at = Math.floor(a / 10), bt = Math.floor(b / 10);
+    if (step === 0) {
+      if (!ADD && ao < bo && !opened) { G.say('First open a garland.'); return; }
+      const want = ADD ? ao + bo : ao + (opened ? 10 : 0) - bo;
+      if (v !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the ones again.'); return; }
+      G.$('#fb').innerHTML = ''; G.sfx('good');
+      if (ADD && want >= 10) { carry = 1; ones = want - 10; G.say(`${want} ones. That is 1 ten and ${want - 10} ones. Shift the ten!`); }
+      else { ones = want; G.say(`${want}.`); }
+      step = 1; table(); setTimeout(ask, ADD && carry ? 2400 : 900);
+    } else {
+      const want = ADD ? at + bt + carry : at - (opened ? 1 : 0) - bt;
+      if (v !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the tens again.'); return; }
+      tens = want; step = 2; table(); G.star(); G.sfx('good');
+      const ans = ADD ? a + b : a - b;
+      G.feedback(G.$('#fb'), true, `🎉 ${a} ${ADD ? '+' : '−'} ${b} = ${ans}`);
+      G.say(`${a} ${ADD ? 'plus' : 'minus'} ${b} is ${ans}.`);
+      k++; setTimeout(show, 3200);
+    }
+  },
+});
+show();
+</script>
+</body>
+</html>

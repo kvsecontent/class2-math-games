@@ -225,7 +225,34 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 6 }, (_, i) => ({ n: i + 6, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 6, title: 'Decoration for Festival', unit: 'Adding and subtracting 2-digit numbers',
+    sections: [
+      { key: 'count', name: '➕ Adding', games: [
+        { href: 'ch6/flower-garlands.html', ic: '🌼', t: 'Flowers for the Festival', d: 'Garlands of 10 · Rohan and Suwali bring 65' },
+        { href: 'ch6/jump-line.html?add', ic: '🐸', t: 'Count Ahead', d: 'Ginladi and number line: 25 + 12, 57 + 34 …' },
+        { href: 'ch6/columns.html?add', ic: '🧱', t: 'Add with Tens and Ones', d: 'Ones first · shift a ten · 46 + 37' },
+        { href: 'ch6/stories.html?add', ic: '🏏', t: 'Adding Stories', d: 'Runs, pencils, marbles, money, bus' },
+      ]},
+      { key: 'compare', name: '➖ Taking away', games: [
+        { href: 'ch6/jump-line.html?sub', ic: '🪔', t: 'Count Back', d: 'Diyas: 75 − 35 · ginladi and number line' },
+        { href: 'ch6/columns.html?sub', ic: '🌼', t: 'Subtract with Tens and Ones', d: 'Open a garland · 46 − 18 · 93 − 48' },
+        { href: 'ch6/skip-rope.html', ic: '🪢', t: 'Skip the Rope', d: 'Aman and Avni: how many more to 20?' },
+        { href: 'ch6/stories.html?sub', ic: '🎈', t: 'Taking Away Stories', d: 'Shells, bus, balloons, bangles, birds' },
+      ]},
+      { key: 'play', name: '🧩 Facts and puzzles', games: [
+        { href: 'ch6/number-puzzles.html', ic: '🔺', t: 'Number Puzzles', d: 'Fact families · pyramids · diagrams' },
+        { href: 'ch6/check-answers.html', ic: '✅', t: 'Check the Answers', d: 'Is Daljeet right? Correct the mistakes' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch6/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch6/diya-race.html', ic: '🏆', t: 'Festival Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 5 }, (_, i) => ({ n: i + 7, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

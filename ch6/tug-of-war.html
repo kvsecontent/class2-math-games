@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Decoration for Festival · Two players', back: '../index.html#ch6' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🌼', t: 'One garland has ____ flowers.', o: ['10', '5', '12'] },
+  { e: '🌼', t: 'Rohan has 1 garland and 2 flowers. How many flowers?', o: ['12', '3', '21'] },
+  { e: '🌼', t: 'Rohan brings 12 and Suwali brings 53. Together?', o: ['65', '41', '56'] },
+  { e: '🌼', t: 'Zoha brings 43 and Javed brings 20. Together?', o: ['63', '23', '45'] },
+  { e: '📿', t: '25 + 12 = ____', o: ['37', '13', '38'] },
+  { e: '📿', t: '57 + 34 = ____', o: ['91', '81', '23'] },
+  { e: '📿', t: '24 + 43 = ____', o: ['67', '19', '76'] },
+  { e: '🐸', t: '23 + 14 = ____', o: ['37', '9', '38'] },
+  { e: '🐸', t: '24 + 16 = ____', o: ['40', '30', '8'] },
+  { e: '🐸', t: '22 + ____ = 38', o: ['16', '14', '60'] },
+  { e: '🧱', t: '44 + 23 = ____', o: ['67', '21', '76'] },
+  { e: '🧱', t: '46 + 37 = ____', o: ['83', '73', '9'] },
+  { e: '🧱', t: '13 ones = 1 ten and ____ ones', o: ['3', '13', '1'] },
+  { e: '🏏', t: 'Rahim made 43 runs and 58 runs. Total runs?', o: ['101', '91', '15'] },
+  { e: '🚌', t: '36 men and 47 women in a bus. How many people?', o: ['83', '73', '11'] },
+  { e: '🪔', t: '75 diyas were made and 35 were sold. How many are left?', o: ['40', '110', '30'] },
+  { e: '🪔', t: '32 diyas in the morning, 12 sold by evening. Left?', o: ['20', '44', '30'] },
+  { e: '📿', t: '18 − 9 = ____', o: ['9', '27', '11'] },
+  { e: '📿', t: '30 − 18 = ____', o: ['12', '22', '48'] },
+  { e: '🐸', t: '39 − 28 = ____', o: ['11', '67', '21'] },
+  { e: '0️⃣', t: '22 − 22 = ____', o: ['0', '22', '44'] },
+  { e: '0️⃣', t: '14 − 0 = ____', o: ['14', '0', '1'] },
+  { e: '🌼', t: '46 − 18 = ____', o: ['28', '32', '38'] },
+  { e: '🌼', t: '73 − 47 = ____', o: ['26', '34', '36'] },
+  { e: '🌼', t: 'We cannot take 8 from 6. So we open a ____.', o: ['garland (ten)', 'box', 'window'] },
+  { e: '🪢', t: 'Aman skipped 14 times. How many more to make 20?', o: ['6', '34', '10'] },
+  { e: '🪢', t: 'Avni skipped 12 times. How many more to make 20?', o: ['8', '32', '12'] },
+  { e: '🐚', t: 'Anushka had 63 shells and gave away 26. Left?', o: ['37', '43', '89'] },
+  { e: '🐦', t: '56 birds, then more came. Now 87. How many came?', o: ['31', '143', '41'] },
+  { e: '👨‍👩‍👧', t: '20 + 30 = 50. So 50 − 30 = ____', o: ['20', '80', '30'] },
+  { e: '🔺', t: 'Addition pyramid: 6 and 8 make ____ on top.', o: ['14', '2', '68'] },
+  { e: '🎁', t: '₹78 in the purse. ₹61 spent. How much is left?', o: ['₹17', '₹139', '₹27'] },
+  { e: '✏️', t: 'Daljeet wrote 25 + 36 = 511. The right answer is ____.', o: ['61', '511', '51'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>
