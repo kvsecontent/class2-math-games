@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .sand { background: #f7dc9c; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem; }
+  .pile { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; min-height: 7rem; }
+  .shell { font-size: 2.8rem; border: 0; background: none; padding: 0.1rem; line-height: 1; }
+  .strings { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; margin-top: 0.8rem; min-height: 6rem; }
+  .str { display: flex; gap: 0.05rem; padding: 0.3rem 0.8rem; border-radius: 3rem; border: 0.3rem solid #8b5a2b; background: rgba(255, 255, 255, 0.6); font-size: 2rem; min-width: 6rem; min-height: 3.6rem; align-items: center; }
+  .str.full { border-color: var(--green); background: #d9f7e8; animation: pop 0.35s; }
+  .who { font-size: 2rem; font-weight: 800; }
+  .sent { font-family: var(--read); font-size: 2.1rem; line-height: 2.2; margin-top: 0.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint"></p>
+  <div class="wrap">
+    <div class="sand"><div class="who" id="who"></div><div class="pile" id="pile"></div><div class="strings" id="strings"></div><div class="sent" id="sent"></div></div>
+    <div class="side card"><div class="progress" id="pg"></div><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Surbhi’s Shells', subtitle: 'A Day at the Beach · Making groups' });
+
+/* From the book: Surbhi makes groups for bracelets, her mother makes groups for necklaces.
+   How many shells go on each one is our choice. */
+const ROUNDS = [
+  { who: '👧 Surbhi', what: 'bracelet', each: 5, total: 20, text: 'Surbhi has made [g] groups of shells with [e] number of shells in each group for her bracelets.' },
+  { who: '👩 Her mother', what: 'necklace', each: 10, total: 30, text: 'Her mother has made [g] groups of shells with [e] number of shells in each group for her necklaces.' },
+  { who: '👧 Surbhi', what: 'bracelet', each: 4, total: 24, text: 'Surbhi has made [g] groups of shells with [e] number of shells in each group for her bracelets.' },
+  { who: '👩 Her mother', what: 'necklace', each: 10, total: 50, text: 'Her mother has made [g] groups of shells with [e] number of shells in each group for her necklaces.' },
+];
+let r = 0, R, cur, vals, b, filling;
+
+function start() { r = 0; next(); }
+function next() {
+  if (r >= ROUNDS.length) { G.end({ title: 'Lovely jewellery!', msg: 'You made equal groups of shells.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), r, ROUNDS.length);
+  R = ROUNDS[r]; filling = true; b = 0;
+  vals = [R.total / R.each, R.each];
+  G.$('#who').textContent = `${R.who} – ${R.each} shells on each ${R.what}`;
+  G.$('#hint').innerHTML = `Tap the shells to put them on a ${R.what}. Each ${R.what} needs <b>${R.each}</b> shells.`;
+  G.$('#pile').innerHTML = '<button class="shell">🐚</button>'.repeat(R.total);
+  G.$('#strings').innerHTML = '';
+  G.$('#sent').innerHTML = '';
+  G.$('#fb').innerHTML = '';
+  cur = null;
+  G.$$('#pile .shell').forEach((s) => (s.onclick = () => thread(s)));
+  G.say(`Put ${R.each} shells on each ${R.what}.`);
+}
+function thread(s) {
+  if (!filling) return;
+  if (!cur || cur.children.length === R.each) { cur = document.createElement('div'); cur.className = 'str'; G.$('#strings').append(cur); }
+  s.remove();
+  const sp = document.createElement('span'); sp.textContent = '🐚'; cur.append(sp);
+  G.sfx('pop');
+  if (cur.children.length === R.each) { cur.classList.add('full'); G.sfx('good'); G.say(`${G.$$('#strings .str').length} ${R.what}${G.$$('#strings .str').length > 1 ? 's' : ''}`); }
+  if (!G.$('#pile .shell')) {
+    filling = false;
+    let i = 0;
+    G.$('#sent').innerHTML = R.text.replace(/\[\w\]/g, () => `<span class="m-box" data-i="${i++}">?</span>`);
+    mark();
+    setTimeout(() => G.say('Now fill in the blanks. ' + R.text.replace(/\[\w\]/g, 'blank')), 900);
+  }
+}
+function mark() { G.$$('#sent .m-box').forEach((x) => x.classList.toggle('on', +x.dataset.i === b)); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear();
+    if (filling) { G.say('First put all the shells on the ' + R.what + 's.'); return; }
+    if (v !== vals[b]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again!'); return; }
+    const box = G.$(`#sent .m-box[data-i="${b}"]`);
+    box.textContent = v; box.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++b < vals.length) { mark(); return; }
+    G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(G.$('#sent').textContent);
+    r++; setTimeout(next, 4200);
+  },
+});
+start();
+</script>
+</body>
+</html>

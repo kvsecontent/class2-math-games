@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .beach { position: relative; min-height: calc(100vh - 17rem); border-radius: var(--radius); border: 0.25rem solid var(--line); overflow: hidden;
+    background: linear-gradient(#bfe6ff 0 18%, #5ec3f0 18% 36%, #f7dc9c 36%); display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 1.2rem; padding: 6rem 1rem 1rem; }
+  .beach .sun { position: absolute; right: 2rem; top: 0.6rem; font-size: 4rem; }
+  .beach .ask { position: absolute; left: 1rem; top: 0.8rem; background: #fff; border-radius: 1rem; padding: 0.3rem 1rem; font-size: 1.8rem; font-weight: 800; box-shadow: var(--shadow); }
+  .grp { display: flex; flex-wrap: wrap; width: 12.5rem; justify-content: center; gap: 0.1rem; padding: 0.3rem; border-radius: 1.2rem; transition: all 0.4s; }
+  .grp.ring { background: rgba(255, 255, 255, 0.55); outline: 0.3rem dashed var(--purple); }
+  .grp.ring.loose { outline-color: var(--orange); }
+  .it { font-size: 2.3rem; line-height: 1.1; border: 0; background: none; padding: 0; width: 2.4rem; border-radius: 0.6rem; }
+  .it.c { background: #ffd34d; }
+  .it small { display: none; }
+  .side { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; }
+  .side .ans { font-size: 3rem; font-weight: 800; min-width: 9rem; text-align: center; background: #fff4cc; border-radius: 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Count the things on the beach. Count one by one (tap each one), or tap <b>Make groups of 10</b> and count in tens!</p>
+  <div class="wrap">
+    <div class="beach" id="beach"></div>
+    <div class="side card">
+      <div class="progress" id="pg"></div>
+      <button class="big-btn purple" id="grp">🔟 Make groups of 10</button>
+      <div class="ans" id="ans">?</div>
+      <div id="pad"></div>
+      <div class="feedback" id="fb"></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Count at the Beach', subtitle: 'A Day at the Beach · Counting in groups' });
+
+/* Things in the book picture: coconuts, children, boats, oranges (we add shells). How many is our choice. */
+const THINGS = [['🥥', 'coconuts'], ['🧒', 'children'], ['⛵', 'boats'], ['🍊', 'oranges'], ['🐚', 'shells']];
+let round = 0, list = [], n = 0, tapped = 0, grouped = false;
+
+function start() { round = 0; list = THINGS.map((t) => [...t, M.rnd(13, 48)]); next(); }
+function next() {
+  if (round >= list.length) { G.end({ title: 'Super counting!', msg: 'Counting in groups of 10 is quick and easy.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), round, list.length);
+  const [e, name, k] = list[round];
+  n = k; tapped = 0; grouped = false;
+  G.$('#fb').innerHTML = '';
+  G.$('#grp').disabled = false;
+  draw(e, name);
+  G.say(`How many ${name} are there?`);
+}
+function draw(e, name) {
+  const b = G.$('#beach');
+  const items = Array.from({ length: n }, () => `<button class="it">${e}</button>`);
+  let html = `<span class="sun">☀️</span><span class="ask">How many ${name}?</span>`;
+  if (!grouped) {
+    // scattered: small random bunches so they are not already in tens
+    let i = 0;
+    while (i < n) { const s = M.rnd(3, 7); html += `<div class="grp">${items.slice(i, i + s).join('')}</div>`; i += s; }
+  } else {
+    for (let i = 0; i < n; i += 10) html += `<div class="grp ring ${n - i < 10 ? 'loose' : ''}">${items.slice(i, i + 10).join('')}</div>`;
+  }
+  b.innerHTML = html;
+  G.$$('.it', b).forEach((it) => (it.onclick = () => {
+    if (it.classList.contains('c')) return;
+    it.classList.add('c'); tapped++; G.sfx('pop'); G.say(String(tapped), { rate: 1 });
+  }));
+}
+G.$('#grp').onclick = () => {
+  grouped = true; G.$('#grp').disabled = true;
+  draw(list[round][0], list[round][1]);
+  const t = Math.floor(n / 10), o = n % 10;
+  G.say(`${t} groups of ten and ${o} more.`);
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#ans'),
+  onEnter: (v) => {
+    const t = Math.floor(n / 10), o = n % 10;
+    if (v === n) {
+      G.star(); G.sfx('good');
+      G.feedback(G.$('#fb'), true, `🎉 ${n} ${list[round][1]}!`);
+      G.say(`Yes! ${t} tens and ${o} ones make ${n}.`);
+      round++; pad.clear(); setTimeout(next, 2400);
+    } else {
+      G.sfx('bad');
+      G.feedback(G.$('#fb'), false, '🙂 Count again!');
+      G.say('Count again. Try making groups of ten.');
+      pad.clear();
+    }
+  },
+});
+start();
+</script>
+</body>
+</html>

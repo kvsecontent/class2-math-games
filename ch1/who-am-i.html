@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 110rem; align-items: center; }
+  .thinker { font-size: 6rem; line-height: 1; animation: bob 2.5s ease-in-out infinite; }
+  .riddle { font-family: var(--read); font-size: 3rem; font-weight: 700; margin: 0.6rem 0; }
+  .lbl { font-size: 1.6rem; font-weight: 800; color: var(--muted); }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .clue { font-size: 1.6rem; color: var(--blue); font-weight: 800; min-height: 2.4rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Play with numbers! Read the riddle and type the number.</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card center"><div class="thinker">🤔</div><div class="lbl" id="lbl"></div><div class="riddle" id="rid"></div>
+      <div class="row"><button class="big-btn ghost" id="again">🔊 Read again</button><button class="big-btn ghost" id="help">💡 Clue</button></div>
+      <div class="clue" id="clue"></div></div>
+    <div class="side card"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Who am I?', subtitle: 'A Day at the Beach · Play with numbers' });
+
+/* Riddles A–F from the book. */
+const RID = [
+  { t: 'I am the largest two-digit number.', a: 99, c: 'Put the biggest digit at both places.' },
+  { t: 'I am the largest two-digit number where no digit is repeated.', a: 98, c: 'The two digits must be different.' },
+  { t: 'I am the smallest two-digit number.', a: 10, c: 'I come just after 9.' },
+  { t: 'I am the smallest two-digit number, my digits are repeated.', a: 11, c: 'Both digits are the same.' },
+  { t: 'I am the smallest two-digit number with 3 at the tens place.', a: 30, c: 'Put the smallest digit at the ones place.' },
+  { t: 'I am the largest two-digit number with 2 at the ones place.', a: 92, c: 'Put the biggest digit at the tens place.' },
+];
+let k = 0;
+function show() {
+  if (k >= RID.length) { G.end({ title: 'Riddle master!', msg: 'You found all the numbers.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, RID.length);
+  G.$('#lbl').textContent = 'ABCDEF'[k] + '.';
+  G.$('#rid').textContent = RID[k].t;
+  G.$('#clue').textContent = ''; G.$('#fb').innerHTML = '';
+  G.say(RID[k].t + ' Who am I?');
+}
+G.$('#again').onclick = () => G.say(RID[k].t + ' Who am I?');
+G.$('#help').onclick = () => { G.$('#clue').textContent = '💡 ' + RID[k].c; G.say(RID[k].c); };
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== RID[k].a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 Not ${v}. Try again!`); G.say('Try again.'); return; }
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, `🎉 I am ${v}!`);
+    G.say(`Yes! I am ${M.word(v)}.`);
+    k++; setTimeout(show, 2600);
+  },
+});
+show();
+</script>
+</body>
+</html>

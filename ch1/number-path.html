@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .field { position: relative; width: 100%; max-width: 120rem; height: calc(100vh - 15rem); min-height: 28rem; border-radius: var(--radius); border: 0.25rem solid var(--line); background: linear-gradient(#9be38a, #7fcf6c); overflow: hidden; }
+  .field svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .stone { position: absolute; transform: translate(-50%, -50%); width: 8.4rem; height: 6.4rem; border-radius: 50%; border: 0.3rem solid #8d8d8d; background: radial-gradient(circle at 40% 35%, #fff, #d8d8d8); font-size: 3rem; font-weight: 800; box-shadow: 0 0.4rem 0 rgba(0, 0, 0, 0.25); }
+  .stone.done { background: #ffd34d; border-color: var(--orange); }
+  .stone.no { animation: shake 0.4s; }
+  .stone small { position: absolute; top: -0.9rem; right: -0.4rem; background: var(--purple); color: #fff; border-radius: 1rem; font-size: 1.1rem; padding: 0 0.5rem; }
+  .frog { position: absolute; font-size: 4rem; transform: translate(-50%, -110%); transition: left 0.5s, top 0.5s; pointer-events: none; }
+  .bar { display: flex; gap: 1rem; align-items: center; justify-content: center; margin-bottom: 0.6rem; font-size: 1.8rem; font-weight: 800; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Mark the path! Start at the <b>largest</b> number and hop to the <b>smallest</b> — in decreasing order, passing every number.</p>
+  <div class="bar"><div class="progress" id="pg" style="margin:0"></div><span id="next">Find the largest number!</span></div>
+  <div class="field" id="field"><svg id="lines"></svg><span class="frog" id="frog">🐸</span></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Mark the Path', subtitle: 'A Day at the Beach · Decreasing order' });
+
+/* Our own numbers. More stones each round. */
+const SIZES = [7, 9, 12];
+let r = 0, order = [], step = 0, pos = [];
+
+function spots(n) {
+  // spread the stones on a loose grid so they never overlap
+  const cols = Math.ceil(Math.sqrt(n * 1.8)), rows = Math.ceil(n / cols);
+  const cells = G.shuffle(Array.from({ length: cols * rows }, (_, i) => i)).slice(0, n);
+  return cells.map((c) => ({ x: ((c % cols) + 0.5) / cols * 100 + M.rnd(-3, 3), y: (Math.floor(c / cols) + 0.5) / rows * 100 + M.rnd(-4, 4) }));
+}
+function round() {
+  if (r >= SIZES.length) { G.end({ title: 'Path finder!', msg: 'You hopped from the largest to the smallest number.', onReplay: () => { r = 0; round(); } }); return; }
+  G.progress(G.$('#pg'), r, SIZES.length);
+  const set = new Set();
+  while (set.size < SIZES[r]) set.add(M.rnd(10, 99));
+  const nums = [...set];
+  order = [...nums].sort((a, b) => b - a);
+  pos = spots(nums.length);
+  step = 0;
+  const f = G.$('#field');
+  G.$$('.stone', f).forEach((s) => s.remove());
+  G.$('#lines').innerHTML = '';
+  G.$('#frog').style.display = 'none';
+  nums.forEach((n, i) => {
+    const s = document.createElement('button');
+    s.className = 'stone'; s.textContent = n;
+    s.style.left = pos[i].x + '%'; s.style.top = pos[i].y + '%';
+    s.dataset.n = n; s.dataset.i = i;
+    s.onclick = () => hop(s);
+    f.append(s);
+  });
+  G.$('#next').textContent = 'Find the largest number!';
+  G.say('Find the largest number.');
+}
+let last = null;
+function hop(s) {
+  if (s.classList.contains('done')) return;
+  const n = +s.dataset.n;
+  if (n !== order[step]) { s.classList.remove('no'); void s.offsetWidth; s.classList.add('no'); G.sfx('bad'); G.say(step ? `Find the largest number smaller than ${order[step - 1]}.` : 'Find the largest number.'); return; }
+  const p = pos[+s.dataset.i];
+  s.classList.add('done'); s.insertAdjacentHTML('beforeend', `<small>${step + 1}</small>`);
+  const fr = G.$('#frog'); fr.style.display = ''; fr.style.left = p.x + '%'; fr.style.top = p.y + '%';
+  if (last) G.$('#lines').insertAdjacentHTML('beforeend', `<line x1="${last.x}%" y1="${last.y}%" x2="${p.x}%" y2="${p.y}%" stroke="#ff8a3d" stroke-width="8" stroke-dasharray="14 10" stroke-linecap="round"/>`);
+  last = p;
+  G.sfx('pop'); G.say(String(n), { rate: 1 });
+  step++;
+  if (step === order.length) { last = null; G.star(); G.sfx('win'); G.$('#next').textContent = '🎉 Well done!'; G.say(`Well done! From ${order[0]} down to ${order[order.length - 1]}.`); r++; setTimeout(round, 3000); return; }
+  G.$('#next').textContent = `Next: the largest number smaller than ${n}`;
+}
+round();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .q .e { font-size: 1.6rem; font-weight: 800; color: var(--muted); }
+  .q .st { font-family: var(--read); font-size: 3.6rem; font-weight: 700; margin: 0.6rem 0 1.4rem; }
+  .q .st b { display: inline-block; min-width: 6rem; border-bottom: 0.3rem solid var(--ink); color: var(--purple); }
+  .choice { font-family: var(--read); font-size: 3rem; min-width: 11rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Fill in the blanks. Tap the number that makes the sentence true.</p>
+  <div class="card" id="game" style="width:100%;max-width:90rem"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'More Than, Less Than', subtitle: 'A Day at the Beach · Fill in the blanks' });
+
+/* Sentences A–H from the book. Only one choice is right each time. */
+const ITEMS = [
+  { l: 'A', s: '29 is ___ than 20.', o: ['more', 'less'], a: 'more', why: '29 has 2 tens and 9 ones. 20 has 2 tens and 0 ones.' },
+  { l: 'B', s: '___ is less than 41.', o: [38, 45, 52], a: 38, why: '38 has 3 tens. 41 has 4 tens.' },
+  { l: 'C', s: '___ is less than 76.', o: [70, 79, 86], a: 70, why: 'Both have 7 tens. 70 has 0 ones, 76 has 6 ones.' },
+  { l: 'D', s: '49 is more than ___.', o: [40, 59, 94], a: 40, why: 'Both have 4 tens. 49 has 9 ones, 40 has 0 ones.' },
+  { l: 'E', s: '25 is less than ___.', o: [52, 20, 15], a: 52, why: '52 has 5 tens. 25 has only 2 tens.' },
+  { l: 'F', s: '___ is less than 2.', o: [1, 3, 12], a: 1, why: '1 comes before 2.' },
+  { l: 'G', s: '36 is more than ___.', o: [33, 63, 39], a: 33, why: 'Both have 3 tens. 36 has 6 ones, 33 has 3 ones.' },
+  { l: 'H', s: 'Which one is true?', o: ['54 is more than 45', '45 is more than 54', '39 is more than 93'], a: '54 is more than 45', why: '54 has 5 tens. 45 has only 4 tens.' },
+];
+
+G.quiz({
+  el: G.$('#game'),
+  items: ITEMS,
+  shuffleItems: false,
+  question: (it) => `<div class="e">${it.l}.</div><div class="st">${it.s.replace('___', '<b>&nbsp;?&nbsp;</b>')}</div>`,
+  options: (it) => G.shuffle(it.o).map((o) => ({ label: o, value: o })),
+  answer: (it) => it.a,
+  onShow: (it) => G.say(it.s.replace('___', 'blank')),
+  explain: (it) => it.why,
+  endMsg: 'You know more than and less than!',
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .pic { min-height: 21rem; display: flex; align-items: center; justify-content: center; padding: 0.6rem; }
+  .sent { font-family: var(--read); font-size: 2.4rem; line-height: 2.2; }
+  .tbl { display: inline-grid; grid-template-columns: repeat(3, 12rem); border: 0.25rem solid var(--ink); border-radius: 0.8rem; overflow: hidden; margin-top: 0.4rem; }
+  .tbl b { background: #e7f1ff; font-size: 1.5rem; padding: 0.3rem; border-bottom: 0.2rem solid var(--ink); }
+  .tbl > * { border-right: 0.2rem solid var(--ink); }
+  .tbl > *:nth-child(3n) { border-right: 0; }
+  .tbl span { font-size: 2.6rem; font-weight: 800; padding: 0.2rem; border-top: 0.15rem solid var(--line); }
+  .tbl .m-box { height: 3.8rem; font-size: 2.4rem; margin: 0.2rem auto; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint">Fun with blocks and strips! Count the tens and the ones, then fill in the blanks.</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card"><div class="pic" id="pic"></div><div class="sent" id="sent"></div></div>
+    <div class="side card"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Blocks and Strips', subtitle: 'A Day at the Beach · Fun with blocks and strips' });
+
+/* Steps from the book: what is a block stick / ten strip, 3 sticks + 4 blocks = 34,
+   more pictures to count, and the table 24, 36, 72, 69, 46. */
+const BLK = { col: '#2bb673', unit: '#2bb673' }, STR = { col: '#ffc93c', unit: '#e63946' };
+const STEPS = () => [
+  { pic: M.strips(10, BLK), text: '1 block stick = [10] blocks', say: 'How many blocks are there in one block stick?' },
+  { pic: M.strips(10, STR), text: '1 ten strip = [10] units', say: 'How many units are there in one ten strip?' },
+  ...[34, M.rnd(41, 59), M.rnd(61, 89)].map((n) => ({ pic: M.strips(n, BLK), text: `[${Math.floor(n / 10)}] block sticks and [${n % 10}] blocks = [${n}] total blocks`, say: 'How many block sticks? How many blocks? How many in all?' })),
+  ...[M.rnd(21, 39), M.rnd(41, 69), M.rnd(71, 99)].map((n) => ({ pic: M.strips(n, STR), text: `[${Math.floor(n / 10)}] ten strips and [${n % 10}] units = [${n}] total units`, say: 'How many ten strips? How many units? How many in all?' })),
+  { table: [24, 36, 72, 69, 46], say: 'Complete the table. Write the ten strips and the units.' },
+];
+let steps, s, vals, b;
+
+function start() { steps = STEPS(); s = 0; next(); }
+function next() {
+  if (s >= steps.length) { G.end({ title: 'Block builder!', msg: '10 units make 1 ten. You know your tens and ones!', onReplay: start }); return; }
+  G.progress(G.$('#pg'), s, steps.length);
+  const st = steps[s]; b = 0; G.$('#fb').innerHTML = '';
+  let i = 0;
+  if (st.table) {
+    vals = st.table.flatMap((n) => [Math.floor(n / 10), n % 10]);
+    G.$('#pic').innerHTML = `<div class="tbl"><b>Total blocks / units</b><b>Ten strips</b><b>Units</b>${
+      st.table.map((n) => `<span>${n}</span><span><span class="m-box" data-i="${i++}">?</span></span><span><span class="m-box" data-i="${i++}">?</span></span>`).join('')}</div>`;
+    G.$('#sent').innerHTML = '';
+  } else {
+    vals = [...st.text.matchAll(/\[(\d+)\]/g)].map((m) => +m[1]);
+    G.$('#pic').innerHTML = st.pic;
+    G.$('#sent').innerHTML = st.text.replace(/\[\d+\]/g, () => `<span class="m-box" data-i="${i++}">?</span>`);
+  }
+  mark();
+  G.say(st.say);
+}
+function mark() { G.$$('.card .m-box[data-i]').forEach((x) => x.classList.toggle('on', +x.dataset.i === b)); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== vals[b]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again!'); return; }
+    const box = G.$(`.card .m-box[data-i="${b}"]`);
+    box.textContent = v; box.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++b < vals.length) { mark(); return; }
+    G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(steps[s].table ? 'The table is complete!' : G.$('#sent').textContent);
+    s++; setTimeout(next, 3000);
+  },
+});
+start();
+</script>
+</body>
+</html>

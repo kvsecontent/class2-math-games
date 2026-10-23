@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .q { font-size: 2.6rem; font-weight: 800; margin: 0.2rem 0 0.8rem; font-family: var(--read); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 116rem; }
+  .side { border: 0.35rem solid var(--line); border-radius: var(--radius); background: #fff; padding: 0.6rem; min-height: 21rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; box-shadow: var(--shadow); }
+  .side.right { border-color: var(--green); background: #effcf5; }
+  .side.wrong { border-color: var(--red); animation: shake 0.4s; }
+  .side .n { font-size: 4.4rem; font-weight: 800; line-height: 1; }
+  .side .to { font-size: 1.4rem; font-weight: 800; color: var(--muted); }
+  .pics { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; align-items: center; flex: 1; }
+  .tray { display: grid; grid-template-columns: repeat(5, 1.5rem); gap: 0.05rem; padding: 0.2rem 0.3rem; background: #c9a46a; border: 0.2rem solid #8b5a2b; border-radius: 0.5rem; font-size: 1.3rem; line-height: 1.15; }
+  .loose { display: grid; grid-template-columns: repeat(5, 1.8rem); font-size: 1.6rem; }
+  .sent { font-family: var(--read); font-size: 3rem; margin: 1rem 0; }
+  .choice { font-family: var(--read); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Trays of oranges: compare the tens first. If the tens are the same, compare the ones.</p>
+  <div class="progress" id="pg"></div>
+  <div id="area" style="width:100%" class="center"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Trays of Oranges', subtitle: 'A Day at the Beach · More or less' });
+
+/* Pairs from the book: 43/34 (more), 27/72 (less), 43/47 (more), then
+   "67 chikoos are ___ than 76" and "53 shells are ___ than 35". */
+const pic = (n, e) => `<div class="pics">${`<div class="tray">${`<span>${e}</span>`.repeat(10)}</div>`.repeat(Math.floor(n / 10))}${n % 10 ? `<div class="loose">${`<span>${e}</span>`.repeat(n % 10)}</div>` : ''}</div>`;
+const ROUNDS = () => {
+  const r = [{ a: 43, b: 34, ask: 'more' }, { a: 27, b: 72, ask: 'less' }, { a: 43, b: 47, ask: 'more' },
+    { s: [67, 76, 'chikoos', '🟤'] }, { s: [53, 35, 'shells', '🐚'] }];
+  for (let i = 0; i < 3; i++) {
+    const t = M.rnd(2, 9), a = t * 10 + M.rnd(0, 9);
+    let b = i === 1 ? t * 10 + M.rnd(0, 9) : (a % 10) * 10 + Math.floor(a / 10); // same tens, or swapped digits
+    const d = M.rnd(1, 9);
+    if (b === a || b < 10) b = a + d <= 99 ? a + d : a - d;
+    r.push(i === 2 ? { s: [a, b, 'oranges', '🍊'] } : { a, b, ask: i ? 'less' : 'more' });
+  }
+  return r;
+};
+let list, k;
+function start() { list = ROUNDS(); k = 0; next(); }
+function why(a, b) {
+  const big = Math.max(a, b), small = Math.min(a, b);
+  return Math.floor(a / 10) !== Math.floor(b / 10)
+    ? `${big} has ${Math.floor(big / 10)} tens, ${small} has only ${Math.floor(small / 10)} tens.`
+    : `Both have ${Math.floor(a / 10)} tens. ${big} has ${big % 10} ones, ${small} has ${small % 10} ones.`;
+}
+function next() {
+  if (k >= list.length) { G.end({ title: 'Great comparing!', msg: 'Look at the tens first, then the ones.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, list.length);
+  G.$('#fb').innerHTML = '';
+  const q = list[k], area = G.$('#area');
+  if (q.s) {
+    const [a, b, what, e] = q.s, ans = a > b ? 'more' : 'less';
+    area.innerHTML = `<div class="two"><div class="side"><div class="n">${a}</div>${pic(a, e)}</div><div class="side"><div class="n">${b}</div>${pic(b, e)}</div></div>
+      <div class="sent">${a} ${what} are <b>_____</b> than ${b} ${what}.</div>
+      <div class="row"><button class="choice" data-v="more">more</button><button class="choice" data-v="less">less</button></div>`;
+    G.say(`${a} ${what} are blank than ${b} ${what}. More or less?`);
+    G.$$('#area .choice').forEach((c) => (c.onclick = () => {
+      if (c.dataset.v !== ans) { c.classList.add('wrong'); G.sfx('bad'); setTimeout(() => c.classList.remove('wrong'), 500); return; }
+      c.classList.add('right'); G.$('.sent b').textContent = ans; done(`${a} ${what} are ${ans} than ${b} ${what}. ${why(a, b)}`);
+    }));
+  } else {
+    area.innerHTML = `<div class="q">Which is ${q.ask}? Tap it.</div><div class="two">${[q.a, q.b].map((n) => `<button class="side" data-n="${n}"><div class="n">${n}</div><div class="to">${Math.floor(n / 10)} tens ${n % 10} ones</div>${pic(n, '🍊')}</button>`).join('')}</div>`;
+    G.say(`Which is ${q.ask}? ${q.a} oranges or ${q.b} oranges?`);
+    const ans = q.ask === 'more' ? Math.max(q.a, q.b) : Math.min(q.a, q.b);
+    G.$$('#area .side').forEach((s) => (s.onclick = () => {
+      if (+s.dataset.n !== ans) { s.classList.add('wrong'); G.sfx('bad'); G.say('Look at the tens.'); setTimeout(() => s.classList.remove('wrong'), 500); return; }
+      s.classList.add('right'); done(`${ans} oranges are ${q.ask}. ${why(q.a, q.b)}`);
+    }));
+  }
+}
+function done(text) {
+  G.$$('#area button').forEach((b) => (b.disabled = true));
+  G.star(); G.sfx('good');
+  G.feedback(G.$('#fb'), true, '🎉 ' + text);
+  G.say(text);
+  k++; setTimeout(next, 5200);
+}
+start();
+</script>
+</body>
+</html>

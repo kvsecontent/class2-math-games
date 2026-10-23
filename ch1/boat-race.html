@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .river { position: relative; width: 100%; max-width: 120rem; border-radius: var(--radius); border: 0.25rem solid var(--line); background: repeating-linear-gradient(170deg, #4fb6e8 0 2rem, #5ec3f0 2rem 4rem); padding: 0.4rem 0; overflow: hidden; }
+  .river .finish { position: absolute; right: 7%; top: 0; bottom: 0; width: 0.6rem; background: repeating-linear-gradient(#fff 0 1rem, #222 1rem 2rem); }
+  .lane { position: relative; height: 4.6rem; }
+  .boat { position: absolute; top: 0.5rem; left: 2%; width: 22%; height: 3.6rem; transition: left 3s cubic-bezier(.4, 0, .3, 1); }
+  .boat .hull { position: absolute; left: 0; right: 0; bottom: 0; height: 1.6rem; background: var(--c); border-radius: 0 0 50% 50% / 0 0 100% 100%; border: 0.18rem solid #2b2140; }
+  .boat .hull::after { content: ''; position: absolute; left: -0.6rem; bottom: 0.4rem; width: 1.8rem; height: 2.6rem; background: var(--c); border: 0.18rem solid #2b2140; border-radius: 100% 0 0 0; }
+  .boat .crew { position: absolute; left: 1.6rem; bottom: 1rem; font-size: 1.9rem; letter-spacing: -0.4rem; transform: scaleX(-1); }
+  .q { font-family: var(--read); font-size: 2.6rem; font-weight: 700; margin: 0.8rem 0 0.6rem; min-height: 3.6rem; }
+  .choice { font-family: var(--read); font-size: 2rem; min-width: 8rem; min-height: 4.4rem; padding: 0.4rem 1.2rem; }
+  .dot { display: inline-block; width: 1.6rem; height: 1.6rem; border-radius: 50%; vertical-align: middle; margin-right: 0.4rem; border: 0.15rem solid #2b2140; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Vallam kali — the snake boat race of Onam in Kerala! Watch the race, then answer: who is <b>first, second, third…</b>?</p>
+  <div class="river" id="river"><div class="finish"></div></div>
+  <div class="q" id="q"></div>
+  <div class="row" id="opts"><button class="big-btn green" id="go">🚣 Start the race</button></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Vallam Kali', subtitle: 'A Day at the Beach · First, second, third' });
+
+/* The book asks about the first boat, the third boat, and the blue, green, pink and orange boats.
+   Our race has five boats and a new result every time. */
+const BOATS = [['red', '#e63946'], ['blue', '#2f7de1'], ['green', '#2bb673'], ['pink', '#ff6fa8'], ['orange', '#ff8a3d']];
+const ORD = ['first', 'second', 'third', 'fourth', 'fifth'];
+let place = [], qs = [], qi = 0;
+
+G.$('#river').insertAdjacentHTML('beforeend', BOATS.map(([n, c]) => `<div class="lane"><div class="boat" data-b="${n}" style="--c:${c}"><div class="hull"></div><div class="crew">🚣🚣🚣🚣🚣</div></div></div>`).join(''));
+
+function race() {
+  G.$('#fb').innerHTML = '';
+  G.$$('.boat').forEach((b) => { b.style.transition = 'none'; b.style.left = '2%'; });
+  void G.$('#river').offsetWidth;
+  place = G.shuffle(BOATS.map((b) => b[0]));
+  G.$('#q').textContent = 'Go, go, go!'; G.$('#opts').innerHTML = '';
+  G.sfx('win'); G.say('Ready, steady, go!');
+  setTimeout(() => {
+    G.$$('.boat').forEach((b) => {
+      const p = place.indexOf(b.dataset.b);
+      b.style.transition = '';
+      b.style.left = 71 - p * 9 + '%'; // the first boat touches the finish line
+    });
+  }, 300);
+  setTimeout(ask, 3600);
+  qs = G.shuffle([
+    { t: 'Which colour boat came first?', a: place[0], o: 'colour' },
+    { t: 'Which colour boat is third?', a: place[2], o: 'colour' },
+    { t: 'Which colour boat is last?', a: place[4], o: 'colour' },
+    ...['blue', 'green', 'pink', 'orange'].map((c) => ({ t: `At which position is the ${c} boat?`, a: ORD[place.indexOf(c)], o: 'pos' })),
+  ]).slice(0, 5);
+  qi = 0;
+}
+function ask() {
+  if (qi >= qs.length) {
+    G.$('#q').textContent = '🏆 Race over!';
+    G.$('#opts').innerHTML = '<button class="big-btn green" id="again">🚣 Race again</button><button class="big-btn ghost" id="fin">✅ Finish</button>';
+    G.$('#again').onclick = race;
+    G.$('#fin').onclick = () => G.end({ title: 'Super boat watchers!', msg: 'First, second, third, fourth, fifth – you know them all!', onReplay: race });
+    return;
+  }
+  const q = qs[qi];
+  G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  G.say(q.t);
+  const opts = q.o === 'colour' ? BOATS.map(([n, c]) => ({ v: n, h: `<span class="dot" style="background:${c}"></span>${n}` })) : ORD.map((o) => ({ v: o, h: o }));
+  G.$('#opts').innerHTML = opts.map((o) => `<button class="choice" data-v="${o.v}">${o.h}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== q.a) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good');
+    const txt = q.o === 'colour' ? `The ${q.a} boat.` : `The ${q.t.match(/the (\w+) boat/)[1]} boat is ${q.a}.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + txt); G.say(txt);
+    qi++; setTimeout(ask, 2200);
+  }));
+}
+G.$('#go').onclick = race;
+</script>
+</body>
+</html>

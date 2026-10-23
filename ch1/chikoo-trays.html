@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .stall { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem; }
+  .ttl { font-size: 2.2rem; font-weight: 800; }
+  .pile { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; min-height: 5rem; padding: 0.6rem; border-radius: 1rem; background: #fff4e0; margin: 0.4rem 0; }
+  .ck { display: inline-block; width: 2.3rem; height: 2.1rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c79a62, #7a4a1c 70%); box-shadow: inset 0 -0.2rem 0 rgba(0, 0, 0, 0.2); }
+  .trays { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; min-height: 6.5rem; }
+  .tray { display: grid; grid-template-columns: repeat(5, 2.3rem); gap: 0.2rem; padding: 0.4rem 0.6rem; background: #c9a46a; border: 0.3rem solid #8b5a2b; border-radius: 0.8rem; animation: pop 0.35s; }
+  .sent { font-family: var(--read); font-size: 2.2rem; line-height: 2.2; margin-top: 0.4rem; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Help Manoj put the chikoos in trays. Each tray holds <b>10</b> chikoos. Tap <b>Fill a tray</b>, then fill in the blanks.</p>
+  <div class="wrap">
+    <div class="stall">
+      <div class="ttl" id="ttl"></div>
+      <div class="pile" id="pile"></div>
+      <div class="row"><button class="big-btn orange" id="fill">🧺 Fill a tray</button></div>
+      <div class="trays" id="trays" style="margin-top:0.6rem"></div>
+      <div class="sent" id="sent"></div>
+    </div>
+    <div class="side card"><div class="progress" id="pg"></div><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Tasty Chikoos!', subtitle: 'A Day at the Beach · Trays of ten' });
+
+/* 25, 43, 35 and 58 are from the book. Two more are made at random. */
+const NUMS = () => [0, 25, 43, 35, 58, M.rnd(61, 69), M.rnd(71, 97)];
+let list, r, n, left, vals, b;
+
+function start() { list = NUMS(); r = 0; next(); }
+function next() {
+  if (r >= list.length) { G.end({ title: 'Manoj says thank you!', msg: 'All the chikoos are in trays of ten.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), r, list.length);
+  b = 0; G.$('#fb').innerHTML = ''; G.$('#trays').innerHTML = '';
+  if (list[r] === 0) {
+    // first: how many in one tray?
+    n = 10; left = 0; vals = [10];
+    G.$('#ttl').textContent = 'Look at one tray.';
+    G.$('#pile').innerHTML = ''; G.$('#pile').style.display = 'none'; G.$('#fill').style.display = 'none';
+    G.$('#trays').innerHTML = `<div class="tray">${'<span class="ck"></span>'.repeat(10)}</div>`;
+    G.$('#sent').innerHTML = 'There are <span class="m-box on" data-i="0">?</span> chikoos in one tray.';
+    G.say('How many chikoos are there in one tray?');
+    return;
+  }
+  n = list[r]; left = n; vals = [Math.floor(n / 10), n % 10];
+  G.$('#pile').style.display = ''; G.$('#fill').style.display = '';
+  G.$('#ttl').textContent = `${n} chikoos`;
+  drawPile();
+  G.$('#sent').innerHTML = '';
+  G.say(`${n} chikoos. Put them in trays of ten.`);
+}
+function drawPile() { G.$('#pile').innerHTML = '<span class="ck"></span>'.repeat(left); }
+G.$('#fill').onclick = () => {
+  if (left < 10) { G.sfx('bad'); G.say(left ? `Only ${left} left. Not enough for a tray!` : 'No chikoos left.'); return; }
+  left -= 10; drawPile();
+  G.$('#trays').insertAdjacentHTML('beforeend', `<div class="tray">${'<span class="ck"></span>'.repeat(10)}</div>`);
+  G.sfx('pop');
+  const t = G.$$('#trays .tray').length;
+  G.say(`${t * 10}`);
+  if (left < 10) {
+    G.$('#sent').innerHTML = `<span class="m-box on" data-i="0">?</span> trays of ten chikoos and <span class="m-box" data-i="1">?</span> chikoos.`;
+    setTimeout(() => G.say('How many trays? How many chikoos are left?'), 900);
+  }
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear();
+    if (!G.$('#sent .m-box')) { G.say('First fill the trays.'); return; }
+    if (v !== vals[b]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again!'); return; }
+    const box = G.$(`#sent .m-box[data-i="${b}"]`);
+    box.textContent = v; box.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++b < vals.length) { G.$(`#sent .m-box[data-i="${b}"]`).classList.add('on'); return; }
+    G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(n === 10 ? 'Yes, 10 chikoos in one tray.' : `${vals[0]} trays of ten and ${vals[1]} chikoos make ${n}.`);
+    r++; setTimeout(next, 3200);
+  },
+});
+start();
+</script>
+</body>
+</html>

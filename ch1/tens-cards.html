@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .cards { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; align-items: flex-end; min-height: 13rem; }
+  .tc { width: 6.4rem; padding: 0.3rem; border-radius: 0.8rem; background: #e7f1ff; border: 0.25rem solid var(--blue); display: grid; grid-template-columns: repeat(2, 1fr); font-size: 1.45rem; line-height: 1.1; text-align: center; }
+  .tc b { grid-column: 1 / -1; font-size: 1.4rem; color: var(--blue); }
+  .oc { width: 3.6rem; padding: 0.2rem; border-radius: 0.6rem; background: #fff4e0; border: 0.25rem solid var(--orange); font-size: 1.6rem; text-align: center; }
+  .oc b { display: block; font-size: 1.1rem; color: var(--orange); }
+  .sent { font-family: var(--read); font-size: 2.3rem; line-height: 2.3; margin-top: 0.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .key { font-size: 1.4rem; font-weight: 800; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Counting through cards: a <b style="color:var(--blue)">blue card</b> is a group of ten shells, an <b style="color:var(--orange)">orange card</b> is one shell.</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card"><div class="cards" id="cards"></div><div class="sent" id="sent"></div></div>
+    <div class="side card"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Tens and Ones Cards', subtitle: 'A Day at the Beach · Counting through cards' });
+
+/* 31, 93, 75 and 29 are from the book. */
+const NUMS = () => [31, 93, 75, 29, M.rnd(41, 59), M.rnd(61, 88)];
+const TEN = `<div class="tc"><b>10</b>${'<span>🐚</span>'.repeat(10)}</div>`, ONE = '<div class="oc"><b>1</b>🐚</div>';
+let list, r, vals, b;
+
+function start() { list = NUMS(); r = 0; next(); }
+function next() {
+  if (r >= list.length) { G.end({ title: 'Card counter!', msg: 'Tens cards and ones cards help us count fast.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), r, list.length);
+  const n = list[r], t = Math.floor(n / 10), o = n % 10;
+  vals = [n, t * 10, o, t, o]; b = 0; G.$('#fb').innerHTML = '';
+  G.$('#cards').innerHTML = TEN.repeat(t) + ONE.repeat(o);
+  let i = 0;
+  G.$('#sent').innerHTML = 'There are <span class="m-box" data-i="0">?</span> shells.<br>' +
+    `<span class="m-box" data-i="1">?</span> + <span class="m-box" data-i="2">?</span> &nbsp;or&nbsp; <span class="m-box" data-i="3">?</span> tens <span class="m-box" data-i="4">?</span> ones`;
+  mark();
+  G.say('How many shells? Count the tens cards and the ones cards.');
+}
+function mark() { G.$$('#sent .m-box').forEach((x) => x.classList.toggle('on', +x.dataset.i === b)); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== vals[b]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again!'); return; }
+    const box = G.$(`#sent .m-box[data-i="${b}"]`);
+    box.textContent = v; box.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++b < vals.length) { mark(); return; }
+    G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(`${vals[0]} is ${vals[1]} plus ${vals[2]}, or ${vals[3]} tens and ${vals[4]} ones.`);
+    r++; setTimeout(next, 3400);
+  },
+});
+start();
+</script>
+</body>
+</html>

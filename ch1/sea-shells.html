@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .tw { font-family: var(--read); font-size: 3.4rem; font-weight: 700; line-height: 1.5; margin: 0.6rem 0 1rem; }
+  .tw span { border-radius: 0.6rem; padding: 0 0.2rem; }
+  .tw span.now { background: #ffd34d; }
+  .pic { font-size: 5rem; }
+  .count { font-size: 1.6rem; font-weight: 800; color: var(--purple); min-height: 2.4rem; }
+  h3 { margin: 0 0 0.6rem; font-size: 2rem; }
+  .ideas { display: flex; flex-direction: column; gap: 0.6rem; }
+  .ideas label { display: flex; align-items: center; gap: 0.6rem; font-size: 2rem; font-weight: 800; }
+  .ideas input { flex: 1; font-family: var(--read); font-size: 1.8rem; padding: 0.5rem 0.8rem; border-radius: 1rem; border: 0.25rem solid var(--line); }
+  .help { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; }
+  .help span { background: #fff4cc; border-radius: 1rem; padding: 0.3rem 0.8rem; font-size: 1.4rem; font-weight: 800; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="wrap">
+    <div class="card center">
+      <h3>👅 Try the tongue twister</h3>
+      <div class="pic">👩🐚🌊</div>
+      <div class="tw" id="tw"></div>
+      <div class="count" id="count"></div>
+      <div class="row">
+        <button class="big-btn green" id="slow">🐢 Slow</button>
+        <button class="big-btn orange" id="fast">🐇 Fast</button>
+        <button class="big-btn purple" id="three">3️⃣ Say it 3 times!</button>
+      </div>
+      <div class="row" style="margin-top:0.8rem"><button class="big-btn ghost" id="done">⭐ I said it!</button></div>
+    </div>
+    <div class="card">
+      <h3>🔟 Things that come in tens</h3>
+      <p class="hint">List out the objects that come in packs of ten. Talk with your friends, then write them here.</p>
+      <div class="ideas">
+        <label>A. <input id="a" placeholder="…"></label>
+        <label>B. <input id="b" placeholder="…"></label>
+        <label>C. <input id="c" placeholder="…"></label>
+      </div>
+      <div class="row" style="margin-top:0.8rem"><button class="big-btn ghost" id="hint">💡 Need help?</button><button class="big-btn green" id="save">✅ Done</button></div>
+      <div class="help" id="help"></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'She Sells Seashells', subtitle: 'A Day at the Beach · Let us do' });
+
+const TW = 'She sells seashells at the seashore.';
+const words = TW.split(' ');
+G.$('#tw').innerHTML = words.map((w) => `<span>${w}</span>`).join(' ');
+let token = 0;
+
+/* Highlight each word while it is read; rate sets slow or fast. */
+function read(rate, times = 1, k = 1) {
+  const my = ++token, ss = G.$$('#tw span');
+  G.$('#count').textContent = times > 1 ? `Time ${k} of ${times}` : '';
+  const go = (i) => {
+    if (my !== token) return;
+    ss.forEach((s, j) => s.classList.toggle('now', j === i));
+    if (i >= ss.length) { if (k < times) setTimeout(() => read(rate, times, k + 1), 400); else G.$('#count').textContent = '👏 Now you try!'; return; }
+    G.say(ss[i].textContent.replace('.', ''), { rate, onend: () => setTimeout(() => go(i + 1), rate > 1 ? 0 : 120) });
+  };
+  go(0);
+}
+G.$('#slow').onclick = () => read(0.6);
+G.$('#fast').onclick = () => read(1.3);
+G.$('#three').onclick = () => read(1.1, 3);
+G.$('#done').onclick = () => { G.star(); G.sfx('good'); G.confetti(15); G.say('Wow! Super speaking!'); };
+
+/* Hints are the groups of ten in this chapter. */
+const HELP = ['📿 a necklace of 10 shells', '🧺 a tray of 10 chikoos', '🟧 a ten strip of 10 units', '🧱 a block stick of 10 blocks', '🍊 a tray of 10 oranges', '🖐️🖐️ fingers on two hands'];
+G.$('#hint').onclick = () => { G.$('#help').innerHTML = HELP.map((h) => `<span>${h}</span>`).join(''); G.say('Things that come in tens: ' + HELP.map((h) => h.replace(/^\S+\s/, '')).join(', ')); };
+G.$('#save').onclick = () => {
+  const n = ['a', 'b', 'c'].filter((k) => G.$('#' + k).value.trim()).length;
+  if (!n) { G.say('Write one thing that comes in a pack of ten.'); return; }
+  G.end({ title: 'Great thinking!', msg: `You found ${n} thing${n > 1 ? 's' : ''} that come in tens.`, onReplay: () => ['a', 'b', 'c'].forEach((k) => (G.$('#' + k).value = '')) });
+};
+</script>
+</body>
+</html>

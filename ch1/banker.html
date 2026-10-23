@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .top { display: flex; gap: 1.2rem; align-items: center; justify-content: center; margin-bottom: 0.8rem; flex-wrap: wrap; }
+  .dice { display: flex; gap: 0.8rem; }
+  .die { width: 6.4rem; height: 6.4rem; border-radius: 1.2rem; background: #fff; border: 0.3rem solid var(--ink); font-size: 5rem; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
+  .die.roll { animation: shake 0.25s 3; }
+  .msg { font-size: 2rem; font-weight: 800; min-width: 22rem; }
+  .players { display: grid; gap: 1rem; width: 100%; max-width: 120rem; }
+  .pl { background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; min-height: 18rem; }
+  .pl.turn { border-color: var(--orange); box-shadow: 0 0 0 0.4rem #ffd34d; }
+  .pl h3 { margin: 0; font-size: 1.8rem; }
+  .pl .tot { font-size: 1.5rem; font-weight: 800; color: var(--muted); }
+  .setup input { font-family: var(--head); font-size: 1.6rem; padding: 0.4rem 0.8rem; border-radius: 1rem; border: 0.2rem solid var(--line); width: 12rem; }
+  .opt.on { background: var(--purple); color: #fff; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="card setup center" id="setup" style="max-width:80rem">
+    <div class="prompt">🏦 The Banker Game</div>
+    <p class="hint">Play in teams. Roll two dice and take that many units from the bank.<br>When you have 10 units, give them to the banker and get <b>1 ten strip</b>!<br>Collect 10 ten strips to make a 100 units grid.</p>
+    <div class="row" id="count"><b style="font-size:1.6rem">Teams:</b><button class="big-btn ghost opt" data-n="2">2</button><button class="big-btn ghost opt on" data-n="3">3</button><button class="big-btn ghost opt" data-n="4">4</button></div>
+    <div class="row" id="goal" style="margin-top:0.6rem"><b style="font-size:1.6rem">Play to:</b><button class="big-btn ghost opt" data-g="50">50 (5 strips)</button><button class="big-btn ghost opt on" data-g="100">100 (10 strips)</button></div>
+    <div class="row" id="names" style="margin-top:0.8rem"></div>
+    <br><button class="big-btn green" id="go">▶ Start</button>
+  </div>
+  <div id="game" style="display:none;width:100%">
+    <div class="top">
+      <div class="dice"><div class="die" id="d1">⚀</div><div class="die" id="d2">⚀</div></div>
+      <button class="big-btn orange" id="roll">🎲 Roll</button>
+      <button class="big-btn purple" id="swap" disabled>🏦 Exchange 10 units</button>
+      <div class="msg" id="msg"></div>
+    </div>
+    <div class="players" id="players"></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'The Banker Game', subtitle: 'A Day at the Beach · Let us make 100!' });
+
+const FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+const COLS = ['#e63946', '#2f7de1', '#2bb673', '#8a5cf6'];
+let n = 3, goal = 100, P = [], t = 0, busy = false;
+
+function names() { G.$('#names').innerHTML = Array.from({ length: n }, (_, i) => `<input value="Team ${i + 1}" style="border-color:${COLS[i]}">`).join(''); }
+G.$('#count').onclick = (e) => { const b = e.target.closest('.opt'); if (!b) return; n = +b.dataset.n; G.$$('#count .opt').forEach((x) => x.classList.toggle('on', x === b)); names(); };
+G.$('#goal').onclick = (e) => { const b = e.target.closest('.opt'); if (!b) return; goal = +b.dataset.g; G.$$('#goal .opt').forEach((x) => x.classList.toggle('on', x === b)); };
+names();
+G.$('#go').onclick = () => {
+  P = G.$$('#names input').map((x, i) => ({ name: x.value.trim() || `Team ${i + 1}`, tens: 0, ones: 0, col: COLS[i] }));
+  G.$('#setup').style.display = 'none'; G.$('#game').style.display = '';
+  G.$('#players').style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  t = 0; draw(); turn();
+};
+function draw() {
+  G.$('#players').innerHTML = P.map((p, i) => `<div class="pl ${i === t ? 'turn' : ''}" style="border-color:${i === t ? '' : p.col + '55'}">
+    <h3 style="color:${p.col}">${p.name}</h3>${M.strips(p.tens * 10 + p.ones, { size: 1.15 })}
+    <div class="tot">${p.tens} ten strip${p.tens === 1 ? '' : 's'} and ${p.ones} unit${p.ones === 1 ? '' : 's'} = ${p.tens * 10 + p.ones}</div></div>`).join('');
+}
+function turn() { G.$('#msg').textContent = `${P[t].name}, roll the dice!`; G.say(`${P[t].name}, roll the dice!`); G.$('#roll').disabled = false; }
+G.$('#roll').onclick = () => {
+  if (busy) return; busy = true;
+  G.$('#roll').disabled = true;
+  const a = M.rnd(1, 6), c = M.rnd(1, 6);
+  G.$$('.die').forEach((d) => { d.classList.remove('roll'); void d.offsetWidth; d.classList.add('roll'); });
+  let k = 0;
+  const spin = setInterval(() => { G.$('#d1').textContent = FACES[M.rnd(1, 6)]; G.$('#d2').textContent = FACES[M.rnd(1, 6)]; G.sfx('pop'); if (++k > 6) { clearInterval(spin); land(a, c); } }, 90);
+};
+function land(a, c) {
+  G.$('#d1').textContent = FACES[a]; G.$('#d2').textContent = FACES[c];
+  const p = P[t];
+  p.ones += a + c; draw();
+  G.$('#msg').textContent = `${a} + ${c} = ${a + c} units`;
+  G.say(`${a} and ${c} make ${a + c}. Take ${a + c} units.`);
+  busy = false;
+  if (p.ones >= 10) { G.$('#swap').disabled = false; setTimeout(() => G.say('You have 10 or more units. Exchange 10 units for a ten strip!'), 1800); }
+  else setTimeout(nextTurn, 2600);
+}
+G.$('#swap').onclick = () => {
+  const p = P[t];
+  if (p.ones < 10) return;
+  p.ones -= 10; p.tens++; draw(); G.sfx('good'); G.star();
+  G.say(`10 units make 1 ten. ${p.name} has ${p.tens} ten strip${p.tens > 1 ? 's' : ''}.`);
+  if (p.tens * 10 >= goal) { G.$('#swap').disabled = true; setTimeout(() => G.end({ title: `🏆 ${p.name} wins!`, msg: `${p.name} collected ${p.tens} ten strips = ${p.tens * 10} units.`, onReplay: () => location.reload() }), 1500); return; }
+  if (p.ones < 10) { G.$('#swap').disabled = true; setTimeout(nextTurn, 2400); }
+};
+function nextTurn() { t = (t + 1) % P.length; draw(); turn(); }
+</script>
+</body>
+</html>

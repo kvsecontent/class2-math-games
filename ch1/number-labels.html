@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .intro { display: flex; align-items: center; gap: 1.2rem; max-width: 110rem; width: 100%; padding: 0.6rem 1.2rem; }
+  .jersey { position: relative; font-size: 5rem; line-height: 1; }
+  .jersey b { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); font-size: 1.6rem; color: #fff; text-shadow: 0 0 0.3rem #000; }
+  .intro p { font-family: var(--read); font-size: 1.7rem; margin: 0; text-align: left; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin: 0.6rem 0; min-height: 4rem; }
+  .chip { font-family: var(--read); font-size: 1.6rem; font-weight: 700; border: 0.25rem solid var(--line); background: #fff; border-radius: 1.2rem; padding: 0.3rem 0.9rem; min-height: 4rem; box-shadow: var(--shadow); }
+  .chip.gone { display: none; }
+  .bins { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 110rem; }
+  .bin { border: 0.35rem dashed; border-radius: var(--radius); min-height: 11rem; padding: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: flex-start; justify-content: center; }
+  .bin h3 { width: 100%; margin: 0 0 0.3rem; font-size: 2rem; }
+  .bin.a { border-color: var(--blue); background: #e7f1ff; } .bin.b { border-color: var(--orange); background: #fff4e0; }
+  .bin.no { animation: shake 0.4s; }
+  .bin span { font-family: var(--read); font-size: 1.4rem; font-weight: 700; background: #fff; border-radius: 0.8rem; padding: 0.2rem 0.6rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="intro card">
+    <div class="jersey">👕<b>17</b></div>
+    <p>“The player wearing <b>jersey number 17</b> is playing very well. He is Arya, my favourite player.”<br><small style="color:var(--muted)">Here 17 does not tell us how many. It is a <b>name</b> or <b>label</b>.</small></p>
+    <button class="say" id="read">🔊</button>
+  </div>
+  <p class="hint" style="margin:0.6rem 0 0">Sort the cards. Does the number tell <b>how many</b>, or is it a <b>label</b>? Drag a card into a box (or tap the card, then the box).</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins">
+    <div class="bin a" id="cnt"><h3>🔢 How many</h3></div>
+    <div class="bin b" id="lbl"><h3>🏷️ A label (a name)</h3></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Numbers as Labels', subtitle: 'A Day at the Beach · Numbers around us' });
+
+/* Labels from the book: jersey, house, pillar, roll, bus and train numbers. */
+const CARDS = [
+  ['👕 Jersey number 17', 'l'], ['🏠 House number 25', 'l'], ['🚌 Bus number 42', 'l'], ['📋 Roll number 7', 'l'], ['🚆 Train number 12625', 'l'], ['🏛️ Pillar number 8', 'l'],
+  ['🥭 5 mangoes', 'c'], ['⛵ 3 boats', 'c'], ['🐚 10 shells', 'c'], ['🧒 12 children', 'c'], ['📅 31 days in August', 'c'], ['🥥 20 coconuts', 'c'],
+];
+const intro = 'The player wearing jersey number 17 is playing very well. He is Arya, my favourite player.';
+G.$('#read').onclick = () => G.say(intro);
+let done = 0;
+G.$('#chips').innerHTML = G.shuffle(CARDS).map(([t, k]) => `<button class="chip" data-k="${k}">${t}</button>`).join('');
+const bins = [G.$('#cnt'), G.$('#lbl')];
+G.tapDrag(G.$$('#chips .chip'), bins, (chip, bin) => {
+  const want = bin.id === 'cnt' ? 'c' : 'l';
+  const text = chip.textContent.replace(/^\S+\s/, '');
+  if (chip.dataset.k !== want) {
+    bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad');
+    G.say(chip.dataset.k === 'l' ? `${text}. This number is a name, not how many.` : `${text}. This number tells how many.`);
+    return;
+  }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  bin.insertAdjacentHTML('beforeend', `<span>${chip.textContent}</span>`);
+  G.sfx('good'); G.star(); G.say(text);
+  if (++done === CARDS.length) setTimeout(() => G.end({ title: 'Number detective!', msg: 'Numbers can tell how many, or be a label. The digits 0 to 9 that we all write today began in India!', onReplay: () => location.reload() }), 1500);
+});
+setTimeout(() => G.say(intro), 600);
+</script>
+</body>
+</html>

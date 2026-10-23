@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'A Day at the Beach · Two players', back: '../index.html#ch1' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '📿', t: 'A necklace has 10 shells. How many shells are on 3 necklaces?', o: ['30', '13', '3'] },
+  { e: '🧺', t: 'How many chikoos are there in one tray?', o: ['10', '5', '100'] },
+  { e: '🧺🧺 + 🟤🟤🟤🟤🟤', t: '2 trays of ten and 5 chikoos make ____.', o: ['25', '52', '7'] },
+  { e: '🟤', t: '43 chikoos = ____ trays of ten and 3 chikoos.', o: ['4', '3', '43'] },
+  { e: '🟤', t: '58 chikoos = 5 trays of ten and ____ chikoos.', o: ['8', '5', '58'] },
+  { e: '🧱', t: '1 block stick = ____ blocks', o: ['10', '1', '100'] },
+  { e: '🟧', t: '1 ten strip = ____ units', o: ['10', '2', '20'] },
+  { e: '🧱', t: '3 block sticks and 4 blocks = ____ blocks', o: ['34', '43', '7'] },
+  { e: '🟧', t: '72 units = ____ ten strips and 2 units', o: ['7', '2', '72'] },
+  { e: '🟨', t: '7 yellow ten strips and 3 red ten strips make ____ units.', o: ['100', '73', '10'] },
+  { e: '🔟', t: 'How many ten strips make 100?', o: ['10', '100', '1'] },
+  { e: '🏦', t: 'In the banker game, 10 units are changed for ____.', o: ['1 ten strip', '1 unit', '10 ten strips'] },
+  { e: '🃏', t: '31 = 30 + ____', o: ['1', '3', '13'] },
+  { e: '🃏', t: '93 = ____ + 3', o: ['90', '9', '39'] },
+  { e: '🃏', t: '75 = ____ tens and 5 ones', o: ['7', '5', '75'] },
+  { e: '🃏', t: '29 = 2 tens and ____ ones', o: ['9', '2', '29'] },
+  { e: '🔢', t: '50 + 2 = ____', o: ['52', '25', '7'] },
+  { e: '🔢', t: '20 + 7 = ____', o: ['27', '72', '9'] },
+  { e: '🍊', t: 'Which is more: 43 oranges or 34 oranges?', o: ['43', '34'] },
+  { e: '🍊', t: 'Which is less: 27 oranges or 72 oranges?', o: ['27', '72'] },
+  { e: '🍊', t: 'Which is more: 43 oranges or 47 oranges?', o: ['47', '43'] },
+  { e: '🟤', t: '67 chikoos are ____ than 76 chikoos.', o: ['less', 'more'] },
+  { e: '🐚', t: '53 shells are ____ than 35 shells.', o: ['more', 'less'] },
+  { e: '🤔', t: 'I am the largest two-digit number. Who am I?', o: ['99', '98', '100'] },
+  { e: '🤔', t: 'I am the smallest two-digit number. Who am I?', o: ['10', '11', '1'] },
+  { e: '🤔', t: 'The smallest two-digit number with repeated digits is ____.', o: ['11', '10', '22'] },
+  { e: '🤔', t: 'The smallest two-digit number with 3 at the tens place is ____.', o: ['30', '31', '13'] },
+  { e: '🤔', t: 'The largest two-digit number with 2 at the ones place is ____.', o: ['92', '29', '99'] },
+  { e: '🃏', t: 'Which number is between 47 and 59?', o: ['52', '45', '61'] },
+  { e: '⬇️', t: 'Which is in decreasing order?', o: ['86, 63, 29', '29, 63, 86', '63, 86, 29'] },
+  { e: '🚣', t: 'The boat that comes after the second boat is ____.', o: ['third', 'first', 'fifth'] },
+  { e: '📅', t: 'Independence Day is on ____ August.', o: ['15', '26', '2'] },
+  { e: '📅', t: 'How many days are there in August?', o: ['31', '30', '28'] },
+  { e: '👕', t: 'Arya wears jersey number 17. The number 17 is a ____.', o: ['label', 'count of players', 'price'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

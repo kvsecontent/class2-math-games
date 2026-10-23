@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .call { font-size: 2.4rem; font-weight: 800; display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .call .big { font-size: 5rem; color: var(--purple); min-width: 8rem; }
+  .slots { display: flex; gap: 1.6rem; justify-content: center; align-items: center; margin: 0.6rem 0 1rem; }
+  .slot { width: 11rem; height: 8rem; border: 0.35rem dashed var(--purple); border-radius: 1.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 3.6rem; font-weight: 800; background: #f6f1ff; }
+  .slot small { font-size: 1.2rem; color: var(--muted); }
+  .slot.good { border-style: solid; border-color: var(--green); background: #d9f7e8; }
+  .slot.no { animation: shake 0.4s; }
+  .eq { font-size: 3.6rem; font-weight: 800; }
+  .made { display: inline-flex; font-size: 4.6rem; font-weight: 800; border: 0.3rem solid var(--ink); border-radius: 1rem; overflow: hidden; }
+  .made span { padding: 0 1rem; } .made span:first-child { background: #e7f1ff; } .made span:last-child { background: #fff4e0; border-left: 0.3rem solid var(--ink); }
+  .deck { display: grid; grid-template-columns: repeat(9, 1fr); gap: 0.6rem; width: 100%; max-width: 110rem; margin-top: 0.4rem; }
+  .nc { min-height: 5.2rem; font-size: 2.6rem; font-weight: 800; border-radius: 1rem; border: 0.25rem solid; box-shadow: var(--shadow); }
+  .nc.t { background: #e7f1ff; border-color: var(--blue); } .nc.o { background: #fff4e0; border-color: var(--orange); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Make numbers! Drag a <b style="color:var(--blue)">tens card</b> and a <b style="color:var(--orange)">ones card</b> into the boxes (or tap a card, then tap a box).</p>
+  <div class="progress" id="pg"></div>
+  <div class="call"><button class="say" id="again">🔊</button>Make the number <span class="big" id="big"></span></div>
+  <div class="slots">
+    <div class="slot" id="sT"><small>Tens card</small>?</div><span class="eq">+</span>
+    <div class="slot" id="sO"><small>Ones card</small>?</div><span class="eq">=</span>
+    <div class="made" id="made"><span>?</span><span>?</span></div>
+  </div>
+  <div class="deck" id="deck"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Make Numbers', subtitle: 'A Day at the Beach · Let us play' });
+
+/* 52, 27 and 73 are the book examples. */
+const NUMS = () => [52, 27, 73, ...G.shuffle(Array.from({ length: 80 }, (_, i) => i + 11).filter((x) => x % 10)).slice(0, 4)];
+let list, r, n, got;
+
+G.$('#deck').innerHTML = [10, 20, 30, 40, 50, 60, 70, 80, 90].map((x) => `<button class="nc t" data-v="${x}">${x}</button>`).join('') +
+  [1, 2, 3, 4, 5, 6, 7, 8, 9].map((x) => `<button class="nc o" data-v="${x}">${x}</button>`).join('');
+const sT = G.$('#sT'), sO = G.$('#sO');
+G.tapDrag(G.$$('#deck .nc'), [sT, sO], (chip, zone) => {
+  const v = +chip.dataset.v, isT = chip.classList.contains('t');
+  const want = zone === sT ? Math.floor(n / 10) * 10 : n % 10;
+  if ((zone === sT) !== isT || v !== want) {
+    zone.classList.remove('no'); void zone.offsetWidth; zone.classList.add('no'); G.sfx('bad');
+    G.feedback(G.$('#fb'), false, zone === sT ? `🙂 Which tens card makes ${n}?` : `🙂 Which ones card makes ${n}?`);
+    G.say(zone === sT ? 'Look at the tens.' : 'Look at the ones.');
+    return;
+  }
+  zone.innerHTML = `<small>${zone === sT ? 'Tens card' : 'Ones card'}</small>${v}`; zone.classList.add('good'); G.sfx('pop');
+  got[zone === sT ? 0 : 1] = true;
+  G.$('#made').children[zone === sT ? 0 : 1].textContent = zone === sT ? v / 10 : v;
+  G.$('#fb').innerHTML = '';
+  if (got[0] && got[1]) {
+    G.star(); G.sfx('good');
+    G.feedback(G.$('#fb'), true, `🎉 ${Math.floor(n / 10) * 10} + ${n % 10} = ${n}`);
+    G.say(`We have made the number ${M.word(n)}. ${Math.floor(n / 10) * 10} and ${n % 10} make ${n}.`);
+    r++; setTimeout(next, 3400);
+  }
+});
+function start() { list = NUMS(); r = 0; next(); }
+function next() {
+  if (r >= list.length) { G.end({ title: 'Number maker!', msg: 'A tens card and a ones card make a two-digit number.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), r, list.length);
+  n = list[r]; got = [false, false];
+  G.$('#big').textContent = n;
+  sT.className = 'slot'; sO.className = 'slot';
+  sT.innerHTML = '<small>Tens card</small>?'; sO.innerHTML = '<small>Ones card</small>?';
+  G.$('#made').innerHTML = '<span>?</span><span>?</span>';
+  G.$('#fb').innerHTML = '';
+  G.say(`Make the number ${M.word(n)}.`);
+}
+G.$('#again').onclick = () => G.say(`Make the number ${M.word(n)}.`);
+start();
+</script>
+</body>
+</html>

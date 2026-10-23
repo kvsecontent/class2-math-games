@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .board { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; max-width: 120rem; }
+  .spot { display: flex; align-items: center; gap: 1rem; background: #fff; border: 0.25rem solid var(--line); border-radius: var(--radius); padding: 0.6rem 1rem; min-height: 11rem; }
+  .spot .pics { flex: 1; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .tray { display: grid; grid-template-columns: repeat(5, 1.2rem); gap: 0.1rem; padding: 0.2rem 0.3rem; background: #c9a46a; border: 0.2rem solid #8b5a2b; border-radius: 0.5rem; }
+  .ck { display: inline-block; width: 1.2rem; height: 1.1rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c79a62, #7a4a1c 70%); }
+  .loose { display: grid; grid-template-columns: repeat(5, 1.4rem); gap: 0.1rem; }
+  .loose .ck { width: 1.4rem; height: 1.3rem; }
+  .drop { width: 9rem; height: 6rem; border: 0.3rem dashed var(--purple); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: var(--purple); background: #f6f1ff; }
+  .drop.good { border-style: solid; border-color: var(--green); background: #d9f7e8; color: #117a4a; }
+  .drop.no { animation: shake 0.4s; }
+  .cards { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; flex-wrap: wrap; }
+  .num { font-size: 3rem; font-weight: 800; min-width: 12rem; min-height: 5.4rem; border-radius: 1.2rem; border: 0.25rem solid var(--orange); background: #fff4e0; box-shadow: var(--shadow); }
+  .num.gone { visibility: hidden; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Let us match! Drag each number to the right picture (or tap the number, then tap the picture).</p>
+  <div class="progress" id="pg"></div>
+  <div class="cards" id="cards"></div>
+  <div class="board" id="board"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Match the Chikoos', subtitle: 'A Day at the Beach · Let us match' });
+
+/* Set 1 is from the book (80, 72, 56, 28). Set 2 is made at random. */
+const SETS = () => {
+  const s = new Set();
+  while (s.size < 4) s.add(M.rnd(12, 97));
+  return [[80, 72, 56, 28], [...s]];
+};
+let sets, k, done;
+
+function start() { sets = SETS(); k = 0; round(); }
+function round() {
+  if (k >= sets.length) { G.end({ title: 'All matched!', msg: 'Tens in trays and ones on the side.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, sets.length);
+  const nums = sets[k]; done = 0;
+  G.$('#board').innerHTML = G.shuffle(nums).map((n) => `<div class="spot"><div class="pics">${
+    `<div class="tray">${'<span class="ck"></span>'.repeat(10)}</div>`.repeat(Math.floor(n / 10))}${n % 10 ? `<div class="loose">${'<span class="ck"></span>'.repeat(n % 10)}</div>` : ''}</div>
+    <div class="drop" data-n="${n}">?</div></div>`).join('');
+  G.$('#cards').innerHTML = G.shuffle(nums).map((n) => `<button class="num" data-n="${n}">${n} chikoos</button>`).join('');
+  const zones = G.$$('#board .drop');
+  G.tapDrag(G.$$('#cards .num'), zones, (chip, zone) => {
+    if (zone.classList.contains('good')) return;
+    if (chip.dataset.n !== zone.dataset.n) { zone.classList.remove('no'); void zone.offsetWidth; zone.classList.add('no'); G.sfx('bad'); G.say('Count the trays again.'); return; }
+    const n = +chip.dataset.n;
+    zone.textContent = n; zone.classList.add('good');
+    chip.classList.add('gone'); chip.dataset.locked = 1;
+    G.sfx('good'); G.star();
+    G.say(`${Math.floor(n / 10)} trays and ${n % 10} more make ${n}.`);
+    if (++done === nums.length) { k++; setTimeout(round, 2600); }
+  });
+  G.say('Match the number to the chikoos.');
+}
+start();
+</script>
+</body>
+</html>

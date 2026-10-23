@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .cal { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.6rem; }
+  .cal h2 { margin: 0 0 0.4rem; font-size: 2.4rem; color: var(--red); }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; }
+  .days b { font-size: 1.3rem; padding: 0.3rem; background: #e7f1ff; border-radius: 0.5rem; }
+  .days b:first-child { color: var(--red); }
+  .d { position: relative; height: 5.2rem; border-radius: 0.7rem; border: 0.2rem solid var(--line); background: #fff; font-size: 2rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  .d.sun { color: var(--red); }
+  .d small { font-size: 0.85rem; font-weight: 800; color: var(--purple); margin-top: 0.2rem; }
+  .d .ic { position: absolute; top: 0.1rem; right: 0.2rem; font-size: 1.3rem; }
+  .d.hit { background: #d9f7e8; border-color: var(--green); }
+  .d.no { animation: shake 0.4s; background: #ffe1e3; }
+  .d.bday { background: #fff0f6; border-color: var(--pink); }
+  .d.empty { border: 0; background: none; }
+  .q { font-family: var(--read); font-size: 2.4rem; font-weight: 700; margin: 0.4rem 0 1rem; }
+  .side .choice { font-size: 1.8rem; min-width: 9rem; min-height: 4.2rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Look at the month of August in the calendar. Read the calendar and answer the questions.</p>
+  <div class="wrap">
+    <div class="cal"><h2>📅 August 2023</h2><div class="days" id="days"></div></div>
+    <div class="card side center"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'The August Calendar', subtitle: 'A Day at the Beach · Reading a calendar' });
+
+/* August 2023 (from the book): 1 August was a Tuesday.
+   Independence Day 15, Onam 29, Raksha Bandhan 30 (a Wednesday). */
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const START = 2, LEN = 31;
+const FEST = { 15: ['🇮🇳', 'Independence Day'], 29: ['🌼', 'Onam'], 30: ['🎗️', 'Raksha Bandhan'] };
+const dayOf = (d) => DAYS[(START + d - 1) % 7];
+const QS = [
+  { t: 'Onam will be celebrated on which day of the month? Tap the date.', date: 29, say: 'Onam is on 29 August. It is a Tuesday.' },
+  { t: 'When is Independence Day celebrated? Tap the date.', date: 15, say: 'Independence Day is on 15 August.' },
+  { t: 'On which day of the week is Independence Day?', o: DAYS, a: dayOf(15), say: `15 August is a ${dayOf(15)}.` },
+  { t: 'Raksha Bandhan is on Wednesday, ___ of this month. Tap the date.', date: 30, say: 'Raksha Bandhan is on Wednesday, 30 August.' },
+  { t: 'What day is 1 August?', o: DAYS, a: dayOf(1), say: `1 August is a ${dayOf(1)}.` },
+  { t: 'How many Sundays are there in this month?', o: ['3', '4', '5'], a: '4', say: 'There are 4 Sundays: 6, 13, 20 and 27.' },
+  { t: 'How many days are there in August?', o: ['30', '31', '28'], a: '31', say: 'August has 31 days.' },
+  { t: 'Tap the date that comes just after Onam.', date: 30, say: '30 comes just after 29.' },
+  { t: 'Did any of your friends have a birthday in August? Tap the dates to mark them with a cake 🎂. Then tap Done.', bday: true },
+];
+let k = 0;
+
+function cal() {
+  let h = DAYS.map((d) => `<b>${d.slice(0, 3)}</b>`).join('') + '<span class="d empty"></span>'.repeat(START);
+  for (let d = 1; d <= LEN; d++) {
+    const f = FEST[d];
+    h += `<button class="d ${(START + d - 1) % 7 === 0 ? 'sun' : ''}" data-d="${d}">${d}${f ? `<span class="ic">${f[0]}</span><small>${f[1]}</small>` : ''}</button>`;
+  }
+  G.$('#days').innerHTML = h;
+  G.$$('#days .d[data-d]').forEach((c) => (c.onclick = () => tapDate(c)));
+}
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Calendar expert!', msg: 'You can read a calendar.', onReplay: () => { k = 0; cal(); show(); } }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  const q = QS[k];
+  G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  G.$$('#days .hit').forEach((c) => c.classList.remove('hit'));
+  G.$('#opts').innerHTML = q.o ? q.o.map((o) => `<button class="choice" data-v="${o}">${o}</button>`).join('') : q.bday ? '<button class="big-btn green" id="done">✅ Done</button>' : '';
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== q.a) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); right(q);
+  }));
+  if (q.bday) G.$('#done').onclick = () => { const n = G.$$('#days .bday').length; G.say(n ? `${n} birthday${n > 1 ? 's' : ''} in August!` : 'No birthdays. That is fine!'); k++; setTimeout(show, 1800); };
+  G.say(q.t.replace('___', 'blank').replace('🎂', ''));
+}
+function tapDate(c) {
+  const q = QS[k], d = +c.dataset.d;
+  if (!q) return;
+  if (q.bday) { c.classList.toggle('bday'); const on = c.classList.contains('bday'); if (on) c.insertAdjacentHTML('beforeend', '<span class="ic cake">🎂</span>'); else c.querySelector('.cake')?.remove(); G.sfx('pop'); return; }
+  if (!q.date) { G.say(q.t); return; }
+  if (d !== q.date) { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); G.sfx('bad'); G.say(`That is ${d} August. Try again.`); return; }
+  c.classList.add('hit'); right(q);
+}
+function right(q) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + q.say); G.say(q.say); k++; setTimeout(show, 3000); }
+cal(); show();
+</script>
+</body>
+</html>

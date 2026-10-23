@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .rule { font-family: var(--read); font-size: 2.8rem; font-weight: 700; margin: 0.2rem 0 0.8rem; color: var(--purple); }
+  .place { display: inline-grid; grid-template-columns: repeat(2, 10rem); border: 0.3rem solid var(--ink); border-radius: 1rem; overflow: hidden; }
+  .place b { background: #e7f1ff; font-size: 1.6rem; padding: 0.2rem; border-bottom: 0.25rem solid var(--ink); }
+  .place b + b { border-left: 0.25rem solid var(--ink); }
+  .place button { height: 9rem; font-size: 6rem; font-weight: 800; border: 0; background: #fff; }
+  .place button + button { border-left: 0.25rem solid var(--ink); }
+  .place button.full { background: #fff4cc; }
+  .deck { display: grid; grid-template-columns: repeat(10, 1fr); gap: 0.6rem; width: 100%; max-width: 100rem; margin: 1rem 0; }
+  .fc { min-height: 6.4rem; font-size: 3.6rem; font-weight: 800; border-radius: 1rem; border: 0.25rem solid var(--pink); background: #fff0f6; box-shadow: var(--shadow); }
+  .fc.used { visibility: hidden; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Flash card game! Tap the cards to put them at the tens place and the ones place. Tap a box to take a card back.</p>
+  <div class="progress" id="pg"></div>
+  <div class="rule" id="rule"></div>
+  <div class="place"><b>Tens</b><b>Ones</b><button id="T"></button><button id="O"></button></div>
+  <div class="deck" id="deck"></div>
+  <div class="row" id="acts"><button class="big-btn green" id="check">✅ Check</button></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Flash Card Game', subtitle: 'A Day at the Beach · Let us play' });
+
+/* Rules from the book. One card of each digit, so a digit can be used only once. */
+const RULES = [
+  { t: 'Make a number greater than 50.', ok: (n) => n > 50 },
+  { t: 'Make a number less than 30.', ok: (n) => n < 30 },
+  { t: 'Make a number between 47 and 59.', ok: (n) => n > 47 && n < 59 },
+  { t: 'Make the smallest two-digit number you can.', ok: (n) => n === 10, why: '10 is the smallest. 0 cannot go at the tens place, and 1 is the smallest after that.' },
+  { t: 'Make the largest two-digit number you can.', ok: (n) => n === 98, why: 'Put the biggest card, 9, at the tens place and the next biggest, 8, at the ones place.' },
+  { t: 'Make any two-digit number. Then swap the cards!', swap: true },
+];
+let k = 0, T = null, O = null, phase = 0;
+
+G.$('#deck').innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="fc" data-d="${d}">${d}</button>`).join('');
+function draw() {
+  G.$('#T').textContent = T ?? ''; G.$('#O').textContent = O ?? '';
+  G.$('#T').classList.toggle('full', T !== null); G.$('#O').classList.toggle('full', O !== null);
+  G.$$('.fc').forEach((c) => c.classList.toggle('used', +c.dataset.d === T || +c.dataset.d === O));
+}
+G.$('#deck').onclick = (e) => {
+  const c = e.target.closest('.fc'); if (!c || phase) return;
+  const d = +c.dataset.d;
+  if (T === null) T = d; else if (O === null) O = d; else return;
+  G.sfx('pop'); draw();
+};
+G.$('#T').onclick = () => { if (!phase) { T = null; draw(); } };
+G.$('#O').onclick = () => { if (!phase) { O = null; draw(); } };
+function show() {
+  if (k >= RULES.length) { G.end({ title: 'Card champion!', msg: 'The digit at the tens place matters most.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, RULES.length);
+  T = O = null; phase = 0; draw();
+  G.$('#rule').textContent = RULES[k].t;
+  G.$('#acts').innerHTML = '<button class="big-btn green" id="check">✅ Check</button>';
+  G.$('#check').onclick = check;
+  G.$('#fb').innerHTML = '';
+  G.say(RULES[k].t);
+}
+function check() {
+  if (T === null || O === null) { G.say('Put a card at the tens place and at the ones place.'); return; }
+  if (T === 0) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '0 at the tens place does not make a two-digit number!'); G.say('0 at the tens place does not make a two-digit number.'); return; }
+  const n = T * 10 + O, R = RULES[k];
+  if (R.swap) { swapPart(n); return; }
+  if (!R.ok(n)) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 ${n} does not fit. Try again!`); G.say(`${n} does not fit. Try again.`); return; }
+  G.star(); G.sfx('good');
+  G.feedback(G.$('#fb'), true, `🎉 ${n}! ${R.why || G.praise()}`);
+  G.say(`${M.word(n)}. ${R.why || G.praise()}`);
+  k++; setTimeout(show, R.why ? 5000 : 2600);
+}
+function swapPart(n) {
+  phase = 1;
+  G.say(`You made ${n}. Now swap the cards.`);
+  G.$('#acts').innerHTML = '<button class="big-btn orange" id="sw">🔁 Swap the cards</button>';
+  G.$('#sw').onclick = () => {
+    [T, O] = [O, T]; draw(); G.sfx('pop');
+    const m = T * 10 + O;
+    if (T === 0 || m === n) { G.say(T === 0 ? 'Oh! Now 0 is at the tens place. Choose other cards.' : 'Both cards are the same. Choose other cards.'); phase = 0; T = O = null; setTimeout(show, 2200); return; }
+    G.$('#rule').textContent = `Is ${m} bigger or smaller than ${n}?`;
+    G.say(`Is ${m} bigger or smaller than ${n}?`);
+    G.$('#acts').innerHTML = '<button class="choice" data-v="b">bigger</button><button class="choice" data-v="s">smaller</button>';
+    G.$$('#acts .choice').forEach((c) => (c.onclick = () => {
+      if ((c.dataset.v === 'b') !== (m > n)) { c.classList.add('wrong'); G.sfx('bad'); setTimeout(() => c.classList.remove('wrong'), 500); return; }
+      c.classList.add('right'); G.sfx('good'); G.star();
+      const big = Math.max(m, n);
+      G.feedback(G.$('#fb'), true, `🎉 ${m} is ${m > n ? 'bigger' : 'smaller'} than ${n}. To get the largest number, put the bigger digit at the tens place: ${big}.`);
+      G.say(`${m} is ${m > n ? 'bigger' : 'smaller'} than ${n}. To get the largest number, put the bigger digit at the tens place. ${big}.`);
+      k++; setTimeout(show, 6000);
+    }));
+  };
+}
+show();
+</script>
+</body>
+</html>
