@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .rows { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem; display: grid; grid-template-columns: 9rem repeat(10, 1fr); gap: 0.35rem; align-items: center; }
+  .rows .lab { font-size: 1.3rem; font-weight: 800; color: var(--muted); text-align: left; }
+  .rows .c { font-size: 2rem; font-weight: 800; text-align: center; border-radius: 0.6rem; padding: 0.3rem 0; background: #f7f3ea; }
+  .rows .c.a { background: #e7f1ff; } .rows .c.b { background: #fff0f6; }
+  .rows .m-box { height: 3.6rem; min-width: 0; width: 100%; font-size: 2rem; padding: 0; }
+  .rows .plus { grid-column: 1 / -1; font-size: 2.4rem; font-weight: 800; text-align: left; padding-left: 3rem; color: var(--purple); }
+  .rows .bar { grid-column: 2 / -1; height: 0.3rem; background: var(--ink); }
+  .ttl { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.4rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Making multiplication tables! Rudra makes the table of 4 by adding the table of 2 to itself. Add each column to fill the blanks.</p>
+  <div class="progress" id="pg"></div>
+  <div class="ttl" id="ttl"></div>
+  <div class="wrap">
+    <div class="rows" id="rows"></div>
+    <div class="card side"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Make a Table', subtitle: 'Grouping and Sharing · Making multiplication tables', back: '../index.html#ch8' });
+
+/* From the book: 4 = 2 + 2, 6 = 3 + 3, 7 = 3 + 4, 8 = 2 + 6. Five blanks in each new table. */
+const MAKE = [[2, 2], [3, 3], [3, 4], [2, 6]];
+let k = 0, blanks, b;
+function show() {
+  if (k >= MAKE.length) { G.end({ title: 'Table maker!', msg: 'You can make a new table by adding two tables you know!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, MAKE.length);
+  const [x, y] = MAKE[k], z = x + y;
+  blanks = G.shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 5).sort((p, q) => p - q); b = 0;
+  G.$('#ttl').textContent = `Table of ${x} + Table of ${y} = Table of ${z}`;
+  const row = (n, cls) => Array.from({ length: 10 }, (_, i) => `<span class="c ${cls}">${n * (i + 1)}</span>`).join('');
+  G.$('#rows').innerHTML = `<span class="lab">Table of ${x}</span>${row(x, 'a')}<span class="plus">+</span><span class="lab">Table of ${y}</span>${row(y, 'b')}<span class="bar"></span>
+    <span class="lab">Table of ${z}</span>${Array.from({ length: 10 }, (_, i) => (blanks.includes(i) ? `<span class="m-box" data-i="${i}">?</span>` : `<span class="c">${z * (i + 1)}</span>`)).join('')}`;
+  G.$('#fb').innerHTML = ''; pad.clear(); mark();
+  G.say(`Make the table of ${z} by adding the table of ${x} and the table of ${y}.`);
+}
+function mark() { G.$$('#rows .m-box').forEach((m) => m.classList.toggle('on', +m.dataset.i === blanks[b])); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const [x, y] = MAKE[k], i = blanks[b], want = (x + y) * (i + 1);
+    if (v !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 Add ${x * (i + 1)} and ${y * (i + 1)}.`); G.say(`Add ${x * (i + 1)} and ${y * (i + 1)}.`); return; }
+    const m = G.$(`#rows .m-box[data-i="${i}"]`); m.textContent = v; m.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    G.say(`${x * (i + 1)} plus ${y * (i + 1)} is ${v}`, { rate: 1 });
+    if (++b < blanks.length) { mark(); return; }
+    G.star(2); G.feedback(G.$('#fb'), true, `🎉 Table of ${x + y} is ready!`);
+    k++; setTimeout(show, 3000);
+  },
+});
+show();
+</script>
+</body>
+</html>

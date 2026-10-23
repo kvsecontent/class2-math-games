@@ -278,7 +278,34 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 4 }, (_, i) => ({ n: i + 8, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 8, title: 'Grouping and Sharing', unit: 'Equal groups · multiplication · sharing',
+    sections: [
+      { key: 'count', name: '✖️ Equal groups', games: [
+        { href: 'ch8/groups-times.html?traffic', ic: '🚗', t: 'Count the Wheels', d: '4 bicycles × 2 · 2 autos × 3 · 7 cars × 4' },
+        { href: 'ch8/groups-times.html', ic: '🦋', t: 'Groups and Times', d: 'Wings, legs, soldiers, stars, bananas …' },
+        { href: 'ch8/times-match.html', ic: '🔗', t: 'Match the Times', d: '9 + 9 + 9 · 3 × 9 · 27' },
+        { href: 'ch8/swap-groups.html', ic: '💐', t: 'Swap the Groups', d: '4 groups of 3 = 3 groups of 4' },
+      ]},
+      { key: 'tens', name: '📋 Tables', games: [
+        { href: 'ch8/tables.html', ic: '📋', t: 'Times Tables', d: 'Tables of 2, 3, 5 and 10' },
+        { href: 'ch8/make-table.html', ic: '➕', t: 'Make a Table', d: '2 + 2 = 4 · 3 + 3 = 6 · 3 + 4 = 7 · 2 + 6 = 8' },
+        { href: 'ch8/times-stories.html', ic: '🔴', t: 'Times Stories', d: 'Bindis, buttons, pencils, cars' },
+        { href: 'ch8/arrays.html', ic: '🔘', t: 'Arrays of 24', d: 'Arrange 24 buttons in equal rows' },
+      ]},
+      { key: 'compare', name: '🤲 Sharing and grouping', games: [
+        { href: 'ch8/share.html', ic: '🟤', t: 'Let us Share', d: 'Gulab jamuns, bindis, laddoos, candles, bananas' },
+        { href: 'ch8/make-groups.html', ic: '⭐', t: 'How Many Groups?', d: 'Garima’s bracelets · vases · shirts' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch8/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch8/times-race.html', ic: '🏆', t: 'Traffic Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 3 }, (_, i) => ({ n: i + 9, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

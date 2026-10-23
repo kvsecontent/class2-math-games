@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr 20rem; gap: 1rem; width: 100%; max-width: 120rem; align-items: center; }
+  .side2 { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-height: 25rem; justify-content: center; }
+  .side2.now { border-color: var(--orange); box-shadow: 0 0 0 0.3rem #ffd34d; }
+  .grps { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  .g { border: 0.22rem dashed var(--purple); border-radius: 1rem; padding: 0.2rem 0.4rem; font-size: 1.6rem; max-width: 9.4rem; text-align: center; background: #f6f1ff; }
+  .who { font-size: 1.6rem; font-weight: 800; }
+  .ln { font-size: 2rem; font-weight: 800; }
+  .ln .m-box { height: 3.4rem; min-width: 4.4rem; font-size: 2.2rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+  .choice { font-family: var(--read); font-size: 1.5rem; min-width: 0; min-height: 3.6rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">How many? Find the total on both sides. Did you observe something?</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="side2" id="L"></div><div class="side2" id="R"></div>
+    <div class="card side"><div class="q" id="q"></div><div id="padbox" class="side"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Swap the Groups', subtitle: 'Grouping and Sharing · How many?', back: '../index.html#ch8' });
+
+/* Pairs from the book: Ram 4 bouquets of 3 and Gopal 3 bouquets of 4; gulab jamuns 4 × 5 and 5 × 4; flowers 6 × 4 and 4 × 6. */
+const PAIRS = [
+  { e: '🌸', what: 'flowers', L: [4, 3, 'Ram’s bouquets'], R: [3, 4, 'Gopal’s bouquets'] },
+  { e: '🟤', what: 'gulab jamuns', L: [4, 5, 'bowls'], R: [5, 4, 'bowls'] },
+  { e: '🌼', what: 'flowers', L: [6, 4, 'vases'], R: [4, 6, 'vases'] },
+];
+let k = 0, side = 0;
+function panel(el, [g, n, who], e, on, ans) {
+  el.classList.toggle('now', on);
+  el.innerHTML = `<div class="who">${who}</div><div class="grps">${Array.from({ length: g }, () => `<div class="g">${e.repeat(n)}</div>`).join('')}</div>
+    <div class="ln">${g} groups of ${n} → ${g} × ${n} = <span class="m-box ${on ? 'on' : ''}">${ans ?? '?'}</span></div>`;
+}
+function show() {
+  if (k >= PAIRS.length) { G.end({ title: 'Clever counting!', msg: '4 × 3 and 3 × 4 are both 12. Swapping the numbers gives the same answer!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, PAIRS.length);
+  const P = PAIRS[k]; side = 0;
+  panel(G.$('#L'), P.L, P.e, true); panel(G.$('#R'), P.R, P.e, false);
+  G.$('#q').textContent = `How many ${P.what} on the left?`; G.$('#opts').innerHTML = ''; G.$('#padbox').style.display = ''; G.$('#fb').innerHTML = ''; pad.clear();
+  G.say(`${P.L[0]} groups of ${P.L[1]}. How many ${P.what}?`);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const P = PAIRS[k], S = side ? P.R : P.L;
+    if (v !== S[0] * S[1]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again.'); return; }
+    G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (side === 0) { panel(G.$('#L'), P.L, P.e, false, v); panel(G.$('#R'), P.R, P.e, true); side = 1; G.$('#q').textContent = `How many ${P.what} on the right?`; G.say(`${P.R[0]} groups of ${P.R[1]}?`); return; }
+    panel(G.$('#R'), P.R, P.e, false, v); G.$('#padbox').style.display = 'none';
+    G.$('#q').textContent = 'Did you observe something?';
+    const o = ['Both are the same!', 'The left side has more.', 'The right side has more.'];
+    G.$('#opts').innerHTML = G.shuffle(o).map((x) => `<button class="choice">${x}</button>`).join('');
+    G.say('Did you observe something?');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+      if (b.textContent !== o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+      b.classList.add('right'); G.star(2); G.sfx('good');
+      const msg = `${P.L[0]} × ${P.L[1]} = ${P.R[0]} × ${P.R[1]} = ${v}`;
+      G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(`${P.L[0]} times ${P.L[1]} and ${P.R[0]} times ${P.R[1]} are both ${v}!`);
+      k++; setTimeout(show, 3400);
+    }));
+  },
+});
+show();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .groups { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem; min-height: 15rem; align-items: center; }
+  .grp { border: 0.25rem dashed var(--purple); border-radius: 1.2rem; padding: 0.3rem 0.5rem; display: flex; flex-direction: column; align-items: center; background: #f6f1ff; }
+  .grp .big { font-size: 3.4rem; line-height: 1.1; }
+  .grp .parts { font-size: 1.5rem; letter-spacing: 0.1rem; }
+  .lines { font-family: var(--read); font-size: 2rem; line-height: 2.1; margin-top: 0.6rem; text-align: left; }
+  .lines .m-box { height: 3.4rem; min-width: 4rem; font-size: 2.1rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div><div class="groups" id="groups"></div><div class="lines card" id="lines"></div></div>
+    <div class="card side"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+const TRAFFIC = /traffic/.test(location.search);
+G.init({ title: TRAFFIC ? 'Count the Wheels' : 'Groups and Times', subtitle: 'Grouping and Sharing · ' + (TRAFFIC ? 'What are you looking at?' : 'Let us do'), back: '../index.html#ch8' });
+G.$('#hint').textContent = TRAFFIC ? 'Ramya counts wheels in groups. Count the groups, then how many in each group!' : 'Equal groups! Adding the same number again and again is called multiplying (×).';
+
+/* All from the book: bicycles 4 × 2, autos 2 × 3, cars 7 × 4; butterflies 3 × 2 wings, octopuses 2 × 8 legs,
+   soldiers 4 lines of 10; stars 4 × 3, bananas 4 × 4, pencils 2 × 5, balls 3 × 5, fingers 6 times 3. */
+const SETS = TRAFFIC ? [
+  { e: '🚲', g: 4, n: 2, what: 'bicycles', part: 'wheels', p: '⚫' },
+  { e: '🛺', g: 2, n: 3, what: 'autorickshaws', part: 'wheels', p: '⚫' },
+  { e: '🚗', g: 7, n: 4, what: 'cars', part: 'wheels', p: '⚫' },
+] : [
+  { e: '🦋', g: 3, n: 2, what: 'butterflies', part: 'wings', p: '🪽' },
+  { e: '🐙', g: 2, n: 8, what: 'octopuses', part: 'legs', p: '〰️' },
+  { e: '💂', g: 4, n: 10, what: 'lines of soldiers', part: 'soldiers', p: '💂', many: true },
+  { e: '⭐', g: 4, n: 3, what: 'groups of stars', part: 'stars', p: '⭐', many: true },
+  { e: '✋', g: 6, n: 3, what: 'groups of fingers', part: 'fingers', p: '☝️', many: true },
+  { e: '🍌', g: 4, n: 4, what: 'bunches of bananas', part: 'bananas', p: '🍌', many: true },
+  { e: '✏️', g: 2, n: 5, what: 'boxes of pencils', part: 'pencils', p: '✏️', many: true },
+  { e: '⚽', g: 3, n: 5, what: 'baskets of balls', part: 'balls', p: '⚽', many: true },
+];
+let k = 0, vals, b;
+function show() {
+  if (k >= SETS.length) { G.end({ title: 'Times star!', msg: 'Equal groups: count the groups, count in each group, and multiply!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, SETS.length);
+  const S = SETS[k], tot = S.g * S.n; b = 0;
+  vals = [S.g, S.n, tot, S.g, S.n, tot];
+  G.$('#groups').innerHTML = Array.from({ length: S.g }, () => `<div class="grp">${S.many ? '' : `<span class="big">${S.e}</span>`}<span class="parts" style="${S.many ? 'font-size:2.2rem' : ''}">${S.p.repeat(S.n)}</span></div>`).join('');
+  let i = 0; const box = () => `<span class="m-box" data-i="${i++}">?</span>`;
+  G.$('#lines').innerHTML = `Number of ${S.what} = ${box()}<br>Number of ${S.part} in each = ${box()}<br>Total ${S.part} = ${Array(S.g).fill(S.n).join(' + ')} = ${box()}<br>${box()} groups of ${box()} is ${box()}  →  <b>${S.g} × ${S.n} = ${tot}</b>`.replace(/<b>.*<\/b>/, '<b id="eq" style="visibility:hidden">' + `${S.g} × ${S.n} = ${tot}` + '</b>');
+  G.$('#fb').innerHTML = ''; pad.clear(); mark();
+  G.say(`How many ${S.what}? How many ${S.part} in each?`);
+}
+function mark() { G.$$('#lines .m-box').forEach((x) => x.classList.toggle('on', +x.dataset.i === b)); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== vals[b]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again.'); return; }
+    const x = G.$(`#lines .m-box[data-i="${b}"]`); x.textContent = v; x.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++b < vals.length) { mark(); return; }
+    const S = SETS[k]; G.$('#eq').style.visibility = '';
+    G.star(); G.feedback(G.$('#fb'), true, `🎉 ${S.g} × ${S.n} = ${S.g * S.n}`);
+    G.say(`${S.g} times ${S.n} is ${S.g * S.n}. ${S.g} groups of ${S.n} make ${S.g * S.n} ${S.part}.`);
+    k++; setTimeout(show, 3600);
+  },
+});
+show();
+</script>
+</body>
+</html>

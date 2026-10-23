@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .pile { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); min-height: 6.6rem; display: flex; flex-wrap: wrap; gap: 0.2rem; justify-content: center; align-items: center; padding: 0.4rem; font-size: 2.4rem; }
+  .plates { display: flex; gap: 1rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
+  .plate { min-width: 15rem; min-height: 15rem; max-width: 22rem; border-radius: 50%; border: 0.35rem solid #c9c9c9; background: radial-gradient(#fff 55%, #eee); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; cursor: pointer; }
+  .plate.box { border-radius: 1.2rem; background: #fff4e0; border-color: #c9a46a; }
+  .plate .got { display: flex; flex-wrap: wrap; justify-content: center; font-size: 2rem; max-width: 13rem; }
+  .plate b { font-size: 1.4rem; }
+  .plate .n { font-size: 1.6rem; font-weight: 800; color: var(--purple); }
+  .story { font-family: var(--read); font-size: 1.9rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+  .choice { font-size: 1.8rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="progress" id="pg"></div>
+  <div class="story" id="story"></div>
+  <div class="wrap">
+    <div><div class="pile" id="pile"></div><div class="plates" id="plates"></div></div>
+    <div class="card side"><div class="q" id="q"></div><button class="big-btn orange" id="each">🤲 One for each</button><div class="row" id="opts"></div><div id="padbox" class="side" style="display:none"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Let us Share', subtitle: 'Grouping and Sharing · Sharing equally', back: '../index.html#ch8' });
+
+/* From the book: gulab jamuns shared by brother and sister, 12 bindis on 2 ice-cream cones,
+   laddoos from 2 plates into 3 plates, 27 candles in 3 boxes, 24 bananas for 3 monkeys.
+   How many gulab jamuns and laddoos there are is our choice (8 and 9). */
+const ROUNDS = [
+  { s: 'Wow! Gulab jamuns! Let us share them equally. 1 for you, 1 for me.', e: '🟤', n: 8, who: ['👦 Bhaiya', '👧 Sister'], plate: true, qs: [['How many gulab jamuns were there in total?', 8], ['Have they shared equally?', 'Yes'], ['How many gulab jamuns did each get?', 4]] },
+  { s: 'Complete Ritu’s project: draw 12 bindis equally on 2 ice-cream cones as cherries.', e: '🔴', n: 12, who: ['🍦 Cone 1', '🍦 Cone 2'], qs: [['How many bindis on each cone?', 6]] },
+  { s: 'Pooja has 2 plates with 5 and 4 laddoos. Help her divide them equally in 3 plates.', e: '🟠', n: 9, who: ['🍽️ Plate 1', '🍽️ Plate 2', '🍽️ Plate 3'], plate: true, qs: [['How many laddoos in each plate?', 3]] },
+  { s: 'There are 27 candles. Put them equally in 3 boxes.', e: '🕯️', n: 27, who: ['📦 Box 1', '📦 Box 2', '📦 Box 3'], qs: [['How many candles will be in each box?', 9]] },
+  { s: 'Share 24 bananas equally among 3 monkeys.', e: '🍌', n: 24, who: ['🐒 Monkey 1', '🐒 Monkey 2', '🐒 Monkey 3'], qs: [['How many bananas will each monkey get?', 8]] },
+];
+let r = 0, left, got, qi;
+function show() {
+  if (r >= ROUNDS.length) { G.end({ title: 'Fair sharing!', msg: 'Sharing equally means everyone gets the same number.', onReplay: () => { r = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), r, ROUNDS.length);
+  const R = ROUNDS[r]; left = R.n; got = R.who.map(() => 0); qi = 0;
+  G.$('#story').textContent = R.s; G.$('#q').textContent = 'Tap a plate to give one. Or tap “One for each”.';
+  G.$('#each').style.display = ''; G.$('#opts').innerHTML = ''; G.$('#padbox').style.display = 'none'; G.$('#fb').innerHTML = '';
+  draw(); G.say(R.s);
+}
+function draw() {
+  const R = ROUNDS[r];
+  G.$('#pile').innerHTML = left ? `<span>${R.e.repeat(left)}</span>` : '<span style="font-size:1.6rem;color:var(--muted)">All shared!</span>';
+  G.$('#plates').innerHTML = R.who.map((w, i) => `<div class="plate ${R.plate ? '' : 'box'}" data-i="${i}"><b>${w}</b><div class="got">${R.e.repeat(got[i])}</div><span class="n">${got[i]}</span></div>`).join('');
+  G.$$('.plate').forEach((p) => (p.onclick = () => give(+p.dataset.i)));
+}
+function give(i) {
+  if (!left) return;
+  left--; got[i]++; G.sfx('pop'); draw();
+  if (!left) check();
+}
+G.$('#each').onclick = () => { const R = ROUNDS[r]; if (left < R.who.length) { G.say(left ? `Only ${left} left.` : 'All shared!'); return; } R.who.forEach((_, i) => { left--; got[i]++; }); G.sfx('pop'); draw(); G.say('One for each!', { rate: 1.2 }); if (!left) check(); };
+function check() {
+  G.$('#each').style.display = 'none';
+  if (new Set(got).size > 1) {
+    G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Not equal! Let us try again.'); G.say('That is not equal. Let us share again.');
+    setTimeout(() => { left = ROUNDS[r].n; got = got.map(() => 0); G.$('#fb').innerHTML = ''; G.$('#each').style.display = ''; draw(); }, 2400); return;
+  }
+  G.sfx('good'); ask();
+}
+function ask() {
+  const R = ROUNDS[r];
+  if (qi >= R.qs.length) { G.star(2); k2(); return; }
+  const [q, a] = R.qs[qi]; G.$('#q').textContent = q; G.say(q);
+  if (typeof a === 'string') {
+    G.$('#padbox').style.display = 'none';
+    G.$('#opts').innerHTML = ['Yes', 'No'].map((o) => `<button class="choice">${o}</button>`).join('');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== a) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); G.sfx('good'); qi++; setTimeout(ask, 800); }));
+  } else { G.$('#opts').innerHTML = ''; G.$('#padbox').style.display = ''; pad.clear(); }
+}
+function k2() { const R = ROUNDS[r]; const msg = `${R.n} shared equally into ${R.who.length} is ${R.n / R.who.length} each.`; G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); r++; setTimeout(show, 3200); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => { pad.clear(); const a = ROUNDS[r].qs[qi][1]; if (v !== a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again.'); return; } G.sfx('good'); G.$('#fb').innerHTML = ''; qi++; ask(); },
+});
+show();
+</script>
+</body>
+</html>

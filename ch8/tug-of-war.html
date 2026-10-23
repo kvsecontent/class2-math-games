@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Grouping and Sharing · Two players', back: '../index.html#ch8' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🚲', t: '4 bicycles, 2 wheels each. 4 × 2 = ____', o: ['8', '6', '42'] },
+  { e: '🛺', t: '2 autos, 3 wheels each. 2 × 3 = ____', o: ['6', '5', '23'] },
+  { e: '🚗', t: '7 cars, 4 wheels each. How many wheels?', o: ['28', '11', '24'] },
+  { e: '🦋', t: '3 butterflies, 2 wings each. How many wings?', o: ['6', '5', '32'] },
+  { e: '🐙', t: '2 octopuses, 8 legs each. How many legs?', o: ['16', '10', '28'] },
+  { e: '💂', t: '4 lines of 10 soldiers. How many soldiers?', o: ['40', '14', '410'] },
+  { e: '➕', t: '2 + 2 + 2 + 2 is the same as ____', o: ['4 × 2', '2 × 2', '4 + 2'] },
+  { e: '➕', t: '9 + 9 + 9 = ____', o: ['27', '18', '39'] },
+  { e: '➕', t: '7 fives are ____', o: ['35', '12', '57'] },
+  { e: '➕', t: '4 groups of 10 are ____', o: ['40', '14', '410'] },
+  { e: '➕', t: '2 sevens are ____', o: ['14', '9', '27'] },
+  { e: '✖️', t: '3 × 8 = ____', o: ['24', '11', '38'] },
+  { e: '✖️', t: '5 times 3 is ____', o: ['15', '8', '53'] },
+  { e: '2️⃣', t: '2 × 6 = ____', o: ['12', '8', '26'] },
+  { e: '3️⃣', t: '3 × 4 = ____', o: ['12', '7', '34'] },
+  { e: '5️⃣', t: '5 × 6 = ____', o: ['30', '11', '56'] },
+  { e: '🔟', t: '10 × 7 = ____', o: ['70', '17', '107'] },
+  { e: '💐', t: '4 bouquets of 3 flowers and 3 bouquets of 4 flowers. Which has more?', o: ['Both are the same', '4 bouquets of 3', '3 bouquets of 4'] },
+  { e: '🔴', t: '8 packets with 5 bindis each. How many bindis?', o: ['40', '13', '85'] },
+  { e: '👕', t: '7 shirts with 4 buttons each. How many buttons?', o: ['28', '11', '24'] },
+  { e: '✏️', t: '6 pencils at ₹4 each. How much money?', o: ['₹24', '₹10', '₹64'] },
+  { e: '🚗', t: '5 people in each car. How many in 8 cars?', o: ['40', '13', '58'] },
+  { e: '📋', t: 'Table of 2 + table of 2 makes the table of ____', o: ['4', '2', '22'] },
+  { e: '📋', t: 'Table of 3 + table of 4 makes the table of ____', o: ['7', '12', '34'] },
+  { e: '🔘', t: '24 buttons in 3 equal rows. How many in each row?', o: ['8', '6', '21'] },
+  { e: '🟤', t: '8 gulab jamuns shared equally by 2. Each gets ____', o: ['4', '6', '10'] },
+  { e: '🍦', t: '12 bindis shared equally on 2 cones. Each cone gets ____', o: ['6', '10', '14'] },
+  { e: '🕯️', t: '27 candles in 3 boxes equally. Each box has ____', o: ['9', '7', '24'] },
+  { e: '🍌', t: '24 bananas for 3 monkeys equally. Each gets ____', o: ['8', '6', '21'] },
+  { e: '⭐', t: '20 beads, 5 on each bracelet. How many bracelets?', o: ['4', '5', '15'] },
+  { e: '🌹', t: '25 roses, 5 in each vase. How many vases?', o: ['5', '20', '30'] },
+  { e: '🔘', t: '30 buttons, 6 on each shirt. How many shirts?', o: ['5', '6', '24'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

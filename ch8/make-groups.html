@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .pile { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); min-height: 6.6rem; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0.4rem; font-size: 2.2rem; }
+  .groups { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; margin-top: 0.8rem; min-height: 8rem; }
+  .grp { border: 0.3rem solid var(--purple); border-radius: 2rem; padding: 0.4rem 0.8rem; background: #f6f1ff; display: flex; flex-direction: column; align-items: center; animation: pop 0.4s; }
+  .grp .it { font-size: 1.8rem; max-width: 12rem; text-align: center; }
+  .grp b { font-size: 1.3rem; color: var(--purple); }
+  .story { font-family: var(--read); font-size: 1.9rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="progress" id="pg"></div>
+  <div class="story" id="story"></div>
+  <div class="wrap">
+    <div><div class="pile" id="pile"></div><div class="groups" id="groups"></div></div>
+    <div class="card side"><div class="q" id="q"></div><button class="big-btn green" id="make"></button><div id="padbox" class="side" style="display:none"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'How Many Groups?', subtitle: 'Grouping and Sharing · Let us make', back: '../index.html#ch8' });
+
+/* From the book: Garima's 20 beads with 5 on each bracelet, and problems A, B, C and E. */
+const ROUNDS = [
+  { s: 'Garima has 20 star beads. She uses 5 beads to make each bracelet.', e: '⭐', n: 20, k: 5, g: 'bracelet', q: 'How many bracelets did she make?' },
+  { s: 'Each string has 7 beads. How many strings can we make with 21 beads?', e: '🔵', n: 21, k: 7, g: 'string', q: 'How many strings?' },
+  { s: 'There are 54 flowers. Join 9 flowers to make 1 bracelet.', e: '🌼', n: 54, k: 9, g: 'bracelet', q: 'How many bracelets can we make?' },
+  { s: 'There are 25 roses. 5 roses can be placed in 1 vase.', e: '🌹', n: 25, k: 5, g: 'vase', q: 'How many vases are needed?' },
+  { s: 'A tailor puts 6 buttons on one shirt. Here are 30 buttons.', e: '🔘', n: 30, k: 6, g: 'shirt', q: 'On how many shirts can the tailor put the buttons?' },
+];
+let r = 0, left, made;
+function show() {
+  if (r >= ROUNDS.length) { G.end({ title: 'Group maker!', msg: 'Making equal groups tells us how many groups we can make.', onReplay: () => { r = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), r, ROUNDS.length);
+  const R = ROUNDS[r]; left = R.n; made = 0;
+  G.$('#story').textContent = R.s; G.$('#q').textContent = `Make groups of ${R.k}.`; G.$('#groups').innerHTML = '';
+  G.$('#make').textContent = `➕ Make a ${R.g} (${R.k})`; G.$('#make').style.display = ''; G.$('#padbox').style.display = 'none'; G.$('#fb').innerHTML = '';
+  pile(); G.say(R.s);
+}
+function pile() { const R = ROUNDS[r]; G.$('#pile').innerHTML = left ? R.e.repeat(left) : '<span style="font-size:1.6rem;color:var(--muted)">All used!</span>'; }
+G.$('#make').onclick = () => {
+  const R = ROUNDS[r]; if (left < R.k) return;
+  left -= R.k; made++; pile(); G.sfx('pop');
+  G.$('#groups').insertAdjacentHTML('beforeend', `<div class="grp"><span class="it">${R.e.repeat(R.k)}</span><b>${R.g} ${made}</b></div>`);
+  G.say(`${made} ${R.g}${made > 1 ? 's' : ''}. ${left} left.`, { rate: 1.1 });
+  if (!left) { G.$('#make').style.display = 'none'; G.$('#padbox').style.display = ''; pad.clear(); G.$('#q').textContent = R.q; setTimeout(() => G.say(R.q), 1400); }
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    pad.clear(); const R = ROUNDS[r];
+    if (v !== R.n / R.k) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the groups.'); return; }
+    G.star(2); G.sfx('good');
+    const msg = `${R.n} made into groups of ${R.k} gives ${v} ${R.g}s.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); r++; setTimeout(show, 3200);
+  },
+});
+show();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .board { display: grid; grid-template-columns: 1.3fr 1fr 0.6fr; gap: 0.35rem 1rem; width: 100%; max-width: 110rem; align-items: center; }
+  .add { font-size: 1.8rem; font-weight: 800; background: #fff; border-radius: 1rem; padding: 0.4rem 0.8rem; border: 0.2rem solid var(--line); text-align: left; }
+  .slot { min-height: 3.7rem; border: 0.3rem dashed var(--purple); border-radius: 1rem; background: #f6f1ff; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; }
+  .slot.good { border-style: solid; border-color: var(--green); background: #d9f7e8; }
+  .slot.no { animation: shake 0.4s; }
+  .hd { font-size: 1.4rem; font-weight: 800; color: var(--muted); text-align: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin: 0.8rem 0; min-height: 4.6rem; }
+  .chip { font-size: 1.7rem; font-weight: 800; padding: 0.2rem 0.9rem; min-height: 3.8rem; border-radius: 1rem; border: 0.25rem solid var(--orange); background: #fff4e0; box-shadow: var(--shadow); }
+  .chip.n { border-color: var(--blue); background: #e7f1ff; }
+  .chip.gone { visibility: hidden; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Match the following! Drag the words and the answer to the right addition (or tap a card, then tap a box).</p>
+  <div class="chips" id="chips"></div>
+  <div class="board" id="board"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Match the Times', subtitle: 'Grouping and Sharing · Match the following', back: '../index.html#ch8' });
+
+/* The six rows from the book's "Match the Following". */
+const ROWS = [['9 + 9 + 9', '3 × 9', 27], ['5 + 5 + 5 + 5 + 5 + 5 + 5', '7 fives are', 35], ['3 + 3 + 3 + 3 + 3', '5 times 3', 15], ['10 + 10 + 10 + 10', '4 groups of 10', 40], ['8 + 8 + 8', '3 × 8', 24], ['7 + 7', '2 sevens are', 14]];
+G.$('#board').innerHTML = '<span class="hd">Addition</span><span class="hd">Times</span><span class="hd">Answer</span>' + ROWS.map((r, i) => `<div class="add">${r[0]}</div><div class="slot" data-r="${i}" data-k="w"></div><div class="slot" data-r="${i}" data-k="n"></div>`).join('');
+G.$('#chips').innerHTML = G.shuffle(ROWS.flatMap((r, i) => [`<button class="chip" data-r="${i}" data-k="w">${r[1]}</button>`, `<button class="chip n" data-r="${i}" data-k="n">${r[2]}</button>`])).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .chip'), G.$$('#board .slot'), (chip, slot) => {
+  if (slot.classList.contains('good')) return;
+  const r = ROWS[+slot.dataset.r];
+  const ok = chip.dataset.k === slot.dataset.k && (chip.dataset.k === 'w' ? ROWS[+chip.dataset.r][1] === r[1] : +chip.textContent === r[2]);
+  if (!ok) { slot.classList.remove('no'); void slot.offsetWidth; slot.classList.add('no'); G.sfx('bad'); G.say(chip.dataset.k !== slot.dataset.k ? (slot.dataset.k === 'w' ? 'Put the words here.' : 'Put the answer here.') : 'Count the groups again.'); return; }
+  slot.textContent = chip.textContent; slot.classList.add('good'); chip.classList.add('gone'); chip.dataset.locked = 1;
+  G.sfx('good'); G.star();
+  const both = G.$$(`#board .slot[data-r="${slot.dataset.r}"]`).every((s) => s.classList.contains('good'));
+  G.say(both ? `${r[0].replace(/\+/g, 'plus')} is ${r[1].replace('×', 'times')} ${r[2]}.` : chip.textContent.replace('×', 'times'));
+  if (++done === ROWS.length * 2) setTimeout(() => G.end({ title: 'Perfect match!', msg: 'Adding the same number again and again is multiplying.', onReplay: () => location.reload() }), 2200);
+});
+G.say('Match the following.');
+</script>
+</body>
+</html>

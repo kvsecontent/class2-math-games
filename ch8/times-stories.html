@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .story { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+  .story .e { font-size: 4.6rem; line-height: 1; }
+  .story .t { font-family: var(--read); font-size: 2.1rem; font-weight: 700; line-height: 1.4; max-width: 70rem; }
+  .story .eq { font-size: 3.6rem; font-weight: 800; color: var(--purple); min-height: 4.6rem; }
+  .story .eq .m-box { height: 4.6rem; min-width: 6rem; font-size: 3.2rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .choice { font-size: 2.6rem; min-width: 7rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="card story"><div class="e" id="e"></div><div class="t" id="t"></div><div class="row"><button class="say" id="again">🔊</button></div><div class="q" id="q" style="font-size:1.8rem;font-weight:800"></div><div class="row" id="ops"></div><div class="eq" id="eq"></div></div>
+    <div class="card side"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Times Stories', subtitle: 'Grouping and Sharing · Let us do', back: '../index.html#ch8' });
+
+/* Story sums A–D are from the book; the biscuits and ladybirds are ours. */
+const ITEMS = [
+  { e: '🔴', t: 'There are 8 packets of bindis. Each packet has 5 bindis. How many bindis are there?', op: '×', eq: [8, 5], a: 40 },
+  { e: '👕', t: 'Bharti puts 4 buttons on each shirt. She wants to put buttons on 7 shirts. How many buttons does she need?', op: '×', eq: [7, 4], a: 28 },
+  { e: '✏️', t: 'Rita bought 6 pencils of ₹4 each. How much money will she give to the shopkeeper?', op: '×', eq: [6, 4], a: 24 },
+  { e: '🚗', t: 'Five people can sit in a car. How many people can sit in 8 such cars?', op: '×', eq: [8, 5], a: 40 },
+  { e: '🍪', t: 'There are 3 plates with 6 biscuits on each plate. How many biscuits are there?', op: '×', eq: [3, 6], a: 18 },
+  { e: '🐞', t: 'Each ladybird has 6 legs. How many legs do 5 ladybirds have?', op: '×', eq: [5, 6], a: 30 },
+];
+G.$('#hint').textContent = 'Read the story. Choose the sign, then find the answer. Equal groups? Multiply!';
+let k = 0, chose;
+function show() {
+  if (k >= ITEMS.length) { G.end({ title: 'Story solver!', msg: 'You read the stories and found the answers.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, ITEMS.length);
+  const it = ITEMS[k]; chose = false;
+  G.$('#e').textContent = it.e; G.$('#t').textContent = it.t; G.$('#eq').innerHTML = ''; G.$('#fb').innerHTML = ''; pad.clear();
+  G.$('#q').textContent = 'Which sign do we use: +, − or ×?';
+  G.$('#ops').innerHTML = ['+', '−', '×'].map((o) => `<button class="choice" data-v="${o}">${o}</button>`).join('');
+  G.$$('#ops .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== it.op) { b.classList.add('wrong'); G.sfx('bad'); G.say('These are equal groups. Multiply!'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.sfx('good'); chose = true;
+    G.$('#q').textContent = 'Now find the answer.';
+    G.$('#eq').innerHTML = `${it.eq[0]} ${it.op} ${it.eq[1]} = <span class="m-box on">?</span>`;
+    G.say(`${it.eq[0]} times ${it.eq[1]}`);
+  }));
+  G.say(it.t);
+}
+G.$('#again').onclick = () => G.say(ITEMS[k].t);
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const it = ITEMS[k];
+    if (!chose) { G.say('First choose the sign.'); return; }
+    if (v !== it.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Try again. Count in equal groups.'); return; }
+    G.$('#eq .m-box').textContent = v; G.$('#eq .m-box').className = 'm-box good';
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+    G.say(`${it.eq[0]} times ${it.eq[1]} is ${it.a}.`);
+    k++; setTimeout(show, 3000);
+  },
+});
+show();
+</script>
+</body>
+</html>
