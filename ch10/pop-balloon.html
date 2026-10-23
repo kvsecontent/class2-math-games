@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .stall { position: relative; height: calc(100vh - 13rem); min-height: 22rem; border-radius: var(--radius); border: 0.5rem solid #e63946; background: repeating-linear-gradient(90deg, #fff4cc 0 4rem, #ffe08a 4rem 8rem); overflow: hidden; }
+  .bl { position: absolute; width: 6.6rem; height: 8.2rem; border: 0; background: none; padding: 0; animation: bob 2.6s ease-in-out infinite; }
+  .bl svg { width: 100%; height: 100%; }
+  .bl.pop { animation: popb 0.35s forwards; }
+  @keyframes popb { to { transform: scale(1.6); opacity: 0; } }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.5rem; font-weight: 700; text-align: center; }
+  .hits { display: flex; gap: 0.4rem; min-height: 4rem; font-size: 1.8rem; font-weight: 800; flex-wrap: wrap; justify-content: center; }
+  .hits span { border-radius: 1rem; padding: 0.2rem 0.6rem; color: #fff; }
+  .tot { font-size: 2.6rem; font-weight: 800; color: var(--purple); }
+  .side .m-pad { grid-template-columns: repeat(3, 4.4rem); }
+  .side .m-pad button { min-height: 3.3rem; font-size: 1.8rem; }
+  .chances { font-size: 1.5rem; font-weight: 800; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Pop the balloon! Matru gets 3 chances for ₹10. Each colour wins a different amount.</p>
+  <div class="wrap">
+    <div><div class="stall" id="stall"></div><div id="padbox" class="row" style="display:none;margin-top:0.5rem"><div class="m-box on" id="show">?</div><div id="pad"></div></div></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="chances" id="ch"></div><div class="hits" id="hits"></div><div class="tot" id="tot"></div><button class="big-btn ghost" id="again">🔁 Try again</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Pop the Balloon', subtitle: 'Fun at the Fair · Let us do', back: '../index.html#ch10' });
+
+/* The game and the targets ₹17, ₹22, ₹31 are from the book. The amount for each colour is our own. */
+const B = [{ c: '#e63946', n: 'red', v: 12 }, { c: '#2f7de1', n: 'blue', v: 10 }, { c: '#2bb673', n: 'green', v: 7 }, { c: '#ffc93c', n: 'yellow', v: 5 }, { c: '#ff6fa8', n: 'pink', v: 3 }];
+const POS = [[8, 6], [30, 22], [55, 4], [76, 20], [18, 44], [44, 40], [68, 44], [86, 2], [6, 66], [36, 64], [60, 68], [84, 60]];
+const STEPS = [
+  { t: 'A. Matru popped these balloons. How much money will he get?', show: [0, 3, 4] },
+  { t: 'A. Matru popped these balloons. How much money will he get?', show: [1, 2, 4] },
+  { t: 'B. Pop balloons to win exactly ₹17. You have 3 chances.', target: 17, max: 3 },
+  { t: 'B. Pop balloons to win exactly ₹22. You have 3 chances.', target: 22, max: 3 },
+  { t: 'B. Pop balloons to win exactly ₹31. You have 3 chances.', target: 31, max: 3 },
+  { t: 'C. Pop three differently coloured balloons to win the highest amount!', best: 3 },
+  { t: 'D. Now you have four chances. Pop four differently coloured balloons to win the most!', best: 4 },
+];
+let k = 0, hits = [];
+function stall() {
+  G.$('#stall').innerHTML = POS.map(([x, y], i) => { const b = B[i % B.length]; return `<button class="bl" data-b="${i % B.length}" style="left:${x}%;top:${y}%;animation-delay:${(i % 5) * 0.3}s"><svg viewBox="0 0 80 100"><path d="M40 4 C70 4 76 40 60 62 C52 72 44 76 40 76 C36 76 28 72 20 62 C4 40 10 4 40 4 Z" fill="${b.c}"/><path d="M36 76 L44 76 L40 82 Z" fill="${b.c}"/><path d="M40 82 Q34 90 40 98" stroke="#555" stroke-width="2" fill="none"/><ellipse cx="28" cy="24" rx="6" ry="10" fill="#fff" opacity="0.5"/><text x="40" y="48" font-size="20" font-weight="800" text-anchor="middle" fill="#fff">₹${b.v}</text></svg></button>`; }).join('');
+  G.$$('.bl').forEach((el) => (el.onclick = () => pop(el)));
+}
+function upd() {
+  G.$('#hits').innerHTML = hits.map((i) => `<span style="background:${B[i].c}">₹${B[i].v}</span>`).join('<b>+</b>');
+  const st = STEPS[k], sum = hits.reduce((a, i) => a + B[i].v, 0);
+  G.$('#tot').textContent = st.show ? '' : `Total: ₹${sum}`;
+  const max = st.max || st.best; G.$('#ch').textContent = max ? `Chances left: ${max - hits.length}` : '';
+}
+function show() {
+  if (k >= STEPS.length) { G.end({ title: 'Fair winner!', msg: 'Adding the amounts tells us how much we win!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, STEPS.length);
+  const st = STEPS[k]; hits = st.show ? [...st.show] : [];
+  stall(); G.$('#q').textContent = st.t; G.$('#fb').innerHTML = ''; G.$('#padbox').style.display = st.show ? '' : 'none'; G.$('#stall').style.height = st.show ? 'calc(100vh - 19rem)' : ''; G.$('#again').style.display = st.show ? 'none' : ''; pad.clear(); upd();
+  G.say(st.t.replace(/^[A-D]\. /, '').replace(/₹(\d+)/g, '$1 rupees'));
+}
+function pop(el) {
+  const st = STEPS[k]; if (st.show) return;
+  const max = st.max || st.best, i = +el.dataset.b;
+  if (hits.length >= max) { G.say('No chances left. Try again!'); return; }
+  if (st.best && hits.includes(i)) { G.sfx('bad'); G.say('Choose a different colour!'); return; }
+  hits.push(i); el.classList.add('pop'); G.tone(180, 0, 0.12, 'square', 0.25); setTimeout(() => el.classList.remove('pop'), 600);
+  upd();
+  const sum = hits.reduce((a, j) => a + B[j].v, 0);
+  if (st.target) {
+    if (sum === st.target) return win(`${hits.map((j) => B[j].v).join(' + ')} = ${sum}. Matru wins ₹${sum}!`);
+    if (sum > st.target || hits.length === max) { G.sfx('bad'); G.feedback(G.$('#fb'), false, sum > st.target ? '🙂 Too much! Try again.' : '🙂 Not enough. Try again.'); G.say(sum > st.target ? 'Too much! Try again.' : 'Not enough! Try again.'); }
+  }
+  if (st.best && hits.length === max) {
+    const best = B.slice(0, max).reduce((a, b) => a + b.v, 0);
+    if (sum === best) win(`${sum} rupees! That is the highest you can win.`);
+    else { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 You won ₹${sum}. Can you win more?`); G.say(`You won ${sum} rupees. Can you win more? Pick the biggest amounts.`); }
+  }
+}
+function win(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg.replace(/₹(\d+)/g, '$1 rupees')); k++; setTimeout(show, 3000); }
+G.$('#again').onclick = () => { hits = []; G.$('#fb').innerHTML = ''; upd(); };
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), row: true,
+  onEnter: (v) => { pad.clear(); const sum = hits.reduce((a, i) => a + B[i].v, 0); if (v !== sum) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Add the amounts again.'); return; } win(`₹${sum}`); },
+});
+show();
+</script>
+</body>
+</html>

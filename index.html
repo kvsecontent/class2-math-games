@@ -331,7 +331,31 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 2 }, (_, i) => ({ n: i + 10, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 10, title: 'Fun at the Fair', unit: 'Money · adding and subtracting rupees',
+    sections: [
+      { key: 'count', name: '🎡 At the fair', games: [
+        { href: 'ch10/rupal-rides.html', ic: '🎠', t: 'Rupal at the Fair', d: '₹50 for rides · money spent and left' },
+        { href: 'ch10/pop-balloon.html', ic: '🎈', t: 'Pop the Balloon', d: 'Win ₹17, ₹22, ₹31 · the highest amount' },
+      ]},
+      { key: 'tens', name: '💵 Our money', games: [
+        { href: 'ch10/notes-coins.html', ic: '💵', t: 'Notes and Coins', d: 'Sort coins and notes · the ₹500 note' },
+        { href: 'ch10/paise.html', ic: '🪙', t: 'Old Coins', d: '100 paise = ₹1' },
+        { href: 'ch10/pay-ways.html', ic: '👛', t: 'Pay in Different Ways', d: '₹66, ₹54, ₹85, ₹22, ₹103, ₹201' },
+      ]},
+      { key: 'compare', name: '🛒 Buying', games: [
+        { href: 'ch10/let-us-buy.html', ic: '🛒', t: 'Let us Buy', d: 'Money left or more money needed?' },
+        { href: 'ch10/money-stories.html', ic: '🖊️', t: 'Money Stories', d: 'Jayant, Meera and Kanika, Vivek, Ajay' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch10/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch10/fair-race.html', ic: '🏆', t: 'Fair Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  { n: 11, title: 'Coming soon', unit: '', sections: [] },
 ];
 
 const tabs = document.getElementById('tabs');

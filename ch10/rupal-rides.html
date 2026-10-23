@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .rides { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+  .ride { background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .ride .e { font-size: 4.4rem; line-height: 1.1; }
+  .ride b { font-size: 1.5rem; }
+  .ride .p { font-size: 1.8rem; font-weight: 800; color: var(--green); }
+  .ride .n { font-size: 1.3rem; font-weight: 800; color: var(--purple); min-height: 1.8rem; }
+  .ride:disabled { opacity: 0.4; }
+  .purse { font-size: 2.4rem; font-weight: 800; text-align: center; }
+  .purse small { display: block; font-size: 1.2rem; color: var(--muted); }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+  .story { font-family: var(--read); font-size: 1.8rem; line-height: 1.7; text-align: left; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem 1.2rem; }
+  .story div { opacity: 0; transition: opacity 0.5s; } .story div.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem">Rupal loves the fair! Her mother gave her ₹50. Tap the rides she goes on.</p>
+  <div class="wrap">
+    <div id="left"></div>
+    <div class="card side"><div class="purse" id="purse"></div><div class="q" id="q"></div><button class="big-btn green" id="done">✅ Done riding</button><div id="padbox" class="side" style="display:none"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Rupal at the Fair', subtitle: 'Fun at the Fair · How much I spent?', back: '../index.html#ch10' });
+
+/* Rupal's ₹50 and her friend's way (₹8 left: 8 + 20 + 20 + 2 = 50, so ₹42 spent) are from the book.
+   The ride prices are our own. */
+const RIDES = [['🎠', 'Merry-go-round', 10], ['🎡', 'Giant wheel', 15], ['🚂', 'Toy train', 10], ['🛝', 'Slide', 5], ['🚤', 'Boat ride', 8], ['🎪', 'Magic show', 12]];
+let money = 50, rides = [], step = 'ride', asks = [], qi = 0;
+function rideView() {
+  G.$('#left').innerHTML = `<div class="rides">${RIDES.map(([e, n, p], i) => `<button class="ride" data-i="${i}" ${p > money ? 'disabled' : ''}><span class="e">${e}</span><b>${n}</b><span class="p">₹${p}</span><span class="n">${rides.filter((x) => x === i).length ? '✔ ×' + rides.filter((x) => x === i).length : ''}</span></button>`).join('')}</div>`;
+  G.$$('.ride').forEach((b) => (b.onclick = () => { const i = +b.dataset.i, p = RIDES[i][2]; if (p > money) return; money -= p; rides.push(i); G.sfx('pop'); G.say(`${RIDES[i][1]}, ${p} rupees`); purse(); rideView(); }));
+}
+function purse() { G.$('#purse').innerHTML = `👛 ₹${step === 'ride' ? money : 50}<small>${step === 'ride' ? 'left in Rupal’s purse' : ''}</small>`; }
+function start() { money = 50; rides = []; step = 'ride'; G.$('#done').style.display = ''; G.$('#padbox').style.display = 'none'; G.$('#q').textContent = 'Tap the rides. Then tap Done.'; purse(); rideView(); G.say('Rupal has fifty rupees. Which rides will she go on?'); }
+G.$('#done').onclick = () => {
+  if (!rides.length) { G.say('Choose at least one ride.'); return; }
+  const spent = 50 - money; step = 'ask'; G.$('#done').style.display = 'none'; G.$('#padbox').style.display = ''; purse();
+  asks = [[`Total money spent on rides: ${rides.map((i) => '₹' + RIDES[i][2]).join(' + ')} = ?`, spent], [`Money left with Rupal: ₹50 − ₹${spent} = ?`, 50 - spent],
+    ['Her friend has ₹8 left out of ₹50. She counts up: 8 + 20 (rides) + 20 (snacks) + 2 (candies) = 50. How much did she spend?', 42, true],
+    ['Your father gave you ₹40. You have ₹3 left. How many rupees did you spend? Count up from 3 to 40!', 37]];
+  qi = 0; ask();
+};
+function ask() {
+  if (qi >= asks.length) { G.end({ title: 'Fair and square!', msg: 'Money given − money left = money spent. Or count up!', onReplay: start }); return; }
+  const [q, , story] = asks[qi]; G.$('#q').textContent = q; G.$('#fb').innerHTML = ''; pad.clear();
+  if (story) {
+    G.$('#hint').textContent = 'Rupal’s friend has a clever way to find how much she spent!';
+    G.$('#left').innerHTML = `<div class="story"><div>👛 ₹8 is left with me.</div><div>🎡 I spent ₹20 on rides: ₹8 + ₹20 = ₹28</div><div>🍿 I spent ₹20 on snacks: ₹28 + ₹20 = ₹48</div><div>🍬 I spent ₹2 more on candies: ₹48 + ₹2 = ₹50</div><div>So I spent ₹20 + ₹20 + ₹2 = ?</div></div>`;
+    G.$$('.story div').forEach((d, i) => setTimeout(() => d.classList.add('show'), 600 * i));
+  }
+  G.say(q.replace(/₹/g, '').replace(/−/g, 'minus').replace(/\+/g, 'plus').replace('= ?', ''));
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const a = asks[qi][1];
+    if (v !== a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Try again.'); return; }
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, `🎉 ₹${a}`); G.say(`${a} rupees!`); qi++; setTimeout(ask, 2400);
+  },
+});
+start();
+</script>
+</body>
+</html>

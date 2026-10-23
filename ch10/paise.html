@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 110rem; align-items: center; }
+  .box { background: #fff; border-radius: var(--radius); border: 0.35rem dashed var(--orange); min-height: 22rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; padding: 1rem; }
+  .box .got { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; max-width: 50rem; }
+  .box .tot { font-size: 2.6rem; font-weight: 800; color: var(--purple); }
+  .bar { width: 40rem; height: 1.6rem; border-radius: 1rem; background: #eee; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--green); transition: width 0.4s; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.9rem; font-weight: 700; text-align: center; }
+  .src { border: 0; background: none; padding: 0; }
+  .choice { font-size: 2rem; min-width: 5rem; }
+  .gran { font-size: 4rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Tejal's grandmother shows her old coins: 50 paise, 25 paise, 20 paise and 10 paise. 100 paise = 1 rupee!</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="box"><div class="tot" id="tot"></div><div class="bar"><i id="bar"></i></div><div class="got" id="got"></div></div>
+    <div class="card side"><span class="gran">👵</span><div class="q" id="q"></div><button class="src" id="src"></button><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Old Coins', subtitle: 'Fun at the Fair · Paise and rupees', back: '../index.html#ch10' });
+
+/* From the book: 2 coins of 50 paise make ₹1; how many 25 paise and 20 paise make ₹1. We add 10 paise. */
+const COINS = [50, 25, 20, 10];
+let k = 0, n = 0;
+function show() {
+  if (k >= COINS.length) { G.end({ title: 'Paise expert!', msg: '100 paise = 1 rupee. 2 × 50 p, 4 × 25 p, 5 × 20 p and 10 × 10 p all make ₹1!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, COINS.length);
+  const c = COINS[k]; n = 0;
+  G.$('#q').textContent = `Tap the ${c} paise coin to put it in the box. Fill ₹1 (100 paise)!`;
+  G.$('#src').innerHTML = M.money(c, { p: true, size: 1.5 }); G.$('#opts').innerHTML = ''; G.$('#fb').innerHTML = '';
+  draw(); G.say(`How many ${c} paise coins make one rupee? Put them in the box.`);
+}
+function draw() { const c = COINS[k]; G.$('#got').innerHTML = Array.from({ length: n }, () => M.money(c, { p: true })).join(''); G.$('#tot').textContent = `${n * c} paise${n * c === 100 ? ' = ₹1 🎉' : ''}`; G.$('#bar').style.width = Math.min(100, n * c) + '%'; }
+G.$('#src').onclick = () => {
+  const c = COINS[k]; if (n * c >= 100) return;
+  n++; draw(); G.sfx('pop'); G.say(`${n * c} paise`, { rate: 1.1 });
+  if (n * c === 100) setTimeout(() => {
+    G.$('#q').textContent = `How many ${c} paise coins make ₹1?`;
+    const o = G.shuffle([n, n + 1, Math.max(1, n - 1) === n ? n + 2 : Math.max(1, n - 1)]);
+    G.$('#opts').innerHTML = o.map((x) => `<button class="choice">${x}</button>`).join('');
+    G.say(G.$('#q').textContent.replace('₹1', 'one rupee'));
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (+b.textContent !== n) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); G.star(); G.sfx('good'); const msg = `${n} coins of ${c} paise make 1 rupee.`; G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 2800); }));
+  }, 900);
+};
+show();
+</script>
+</body>
+</html>

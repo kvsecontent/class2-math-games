@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; align-items: center; width: 100%; max-width: 120rem; min-height: 6rem; margin-bottom: 0.8rem; }
+  .mon { border: 0.25rem solid transparent; border-radius: 1rem; background: none; padding: 0.2rem; }
+  .mon.gone { visibility: hidden; }
+  .bins { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; max-width: 110rem; }
+  .bin { border: 0.35rem dashed; border-radius: var(--radius); min-height: 16rem; padding: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-content: flex-start; justify-content: center; }
+  .bin h3 { width: 100%; margin: 0; text-align: center; font-size: 2rem; pointer-events: none; }
+  .bin > span { pointer-events: none; }
+  .bin.no { animation: shake 0.4s; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; margin: 0.8rem 0 0.4rem; text-align: center; }
+  .choice { font-family: var(--read); font-size: 1.6rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">Indian money! Sort the coins and the notes. Drag each one into the right box (or tap it, then the box).</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins" id="bins">
+    <div class="bin" data-k="coin" style="border-color:#a8a8a0;background:#f4f4ef"><h3>🪙 Coins</h3></div>
+    <div class="bin" data-k="note" style="border-color:var(--green);background:#e6f8ef"><h3>💵 Notes</h3></div>
+  </div>
+  <div class="q" id="q"></div>
+  <div class="row" id="opts"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Notes and Coins', subtitle: 'Fun at the Fair · Our money', back: '../index.html#ch10' });
+
+const MONEY = [[1, 'coin'], [2, 'coin'], [5, 'coin'], ['c10', 'coin'], ['c20', 'coin'], [10, 'note'], [20, 'note'], [50, 'note'], [100, 'note'], [200, 'note'], [500, 'note']];
+G.$('#chips').innerHTML = G.shuffle(MONEY).map(([v, k]) => `<button class="mon" data-k="${k}" data-v="${String(v).replace('c', '')}">${M.money(v, { size: 0.9 })}</button>`).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .mon'), G.$$('#bins .bin'), (chip, bin) => {
+  const v = chip.dataset.v, k = chip.dataset.k;
+  if (bin.dataset.k !== k) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`This ${v} rupees is a ${k}. Look again.`); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  bin.insertAdjacentHTML('beforeend', `<span>${chip.innerHTML}</span>`);
+  G.sfx('good'); G.star(); G.say(`${v} rupee ${k}`);
+  if (++done === MONEY.length) setTimeout(quiz, 1200);
+});
+/* The ₹500 note question is from the book; the others help children look closely at money. */
+const QS = [
+  { t: 'Which monument is printed on the ₹500 note?', o: ['Red Fort', 'Taj Mahal', 'Qutub Minar'] },
+  { t: 'Notes have raised lines on the border. Who do they help?', o: ['People who cannot see well', 'Shopkeepers only', 'Nobody'] },
+  { t: 'Which is worth more?', o: ['₹200 note', '₹50 note', '₹20 note'] },
+  { t: 'How many ₹10 notes make ₹50?', o: ['5', '10', '50'] },
+  { t: 'Can we also pay using mobile phones?', o: ['Yes', 'No'] },
+];
+let k = 0;
+function quiz() {
+  if (k >= QS.length) { G.end({ title: 'Money expert!', msg: 'Look at real notes with your family. What else do you notice?', onReplay: () => location.reload() }); return; }
+  const q = QS[k]; G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.say(q.t.replace('₹', '') + (q.t.includes('₹500') ? ' rupees' : ''));
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + q.o[0]); G.say(q.o[0]); k++; setTimeout(quiz, 2200); }));
+}
+G.say('Sort the coins and the notes.');
+</script>
+</body>
+</html>

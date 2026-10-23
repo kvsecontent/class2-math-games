@@ -85,7 +85,7 @@ function TUG({ bank, rounds = 10, win = 5 }) {
     const q = p.list[p.i];
     side.innerHTML = head + `<div class="qbox"><button class="say">🔊</button><div class="e">${q.e}</div><div class="t">${q.t}</div></div>
       <div class="opts">${G.shuffle(q.o).map((o) => `<button class="opt">${o}</button>`).join('')}</div>`;
-    side.querySelector('.say').onclick = () => G.say(q.t.replace(/_+/g, 'blank'));
+    side.querySelector('.say').onclick = () => G.say(q.t.replace(/_+/g, 'blank').replace(/₹(\d+)/g, '$1 rupees'));
     side.querySelectorAll('.opt').forEach((b) => {
       // pointerdown so two children can tap at the same moment on a multi-touch board
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); answer(k, b, q); });

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .purse { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; align-items: center; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.6rem; }
+  .purse button, .tray button { border: 0; background: none; padding: 0; }
+  .tray { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; align-items: center; min-height: 14rem; margin-top: 0.8rem; border-radius: var(--radius); border: 0.35rem dashed var(--orange); background: #fff8ec; padding: 0.6rem; }
+  .amt { font-size: 3.4rem; font-weight: 800; color: var(--purple); }
+  .tot { font-size: 2.2rem; font-weight: 800; }
+  .ways { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
+  .ways span { font-size: 1.25rem; font-weight: 800; background: #d9f7e8; border-radius: 0.6rem; padding: 0.2rem 0.5rem; }
+  .side { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Let us pay! Tap notes and coins to put them on the tray. Tap one on the tray to take it back.</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div><div class="purse" id="purse"></div><div class="tray" id="tray"></div></div>
+    <div class="card side"><div>Pay</div><div class="amt" id="amt"></div><div class="tot" id="tot"></div><div class="ways" id="ways"></div><button class="big-btn ghost" id="clear">🧽 Clear the tray</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Pay in Different Ways', subtitle: 'Fun at the Fair · Make the amount', back: '../index.html#ch10' });
+
+/* The amounts are from the book: ₹66 in different ways, then ₹54, ₹85, ₹22, ₹103 and ₹201. */
+const VALS = [1, 2, 5, 'c10', 10, 20, 50, 100, 200];
+const val = (v) => +String(v).replace('c', '');
+const ROUNDS = [{ a: 66, ways: 2 }, { a: 54, ways: 1 }, { a: 85, ways: 1 }, { a: 22, ways: 1 }, { a: 103, ways: 1 }, { a: 201, ways: 1 }];
+let r = 0, tray = [], found = [];
+G.$('#purse').innerHTML = VALS.map((v, i) => `<button data-i="${i}">${M.money(v, { size: 0.75 })}</button>`).join('');
+G.$$('#purse button').forEach((b) => (b.onclick = () => { tray.push(VALS[+b.dataset.i]); G.sfx('pop'); draw(); check(); }));
+function draw() {
+  const sum = tray.reduce((a, v) => a + val(v), 0);
+  G.$('#tray').innerHTML = tray.length ? tray.map((v, i) => `<button data-i="${i}">${M.money(v, { size: 0.75 })}</button>`).join('') : '<span style="color:var(--muted);font-size:1.6rem">Put money here</span>';
+  G.$$('#tray button').forEach((b) => (b.onclick = () => { tray.splice(+b.dataset.i, 1); G.sfx('pop'); draw(); }));
+  G.$('#tot').textContent = `On the tray: ₹${sum}`;
+  G.$('#ways').innerHTML = found.map((f, i) => `<span>Way ${i + 1}: ${f}</span>`).join('');
+}
+function show() {
+  if (r >= ROUNDS.length) { G.end({ title: 'Smart payer!', msg: 'The same amount can be paid in many different ways!', onReplay: () => { r = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), r, ROUNDS.length);
+  tray = []; found = []; G.$('#amt').textContent = `₹${ROUNDS[r].a}`; G.$('#fb').innerHTML = ''; draw();
+  G.say(`Pay ${ROUNDS[r].a} rupees.` + (ROUNDS[r].ways > 1 ? ' Find two different ways!' : ''));
+}
+function check() {
+  const R = ROUNDS[r], sum = tray.reduce((a, v) => a + val(v), 0);
+  if (sum > R.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Too much! Take some back.'); G.say('Too much! Take some back.'); return; }
+  G.$('#fb').innerHTML = '';
+  if (sum !== R.a) return;
+  const desc = [...tray].map(val).sort((a, b) => b - a).map((v) => '₹' + v).join(' + ');
+  if (found.includes(desc)) { G.say('You already found this way. Try a different way!'); return; }
+  found.push(desc); G.star(); G.sfx('good'); draw();
+  G.say(`Yes! ${R.a} rupees.`);
+  if (found.length >= R.ways) { G.feedback(G.$('#fb'), true, '🎉 ' + G.praise()); r++; setTimeout(show, 2600); }
+  else { G.feedback(G.$('#fb'), true, '🎉 Now find another way!'); setTimeout(() => { tray = []; draw(); G.say('Now pay it in a different way.'); }, 1800); }
+}
+G.$('#clear').onclick = () => { tray = []; draw(); };
+show();
+</script>
+</body>
+</html>

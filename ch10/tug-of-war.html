@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Fun at the Fair · Two players', back: '../index.html#ch10' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '👛', t: 'Rupal had ₹50. She spent ₹40. How much is left?', o: ['₹10', '₹90', '₹40'] },
+  { e: '👛', t: 'Her friend had ₹50 and has ₹8 left. How much did she spend?', o: ['₹42', '₹58', '₹8'] },
+  { e: '👛', t: 'Father gave ₹40. ₹3 is left. How much was spent?', o: ['₹37', '₹43', '₹3'] },
+  { e: '🎠', t: 'A ride costs ₹10. How much for 3 rides?', o: ['₹30', '₹13', '₹10'] },
+  { e: '🪙', t: 'Which of these is a coin?', o: ['₹5', '₹100', '₹500'] },
+  { e: '💵', t: 'Which of these is a note?', o: ['₹200', '₹1', '₹2'] },
+  { e: '🏰', t: 'Which monument is on the ₹500 note?', o: ['Red Fort', 'Taj Mahal', 'India Gate'] },
+  { e: '🪙', t: '100 paise = ____', o: ['₹1', '₹10', '₹100'] },
+  { e: '🪙', t: 'How many 50 paise coins make ₹1?', o: ['2', '5', '50'] },
+  { e: '🪙', t: 'How many 25 paise coins make ₹1?', o: ['4', '25', '2'] },
+  { e: '🪙', t: 'How many 20 paise coins make ₹1?', o: ['5', '20', '4'] },
+  { e: '🪙', t: 'How many 10 paise coins make ₹1?', o: ['10', '5', '100'] },
+  { e: '🎈', t: 'Red ₹12 + blue ₹10 = ____', o: ['₹22', '₹2', '₹21'] },
+  { e: '🎈', t: 'Matru gets 3 chances for ____.', o: ['₹10', '₹3', '₹50'] },
+  { e: '💵', t: '₹50 + ₹10 + ₹5 + ₹1 = ____', o: ['₹66', '₹56', '₹65'] },
+  { e: '💵', t: 'Which makes ₹54?', o: ['₹50 + ₹2 + ₹2', '₹50 + ₹5', '₹20 + ₹20'] },
+  { e: '💵', t: '₹100 + ₹2 + ₹1 = ____', o: ['₹103', '₹102', '₹130'] },
+  { e: '🛒', t: 'You have ₹50. A ball costs ₹20 and a kite ₹15. Money left?', o: ['₹15', '₹35', '₹5'] },
+  { e: '🧸', t: 'You have ₹40. A teddy costs ₹55. How much more do you need?', o: ['₹15', '₹95', '₹5'] },
+  { e: '🖊️', t: 'Jayant spent ₹25 on pens and ₹40 on notebooks. Total?', o: ['₹65', '₹15', '₹60'] },
+  { e: '👧', t: 'Meera has ₹43. Kanika has ₹14 more. Kanika has ____.', o: ['₹57', '₹29', '₹43'] },
+  { e: '🍞', t: 'Bread ₹30 and chocolate ₹60. Total?', o: ['₹90', '₹30', '₹80'] },
+  { e: '🛒', t: 'Ajay had ₹58 and spent ₹48. Left?', o: ['₹10', '₹106', '₹20'] },
+  { e: '💰', t: '₹18 + ₹32 = ____', o: ['₹50', '₹40', '₹14'] },
+  { e: '💰', t: '₹47 + ₹50 = ____', o: ['₹97', '₹87', '₹3'] },
+  { e: '💰', t: '₹15 + ₹27 = ____', o: ['₹42', '₹32', '₹12'] },
+  { e: '📱', t: 'We can also pay using ____.', o: ['mobile phones', 'leaves', 'stones'] },
+  { e: '🐷', t: 'Keeping some money for later is called ____.', o: ['saving', 'spending', 'losing'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

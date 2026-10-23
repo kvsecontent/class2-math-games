@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .shop { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); overflow: hidden; }
+  .shop .roof { height: 1.8rem; background: repeating-linear-gradient(90deg, #2f7de1 0 3rem, #fff 3rem 6rem); }
+  .items { display: flex; gap: 1rem; justify-content: center; padding: 1rem; flex-wrap: wrap; }
+  .it { display: flex; flex-direction: column; align-items: center; padding: 0.4rem 0.8rem; border-radius: 1rem; border: 0.25rem solid var(--line); }
+  .it.buy { border-color: var(--orange); background: #fff4cc; }
+  .it .e { font-size: 4rem; line-height: 1.1; } .it b { font-size: 1.3rem; } .it .p { font-size: 1.8rem; font-weight: 800; color: var(--green); }
+  .lines { font-family: var(--read); font-size: 2rem; line-height: 2.1; padding: 0 1.4rem 1rem; }
+  .lines .m-box { height: 3.4rem; min-width: 4.4rem; font-size: 2.1rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .choice { font-size: 1.6rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Let us buy! How much money do we need? Is there money left, or do we need more?</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="shop"><div class="roof"></div><div class="items" id="items"></div><div class="lines" id="lines"></div></div>
+    <div class="card side"><div class="row" id="opts"></div><div id="padbox" class="side"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Let us Buy', subtitle: 'Fun at the Fair · Money left or more needed', back: '../index.html#ch10' });
+
+/* Prices ₹20, ₹15, ₹28, ₹10 and ₹55 appear in the book's table; the items and wallets are our own. */
+const ITEMS = { ball: ['⚽', 20], kite: ['🪁', 15], 'ice cream': ['🍦', 28], balloon: ['🎈', 10], teddy: ['🧸', 55] };
+const ROUNDS = [{ have: 50, buy: ['ball', 'kite'] }, { have: 30, buy: ['ice cream'] }, { have: 40, buy: ['teddy'] }, { have: 100, buy: ['teddy', 'balloon'] }, { have: 20, buy: ['ball', 'balloon'] }];
+let r = 0, step = 0, need, diff, left;
+function show() {
+  if (r >= ROUNDS.length) { G.end({ title: 'Smart shopper!', msg: 'Make a list when you shop with your family, and save money too!', onReplay: () => { r = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), r, ROUNDS.length);
+  const R = ROUNDS[r]; step = 0; need = R.buy.reduce((a, n) => a + ITEMS[n][1], 0); left = R.have >= need; diff = Math.abs(R.have - need);
+  G.$('#items').innerHTML = Object.entries(ITEMS).map(([n, [e, p]]) => `<div class="it ${R.buy.includes(n) ? 'buy' : ''}"><span class="e">${e}</span><b>${n}</b><span class="p">₹${p}</span></div>`).join('');
+  G.$('#lines').innerHTML = `Buy: <b>${R.buy.join(' and ')}</b><br>Money needed: ₹<span class="m-box on" data-i="0">?</span><br>Money you have: <b>₹${R.have}</b><br><span id="l3"></span>`;
+  G.$('#opts').innerHTML = ''; G.$('#padbox').style.display = ''; G.$('#fb').innerHTML = ''; pad.clear();
+  G.say(`You have ${R.have} rupees. You want to buy ${R.buy.join(' and ')}. How much money is needed?`);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const R = ROUNDS[r];
+    const want = step === 0 ? need : diff;
+    if (v !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, step === 0 ? '🙂 Add the prices.' : '🙂 Find the difference.'); return; }
+    const box = G.$(`#lines .m-box[data-i="${step}"]`); box.textContent = v; box.className = 'm-box good'; G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (step === 0) {
+      step = 1; G.$('#padbox').style.display = 'none';
+      G.$('#opts').innerHTML = ['Money left', 'More money needed'].map((o) => `<button class="choice">${o}</button>`).join('');
+      G.say(`You need ${need} rupees. You have ${R.have}. Will money be left, or do you need more?`);
+      G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+        if ((b.textContent === 'Money left') !== left) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+        b.classList.add('right'); G.sfx('good'); G.$('#opts').innerHTML = ''; G.$('#padbox').style.display = '';
+        G.$('#l3').innerHTML = `${left ? 'Money left' : 'More money needed'}: ₹<span class="m-box on" data-i="1">?</span>`;
+        G.say(left ? 'How much money is left?' : 'How much more money is needed?');
+      }));
+      return;
+    }
+    G.star(); G.feedback(G.$('#fb'), true, `🎉 ${left ? 'Left' : 'Need'} ₹${diff}`);
+    G.say(left ? `${diff} rupees left.` : `You need ${diff} rupees more.`); r++; setTimeout(show, 2800);
+  },
+});
+show();
+</script>
+</body>
+</html>

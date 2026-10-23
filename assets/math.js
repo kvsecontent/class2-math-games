@@ -65,5 +65,14 @@ const M = (() => {
     return s + '<circle cx="100" cy="100" r="8" fill="#2b2140"/></svg>';
   }
 
-  return { strips, pad, word, rnd, solid, clock };
+  /* Indian money pictures. v = rupees: 1, 2, 5 and 'c10'/'c20' are coins; 10, 20, 50, 100, 200, 500 are notes.
+     With p: true, v is a paise coin. */
+  function money(v, { p = false, size = 1 } = {}) {
+    if (p) return `<span class="m-coin" style="--s:${size * 4.2}rem;background:#d8c39a">${v}<small>paise</small></span>`;
+    if ([1, 2, 5].includes(v) || v === 'c10' || v === 'c20') { const n = String(v).replace('c', ''); return `<span class="m-coin" style="--s:${size * (3.4 + n * 0.08)}rem;background:${n == 10 || n == 20 ? 'radial-gradient(#e9d27a 55%, #c0c0c0 56%)' : '#d9d9d9'}">₹${n}</span>`; }
+    const COL = { 10: '#c58a54', 20: '#c7d66b', 50: '#6fd0d6', 100: '#b39ddb', 200: '#ffb36b', 500: '#a8a8a0' };
+    return `<span class="m-note" style="--s:${size};background:${COL[v]}"><b>₹${v}</b><i>${v}</i></span>`;
+  }
+
+  return { strips, pad, word, rnd, solid, clock, money };
 })();
