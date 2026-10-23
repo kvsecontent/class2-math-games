@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 110rem; align-items: center; }
+  .desk { background: #c9a46a; border-radius: var(--radius); padding: 0.8rem; }
+  #pap { width: 100%; height: calc(100vh - 13rem); display: block; touch-action: none; }
+  #pap .crease { stroke: #b08a3e; stroke-width: 4; stroke-dasharray: 10 6; }
+  #pap .hitc { stroke: transparent; stroke-width: 34; cursor: pointer; }
+  #pap .flap { transform-origin: 200px 200px; transform-box: view-box; animation: flap 1s ease-in-out; }
+  @keyframes flap { 0% { opacity: 0.9; } 50% { opacity: 0.9; transform: var(--t); } 100% { opacity: 0; } }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; text-align: center; }
+  .cr { width: 6rem; height: 4.4rem; border-radius: 1rem; border: 0.3rem solid #fff; box-shadow: 0 0 0 0.2rem var(--line); font-size: 1.3rem; font-weight: 800; color: #fff; }
+  .cr.on { box-shadow: 0 0 0 0.45rem var(--ink); }
+  .count { font-size: 1.8rem; font-weight: 800; color: var(--purple); }
+  .choice { font-family: var(--read); font-size: 1.6rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">Fun with folding! Each fold makes a crease. Fold, then trace the lines.</p>
+  <div class="wrap">
+    <div class="desk"><svg id="pap" viewBox="0 0 400 400"></svg></div>
+    <div class="card side"><div class="q" id="q"></div><div class="count" id="count"></div><div class="row" id="ctl"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Fun with Folding', subtitle: 'Playing with Lines · Project work', back: '../index.html#ch5' });
+
+/* Each fold and the crease it leaves. Straight creases (standing and sleeping) and slanting ones. */
+const FOLDS = [
+  { d: 'M200 40 L200 360', k: 'straight', t: 'Fold the paper in half.', flap: 'scaleX(-1)' },
+  { d: 'M40 200 L360 200', k: 'straight', t: 'Fold it in half the other way.', flap: 'scaleY(-1)' },
+  { d: 'M40 40 L360 360', k: 'slanting', t: 'Fold it corner to corner.', flap: 'rotate(180deg)' },
+  { d: 'M360 40 L40 360', k: 'slanting', t: 'Fold the other two corners together.', flap: 'rotate(-180deg)' },
+  { d: 'M120 40 L120 360', k: 'straight', t: 'Fold one side to the middle.', flap: 'scaleX(-1)' },
+  { d: 'M280 40 L280 360', k: 'straight', t: 'Fold the other side to the middle.', flap: 'scaleX(-1)' },
+];
+let made = 0, phase = 'fold', crayon = '#e63946', coloured = new Set();
+function draw(anim) {
+  let h = `<rect x="40" y="40" width="320" height="320" fill="#fffdf6" stroke="#2b2140" stroke-width="3"/>`;
+  FOLDS.slice(0, made).forEach((f, i) => {
+    const c = coloured.has(i) ? (f.k === 'straight' ? '#e63946' : '#2f7de1') : null;
+    h += c ? `<path d="${f.d}" stroke="${c}" stroke-width="8" stroke-linecap="round"/>` : `<path class="crease" d="${f.d}"/>`;
+    h += `<path class="hitc" data-i="${i}" d="${f.d}"/>`;
+  });
+  if (anim) h += `<rect class="flap" style="--t:${anim}" x="40" y="40" width="160" height="320" fill="#ffe08a" stroke="#2b2140" stroke-width="2"/>`;
+  G.$('#pap').innerHTML = h;
+  G.$('#count').textContent = `Creases: ${made}`;
+}
+function foldStep() {
+  if (made >= FOLDS.length) { colourStep(); return; }
+  G.$('#q').textContent = FOLDS[made].t;
+  G.$('#ctl').innerHTML = '<button class="big-btn orange" id="fold">📄 Fold and unfold</button>';
+  G.$('#fold').onclick = () => { const f = FOLDS[made]; made++; draw(f.flap); G.sfx('pop'); G.say(`${made} crease${made > 1 ? 's' : ''}!`); setTimeout(foldStep, 1100); };
+  G.say(FOLDS[made].t);
+}
+function colourStep() {
+  phase = 'colour'; draw();
+  G.$('#q').textContent = 'Trace the straight lines with the red crayon and the slanting lines with the blue crayon. Tap each crease.';
+  G.$('#ctl').innerHTML = `<button class="cr on" data-c="#e63946" style="background:#e63946">red</button><button class="cr" data-c="#2f7de1" style="background:#2f7de1">blue</button>`;
+  G.$$('.cr').forEach((b) => (b.onclick = () => { crayon = b.dataset.c; G.$$('.cr').forEach((x) => x.classList.toggle('on', x === b)); }));
+  G.say(G.$('#q').textContent);
+}
+G.$('#pap').addEventListener('click', (e) => {
+  const h = e.target.closest('.hitc'); if (!h || phase !== 'colour') return;
+  const i = +h.dataset.i, f = FOLDS[i]; if (coloured.has(i)) return;
+  const want = f.k === 'straight' ? '#e63946' : '#2f7de1';
+  if (crayon !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 This is a ${f.k} line. Use the ${f.k === 'straight' ? 'red' : 'blue'} crayon.`); G.say(`This is a ${f.k} line. Use the ${f.k === 'straight' ? 'red' : 'blue'} crayon.`); return; }
+  coloured.add(i); draw(); G.sfx('good'); G.star(); G.$('#fb').innerHTML = '';
+  if (coloured.size === FOLDS.length) setTimeout(curveQ, 1200);
+});
+function curveQ() {
+  G.$('#q').textContent = 'Try to make a curved line by folding. What happens?';
+  const o = ['A fold always makes a straight crease.', 'A fold makes a round crease.'];
+  G.$('#ctl').innerHTML = G.shuffle(o).map((x) => `<button class="choice">${x}</button>`).join('');
+  G.say(G.$('#q').textContent);
+  G.$$('#ctl .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.say('Yes! When we fold paper flat, the crease is always straight. Try it with real paper!');
+    setTimeout(() => G.end({ title: 'Folding fun!', msg: `You made ${FOLDS.length} creases. Fold with a friend – who gets more creases?`, onReplay: () => { made = 0; coloured.clear(); phase = 'fold'; draw(); foldStep(); } }), 3000);
+  }));
+}
+draw(); foldStep();
+</script>
+</body>
+</html>

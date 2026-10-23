@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 24rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  #art { width: 100%; height: calc(100vh - 11rem); display: block; background: #8a4b2a; border-radius: var(--radius); touch-action: none; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: stretch; }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .tools button { min-height: 5.6rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; font-size: 1.2rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tools button svg { width: 3rem; height: 3rem; }
+  .tools button.on { border-color: var(--orange); background: #fff4cc; }
+  .info { font-family: var(--read); font-size: 1.25rem; background: #fff4cc; border-radius: 1rem; padding: 0.5rem 0.7rem; }
+  .row button { font-size: 1.3rem; min-height: 3.6rem; padding: 0.2rem 0.8rem; min-width: 0; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">Warli art from Maharashtra uses only lines, triangles and circles! Pick a picture and tap the wall to paint.</p>
+  <div class="wrap">
+    <svg id="art" viewBox="0 0 900 560"></svg>
+    <div class="card side">
+      <div class="tools" id="tools"></div>
+      <div class="info">🎨 Madhubani, Kalamkari and Warli are Indian art forms. Look at the lines: <b>straight</b>, <b>slanting</b> and <b>curved</b>!</div>
+      <div class="row"><button class="big-btn ghost" id="undo">↩️ Undo</button><button class="big-btn ghost" id="clear">🧽 Clear</button></div>
+      <button class="big-btn green" id="done">⭐ Done!</button>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Warli Art', subtitle: 'Playing with Lines · Art with lines', back: '../index.html#ch5' });
+
+const W = 'stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
+const ART = {
+  person: (r) => `<circle cx="0" cy="-58" r="12" fill="#fff"/><path d="M-20 -44 L20 -44 L0 -14 Z M0 -14 L-20 16 L20 16 Z" fill="#fff"/><path ${W} fill="none" d="M-18 -42 L-${30 + r} -18 M18 -42 L${30 + r} -18 M-14 16 L-22 46 M14 16 L22 46"/>`,
+  dancers: () => [0, 1, 2, 3, 4, 5].map((i) => { const a = (i * Math.PI) / 3; return `<g transform="translate(${Math.cos(a) * 70} ${Math.sin(a) * 70}) scale(0.5)">${ART.person(10)}</g>`; }).join('') + `<circle r="70" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="6 8"/>`,
+  sun: () => `<circle r="26" fill="#fff"/>` + Array.from({ length: 12 }, (_, i) => { const a = (i * Math.PI) / 6; return `<line x1="${Math.cos(a) * 34}" y1="${Math.sin(a) * 34}" x2="${Math.cos(a) * 54}" y2="${Math.sin(a) * 54}" ${W}/>`; }).join(''),
+  tree: () => `<path ${W} fill="none" d="M0 60 L0 -60 ${[-40, -15, 10, 35].map((y) => `M0 ${y} L-36 ${y - 26} M0 ${y} L36 ${y - 26}`).join(' ')}"/>`,
+  hut: () => `<path d="M-60 -10 L0 -60 L60 -10 Z" fill="none" ${W}/><rect x="-46" y="-10" width="92" height="60" fill="none" ${W}/><path d="M-12 50 L-12 14 Q0 2 12 14 L12 50" fill="none" ${W}/>`,
+  bird: () => `<path ${W} fill="none" d="M-30 0 Q-15 -18 0 0 Q15 -18 30 0"/>`,
+};
+const NAMES = { person: 'person', dancers: 'dancers', sun: 'sun', tree: 'tree', hut: 'hut', bird: 'bird' };
+let tool = 'person', items = [];
+G.$('#tools').innerHTML = Object.keys(ART).map((k) => `<button data-k="${k}" class="${k === tool ? 'on' : ''}"><svg viewBox="-80 -80 160 160" style="background:#8a4b2a;border-radius:0.5rem">${ART[k](0)}</svg>${NAMES[k]}</button>`).join('');
+G.$('#tools').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tool = b.dataset.k; G.$$('#tools button').forEach((x) => x.classList.toggle('on', x === b)); G.say(NAMES[tool]); };
+function draw() { G.$('#art').innerHTML = items.map(([k, x, y, r]) => `<g transform="translate(${x} ${y})">${ART[k](r)}</g>`).join(''); }
+G.$('#art').addEventListener('pointerdown', (e) => {
+  const s = G.$('#art'), p = s.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(s.getScreenCTM().inverse());
+  items.push([tool, Math.round(q.x), Math.round(q.y), Math.round(Math.random() * 14)]); draw(); G.sfx('pop');
+});
+G.$('#undo').onclick = () => { items.pop(); draw(); };
+G.$('#clear').onclick = () => { items = []; draw(); };
+G.$('#done').onclick = () => { if (!items.length) { G.say('Paint something first!'); return; } G.star(3); G.confetti(30); G.sfx('win'); G.say('Beautiful Warli art! Can you see the straight, slanting and curved lines?'); };
+G.say('Make your own Warli painting. Pick a picture and tap the wall.');
+</script>
+</body>
+</html>

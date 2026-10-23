@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .pic { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.3rem; }
+  #svg { width: 100%; height: calc(100vh - 11rem); display: block; touch-action: none; }
+  #svg .todo { fill: none; stroke: #9aa0ad; stroke-width: 5; stroke-dasharray: 12 10; stroke-linecap: round; }
+  #svg .ink { fill: none; stroke-width: 9; stroke-linecap: round; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: stretch; }
+  .tally { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 1.6rem; font-weight: 800; padding: 0.3rem 0.6rem; border-radius: 1rem; background: #f7f3ea; }
+  .tally i { display: inline-block; width: 2.4rem; height: 0.6rem; border-radius: 0.3rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">Trace the missing lines! Run your finger along each dotted line. Vertical, horizontal, slanting and curved – find them all.</p>
+  <div class="wrap">
+    <div class="pic"><svg id="svg" viewBox="0 0 800 520"></svg></div>
+    <div class="card side" id="tally"></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Trace the Lines', subtitle: 'Playing with Lines · Let us do', back: '../index.html#ch5' });
+
+/* Our own picture (a house, a tree, a kite, hills and the sun). The dotted parts are the lines to trace. */
+const TYPES = { vertical: '#2f7de1', horizontal: '#2bb673', slanting: '#ff8a3d', curved: '#ff6fa8' };
+const LINES = [
+  ['vertical', 'M170 470 L170 300'], ['vertical', 'M370 470 L370 300'], ['horizontal', 'M150 470 L390 470'], ['horizontal', 'M170 300 L370 300'],
+  ['slanting', 'M150 310 L270 200'], ['slanting', 'M270 200 L390 310'], ['curved', 'M240 470 L240 410 Q270 370 300 410 L300 470'],
+  ['vertical', 'M560 470 L560 360'], ['curved', 'M500 360 Q560 220 620 360'],
+  ['slanting', 'M700 250 L610 420'], ['curved', 'M40 130 Q80 60 120 130'], ['curved', 'M420 140 Q480 60 540 140'],
+  ['horizontal', 'M20 490 L780 490'],
+];
+const FIXED = `<rect x="0" y="0" width="800" height="490" fill="#e9f6ff"/><rect x="0" y="490" width="800" height="30" fill="#8fd67e"/>
+  <circle cx="720" cy="80" r="40" fill="#ffd34d"/><path d="M700 250 L730 220 L760 250 L730 280 Z" fill="#e63946" stroke="#2b2140" stroke-width="3"/>`;
+let done = new Set(), samples = [], cur = null;
+const svg = G.$('#svg');
+function build() {
+  done.clear();
+  svg.innerHTML = FIXED + LINES.map(([t, d], i) => `<path class="todo" data-i="${i}" d="${d}"/>`).join('') + '<g id="inks"></g>';
+  samples = LINES.map((l, i) => { const p = svg.querySelector(`[data-i="${i}"]`), n = Math.max(8, Math.round(p.getTotalLength() / 12)); return Array.from({ length: n + 1 }, (_, j) => { const q = p.getPointAtLength((p.getTotalLength() * j) / n); return { x: q.x, y: q.y, hit: false }; }); });
+  tally();
+}
+function tally() {
+  G.$('#tally').innerHTML = Object.entries(TYPES).map(([t, c]) => `<div class="tally"><span><i style="background:${c}"></i> ${t}</span><span>${LINES.filter((l, i) => l[0] === t && done.has(i)).length} / ${LINES.filter((l) => l[0] === t).length}</span></div>`).join('') + '<button class="big-btn ghost" id="again">🔁 Start again</button>';
+  G.$('#again').onclick = build;
+}
+function pt(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+function rub(p) {
+  samples.forEach((ss, i) => {
+    if (done.has(i)) return;
+    let hit = false;
+    ss.forEach((s) => { if (!s.hit && Math.hypot(s.x - p.x, s.y - p.y) < 26) { s.hit = true; hit = true; } });
+    if (!hit) return;
+    const got = ss.filter((s) => s.hit).length / ss.length;
+    if (got >= 0.85) {
+      done.add(i); const [t, d] = LINES[i];
+      G.$('#inks').insertAdjacentHTML('beforeend', `<path class="ink" d="${d}" stroke="${TYPES[t]}"/>`);
+      svg.querySelector(`.todo[data-i="${i}"]`).remove();
+      G.sfx('good'); G.star(); G.say(`A ${t} line!`); tally();
+      if (done.size === LINES.length) setTimeout(() => G.end({ title: 'Line tracer!', msg: 'You traced vertical, horizontal, slanting and curved lines.', onReplay: build }), 1500);
+    }
+  });
+}
+svg.addEventListener('pointerdown', (e) => { cur = e.pointerId; svg.setPointerCapture(e.pointerId); rub(pt(e)); });
+svg.addEventListener('pointermove', (e) => { if (cur === e.pointerId) rub(pt(e)); });
+svg.addEventListener('pointerup', () => (cur = null));
+build();
+G.say('Trace the dotted lines with your finger.');
+</script>
+</body>
+</html>

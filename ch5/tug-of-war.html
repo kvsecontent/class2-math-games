@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Playing with Lines · Two players', back: '../index.html#ch5' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🧍', t: 'In Tadasana we stand straight. Our body makes a ____ line.', o: ['standing', 'sleeping', 'curved'] },
+  { e: '🛌', t: 'In Shavasana we lie flat. Our body makes a ____ line.', o: ['sleeping', 'standing', 'curved'] },
+  { e: '🌈', t: 'In Chakrasana the back makes a ____ line.', o: ['curved', 'standing', 'sleeping'] },
+  { e: '🧘', t: 'Yoga comes from the Yoga Sutras of ____.', o: ['Patanjali', 'Kalidasa', 'Tulsidas'] },
+  { e: '🧵', t: 'Pull a thread tight between your hands. It is ____.', o: ['straight', 'curved', 'round'] },
+  { e: '🧵', t: 'Bring your hands closer. The thread becomes ____.', o: ['curved', 'straight', 'longer'] },
+  { e: '|', t: 'A standing line is also called a ____ line.', o: ['vertical', 'horizontal', 'curved'] },
+  { e: '—', t: 'A sleeping line is also called a ____ line.', o: ['horizontal', 'vertical', 'slanting'] },
+  { e: '/', t: 'A line like this / is a ____ line.', o: ['slanting', 'sleeping', 'standing'] },
+  { e: '🌈', t: 'A rainbow has a ____ line.', o: ['curved', 'straight', 'standing'] },
+  { e: '🚪', t: 'The side of a door is a ____ line.', o: ['standing', 'curved', 'slanting'] },
+  { e: '🏠', t: 'The roof of a hut has ____ lines.', o: ['slanting', 'curved', 'no'] },
+  { e: '🌳', t: 'A tree trunk is a ____ line.', o: ['standing', 'sleeping', 'curved'] },
+  { e: '🛤️', t: 'A railway track on flat ground has ____ lines.', o: ['sleeping', 'curved', 'standing'] },
+  { e: '☁️', t: 'A cloud is drawn with ____ lines.', o: ['curved', 'straight', 'standing'] },
+  { e: '📄', t: 'When we fold paper flat, the crease is always ____.', o: ['straight', 'curved', 'round'] },
+  { e: '📄', t: 'Fold a square paper corner to corner. The crease is ____.', o: ['slanting', 'curved', 'standing'] },
+  { e: '🔴', t: 'In paper folding, we trace straight lines with the ____ crayon.', o: ['red', 'blue', 'green'] },
+  { e: '🔵', t: 'In paper folding, we trace slanting lines with the ____ crayon.', o: ['blue', 'red', 'yellow'] },
+  { e: '🔤', t: 'The letter L is made of ____ lines.', o: ['straight', 'curved', 'only round'] },
+  { e: '🔤', t: 'The letter O is made of a ____ line.', o: ['curved', 'straight', 'slanting'] },
+  { e: '🔤', t: 'Which letter has both straight and curved lines?', o: ['D', 'H', 'O'] },
+  { e: '🔤', t: 'Which letter has slanting lines?', o: ['V', 'O', 'L'] },
+  { e: '🎨', t: 'Warli art comes from ____.', o: ['Maharashtra', 'Kerala', 'Assam'] },
+  { e: '🎨', t: 'A Warli person is made of two ____ and a circle.', o: ['triangles', 'squares', 'stars'] },
+  { e: '⚫', t: 'Join two dots one above the other. You get a ____ line.', o: ['standing', 'sleeping', 'curved'] },
+  { e: '⚫', t: 'Join two dots side by side. You get a ____ line.', o: ['sleeping', 'standing', 'curved'] },
+  { e: '✏️', t: 'How many types of lines did we learn?', o: ['4', '2', '10'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

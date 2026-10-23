@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 26rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .poses { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; }
+  .pose { position: relative; background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.3rem; display: flex; flex-direction: column; align-items: center; }
+  .pose svg { width: 100%; height: 11rem; }
+  .pose b { font-size: 1.3rem; }
+  .pose.on { border-color: var(--orange); background: #fff4cc; }
+  .pose.wrong { border-color: var(--red); animation: shake 0.4s; }
+  .marks { position: absolute; top: 0.2rem; right: 0.4rem; display: flex; gap: 0.2rem; font-size: 1.9rem; font-weight: 800; pointer-events: none; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; text-align: center; }
+  .key { display: grid; gap: 0.3rem; font-size: 1.3rem; font-weight: 800; text-align: left; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">Look at the lines our bodies make in these aasanas (yoga poses)!</p>
+  <div class="wrap">
+    <div class="poses" id="poses"></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><button class="big-btn green" id="chk">✅ Check</button><div class="feedback" id="fb"></div>
+      <div class="key"><span>◯ standing (vertical) lines</span><span>✓ standing and slanting lines</span><span>✘ curved lines</span><span>★ sleeping (horizontal) lines</span></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Lines in Aasanas', subtitle: 'Playing with Lines · Let us do', back: '../index.html#ch5' });
+
+/* Tasks A–D are from the book. The poses are our stick drawings; each is drawn so its lines are clear.
+   L: v = vertical, h = horizontal, s = slanting, c = curved. */
+const S = 'stroke="#2b2140" stroke-width="7" stroke-linecap="round" fill="none"', H = (x, y) => `<circle cx="${x}" cy="${y}" r="10" fill="#ff8a3d" stroke="#2b2140" stroke-width="3"/>`;
+const POSES = [
+  { n: 'Tadasana', L: 'v', svg: `${H(60, 16)}<path ${S} d="M60 28 L60 70 M48 32 L48 66 M72 32 L72 66 M55 70 L55 112 M65 70 L65 112"/>` },
+  { n: 'Vrikshasana', L: 'vs', svg: `${H(60, 20)}<path ${S} d="M60 30 L60 72 L60 112 M60 74 L80 90 L62 98 M60 36 L44 6 M60 36 L76 6"/>` },
+  { n: 'Trikonasana', L: 'vs', svg: `${H(28, 34)}<path ${S} d="M60 72 L30 112 M60 72 L92 112 M60 72 L36 46 M40 8 L40 86"/>` },
+  { n: 'Shavasana', L: 'h', svg: `${H(16, 84)}<path ${S} d="M28 84 L72 84 M72 80 L112 80 M72 90 L112 90 M30 96 L68 96"/>` },
+  { n: 'Dandasana', L: 'vh', svg: `${H(32, 26)}<path ${S} d="M32 38 L32 88 M32 92 L108 92 M44 44 L44 86"/>` },
+  { n: 'Chakrasana', L: 'c', svg: `${H(28, 96)}<path ${S} d="M16 112 Q60 6 104 112"/>` },
+  { n: 'Bhujangasana', L: 'ch', svg: `${H(30, 44)}<path ${S} d="M112 106 L52 106 Q30 100 30 56"/>` },
+  { n: 'Naukasana', L: 's', svg: `${H(24, 40)}<path ${S} d="M60 102 L32 52 M60 102 L102 46 M40 66 L86 42"/>` },
+];
+const TASKS = [
+  { t: 'A. Circle (◯) the aasanas with standing or vertical lines.', mark: '◯', col: '#2f7de1', ok: (L) => L.includes('v') },
+  { t: 'B. Tick (✓) the aasanas with both vertical and slanting lines.', mark: '✓', col: '#2bb673', ok: (L) => L.includes('v') && L.includes('s') },
+  { t: 'C. Cross (✘) the aasanas which have curved lines.', mark: '✘', col: '#e63946', ok: (L) => L.includes('c') },
+  { t: 'D. Put a star (★) on the aasanas that have sleeping or horizontal lines.', mark: '★', col: '#ff8a3d', ok: (L) => L.includes('h') },
+];
+G.$('#poses').innerHTML = POSES.map((p, i) => `<button class="pose" data-i="${i}"><span class="marks"></span><svg viewBox="0 0 120 120">${p.svg}</svg><b>${p.n}</b></button>`).join('');
+let k = 0;
+function show() {
+  if (k >= TASKS.length) { tryIt(); return; }
+  G.progress(G.$('#pg'), k, TASKS.length);
+  G.$('#q').textContent = TASKS[k].t; G.$('#fb').innerHTML = '';
+  G.say(TASKS[k].t.replace(/\(.\)/, '').slice(3));
+}
+G.$('#poses').onclick = (e) => { const b = e.target.closest('.pose'); if (!b || k >= TASKS.length) { if (b) G.say(POSES[b.dataset.i].n); return; } b.classList.toggle('on'); G.sfx('pop'); };
+G.$('#chk').onclick = () => {
+  const T = TASKS[k]; let bad = 0;
+  G.$$('.pose').forEach((b) => { const want = T.ok(POSES[b.dataset.i].L), on = b.classList.contains('on'); b.classList.remove('wrong'); if (want !== on) { bad++; if (on) { void b.offsetWidth; b.classList.add('wrong'); } } });
+  if (bad) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Not yet. Look at the lines again.'); G.say('Not yet. Look at the lines in each pose.'); return; }
+  G.$$('.pose.on').forEach((b) => { b.classList.remove('on'); G.$('.marks', b).insertAdjacentHTML('beforeend', `<span style="color:${T.col}">${T.mark}</span>`); });
+  G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise()); G.say(G.praise());
+  k++; setTimeout(show, 1800);
+};
+/* E. Try some of these aasanas. */
+function tryIt() {
+  G.$('#q').textContent = 'E. Now try some of these aasanas! Tap a pose and do it together.';
+  G.$('#chk').textContent = '🏁 Finish';
+  G.$('#chk').onclick = () => G.end({ title: 'Yoga star!', msg: 'Straight back, slanting arms, curved back – our bodies make lines!', onReplay: () => location.reload() });
+  G.say('Now try some of these aasanas. Tap a pose and do it together. Hold it while we count to five.');
+  G.$('#poses').onclick = (e) => {
+    const b = e.target.closest('.pose'); if (!b) return;
+    const n = POSES[b.dataset.i].n;
+    G.say(`${n}. Hold it! 1, 2, 3, 4, 5.`, { onend: () => { G.star(); G.sfx('good'); } });
+    b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 5000);
+  };
+}
+show();
+</script>
+</body>
+</html>

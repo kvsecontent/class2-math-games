@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .scene { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  #svg { width: 100%; height: calc(100vh - 17rem); display: block; }
+  input[type=range] { width: 100%; height: 3.6rem; accent-color: var(--purple); }
+  .ctl { display: flex; gap: 0.6rem; align-items: center; font-size: 1.4rem; font-weight: 800; }
+  .status { font-size: 2.6rem; font-weight: 800; color: var(--purple); min-height: 3.4rem; text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 2.1rem; font-weight: 700; text-align: center; }
+  .choice { font-size: 1.8rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">What is straight? Hold a piece of thread in your hands and try it too!</p>
+  <div class="wrap">
+    <div class="scene"><svg id="svg" viewBox="0 0 600 420"></svg><div class="ctl" id="ctl"><span id="l1"></span><input type="range" id="rng" min="0" max="100" value="100"><span id="l2"></span></div></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="status" id="now"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'What is Straight?', subtitle: 'Playing with Lines · Standing, sleeping, slanting', back: '../index.html#ch5' });
+
+const L = 420; // length of the thread
+let mode = 'pull', ang = 0, quizAng = 0, quizCurved = false;
+const kind = (a) => { a = ((a % 180) + 180) % 180; return a < 10 || a > 170 ? 'sleeping' : Math.abs(a - 90) < 10 ? 'standing' : 'slanting'; };
+function draw() {
+  const v = +G.$('#rng').value; let h = '';
+  if (mode === 'pull') {
+    const d = 140 + v * 2.8, x1 = 300 - d / 2, x2 = 300 + d / 2, sag = Math.sqrt(Math.max(0, L * L - d * d)) * 0.5;
+    h = `<path d="M${x1} 160 Q300 ${160 + sag * 2} ${x2} 160" stroke="#e63946" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <text x="${x1 - 10}" y="190" font-size="70" text-anchor="end">🤚</text><text x="${x2 + 10}" y="190" font-size="70">🤚</text>`;
+    G.$('#now').textContent = sag < 8 ? 'Straight!' : 'Not straight – it is curved.';
+  } else {
+    const a = mode === 'turn' ? (v / 100) * 180 : quizAng, r = (a * Math.PI) / 180, dx = Math.cos(r) * 190, dy = -Math.sin(r) * 190;
+    h = mode === 'quiz' && quizCurved ? `<path d="M110 300 Q300 40 490 300" stroke="#2f7de1" stroke-width="9" fill="none" stroke-linecap="round"/>`
+      : `<line x1="${300 - dx}" y1="${210 - dy}" x2="${300 + dx}" y2="${210 + dy}" stroke="#2f7de1" stroke-width="9" stroke-linecap="round"/><circle cx="${300 - dx}" cy="${210 - dy}" r="12" fill="#ff8a3d"/><circle cx="${300 + dx}" cy="${210 + dy}" r="12" fill="#ff8a3d"/>`;
+    h = `<line x1="0" y1="400" x2="600" y2="400" stroke="#8fd67e" stroke-width="16"/>` + h;
+    if (mode === 'turn') { ang = a; G.$('#now').textContent = `This is now ${kind(a)}.`; } else G.$('#now').textContent = '';
+  }
+  G.$('#svg').innerHTML = h;
+}
+G.$('#rng').oninput = () => { draw(); if (STEPS[k]?.check) STEPS[k].check(); };
+
+/* Steps: the book's thread activity, then turning the thread, then naming lines. */
+const STEPS = [
+  { mode: 'pull', t: 'Hold the thread. Now bring your hands closer. Is the thread straight now?', o: ['No – it is curved', 'Yes – it is straight'], before: () => (G.$('#rng').value = 100), labels: ['hands close', 'hands apart'], wait: (v) => v < 50 },
+  ...['standing', 'sleeping', 'slanting'].map((w) => ({ mode: 'turn', t: `Turn the thread to make a ${w} line.`, want: w, labels: ['turn', ''] })),
+  ...Array.from({ length: 6 }, () => ({ mode: 'quiz', t: 'What kind of line is this?' })),
+];
+let k = 0;
+function show() {
+  if (k >= STEPS.length) { G.end({ title: 'Line spotter!', msg: 'Standing, sleeping, slanting and curved lines are all around us.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, STEPS.length);
+  const st = STEPS[k]; mode = st.mode; G.$('#fb').innerHTML = ''; G.$('#opts').innerHTML = '';
+  G.$('#ctl').style.visibility = mode === 'quiz' ? 'hidden' : '';
+  if (st.labels) { G.$('#l1').textContent = st.labels[0]; G.$('#l2').textContent = st.labels[1]; }
+  st.before?.();
+  if (mode === 'turn') { G.$('#rng').value = st.want === 'sleeping' ? 40 : 0; st.check = () => { if (kind(ang) === st.want && !st.done) { st.done = true; right(`Yes! A ${st.want} line.`); } }; }
+  if (mode === 'quiz') {
+    quizCurved = Math.random() < 0.2; const pick = G.shuffle(['standing', 'sleeping', 'slanting', 'slanting'])[0];
+    quizAng = pick === 'standing' ? 90 : pick === 'sleeping' ? 0 : G.shuffle([30, 45, 135, 150])[0];
+    st.ans = quizCurved ? 'curved' : pick;
+    G.$('#opts').innerHTML = ['standing', 'sleeping', 'slanting', 'curved'].map((o) => `<button class="choice">${o}</button>`).join('');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== st.ans) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); right(`It is a ${st.ans} line.`); }));
+  }
+  if (st.o) {
+    G.$('#opts').innerHTML = G.shuffle(st.o).map((o) => `<button class="choice">${o}</button>`).join('');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+      if (+G.$('#rng').value > 60) { G.say('First bring your hands closer. Move the slider.'); return; }
+      if (b.textContent !== st.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+      b.classList.add('right'); right('When the hands come closer, the thread is not straight. It becomes curved.');
+    }));
+  }
+  G.$('#q').textContent = st.t; draw(); G.say(st.t);
+}
+function right(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 2800); }
+show();
+</script>
+</body>
+</html>

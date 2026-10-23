@@ -201,7 +201,31 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 7 }, (_, i) => ({ n: i + 5, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 5, title: 'Playing with Lines', unit: 'Standing, sleeping, slanting and curved lines',
+    sections: [
+      { key: 'count', name: '🧘 Lines in our body', games: [
+        { href: 'ch5/yoga-lines.html', ic: '🧘', t: 'Lines in Aasanas', d: 'Circle, tick, cross and star the yoga poses' },
+        { href: 'ch5/thread-lines.html', ic: '🧵', t: 'What is Straight?', d: 'Hold a thread · standing, sleeping, slanting' },
+      ]},
+      { key: 'tens', name: '✏️ Trace and draw lines', games: [
+        { href: 'ch5/trace-lines.html', ic: '✏️', t: 'Trace the Lines', d: 'Trace the missing lines in the picture' },
+        { href: 'ch5/dot-lines.html', ic: '⚫', t: 'Play with Dots', d: 'Straight shapes, clouds, designs with 2, 3, all lines' },
+        { href: 'ch5/letter-lines.html', ic: '🔤', t: 'Letters and Lines', d: 'Straight, curved or both?' },
+      ]},
+      { key: 'play', name: '📄 Project work', games: [
+        { href: 'ch5/paper-fold.html', ic: '📄', t: 'Fun with Folding', d: 'Count creases · red straight, blue slanting' },
+        { href: 'ch5/warli-art.html', ic: '🎨', t: 'Warli Art', d: 'Paint with lines, triangles and circles' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch5/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch5/line-race.html', ic: '🏆', t: 'Line Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 6 }, (_, i) => ({ n: i + 6, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

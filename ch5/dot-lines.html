@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 26rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .pic { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.3rem; }
+  #svg { width: 100%; height: calc(100vh - 11rem); display: block; touch-action: none; }
+  #svg .dot { fill: #2b2140; } #svg .hitd { fill: transparent; cursor: pointer; } #svg .sel { fill: #ff8a3d; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: stretch; }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .tools button { font-size: 1.4rem; min-height: 4rem; padding: 0.2rem 0.4rem; min-width: 0; }
+  .tools .on { outline: 0.35rem solid var(--ink); }
+  .ch { font-family: var(--read); font-size: 1.6rem; font-weight: 700; text-align: center; background: #f6f1ff; border-radius: 1rem; padding: 0.4rem; }
+  .types { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+  .types span { font-size: 1.2rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 1rem; color: #fff; opacity: 0.3; }
+  .types span.used { opacity: 1; }
+  .row button { font-size: 1.3rem; min-height: 3.6rem; padding: 0.2rem 0.8rem; min-width: 0; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">Let us play with dots! Tap one dot, then another dot, to draw a line.</p>
+  <div class="wrap">
+    <div class="pic"><svg id="svg" viewBox="0 0 900 600"></svg></div>
+    <div class="card side">
+      <div class="tools"><button class="big-btn on" id="tS">📏 Straight</button><button class="big-btn" id="tC" style="background:var(--pink)">🌈 Curved</button></div>
+      <div class="types" id="types"></div>
+      <div class="ch" id="ch"></div>
+      <div class="row"><button class="big-btn green" id="chk">✅ Check</button><button class="big-btn ghost" id="skip">Next ▶</button></div>
+      <div class="row"><button class="big-btn ghost" id="undo">↩️ Undo</button><button class="big-btn ghost" id="clear">🧽 Clear</button></div>
+      <div class="feedback" id="fb" style="text-align:center"></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Play with Dots', subtitle: 'Playing with Lines · Let us play with dots', back: '../index.html#ch5' });
+
+const COL = { vertical: '#2f7de1', horizontal: '#2bb673', slanting: '#ff8a3d', curved: '#ff6fa8' };
+/* Challenges from the book: straight-line shapes, curved figures, and designs with two, three and all types of lines. */
+const CH = [
+  { t: 'A. Make a new shape with straight lines – vertical, horizontal and slanting.', ok: (u) => u.vertical && u.horizontal && u.slanting, tip: 'Use vertical, horizontal and slanting lines.' },
+  { t: 'B. Draw a figure with curved lines, like clouds or a rainbow.', ok: (u, n) => u.curved && n.curved >= 3, tip: 'Draw at least 3 curved lines.' },
+  { t: 'Draw a design with any two types of lines.', ok: (u) => Object.values(u).filter(Boolean).length >= 2, tip: 'Use two types of lines.' },
+  { t: 'Draw a design with any three types of lines.', ok: (u) => Object.values(u).filter(Boolean).length >= 3, tip: 'Use three types of lines.' },
+  { t: 'Draw a design using all types of lines.', ok: (u) => Object.values(u).filter(Boolean).length === 4, tip: 'Use vertical, horizontal, slanting and curved lines.' },
+];
+const COLS = 9, ROWS = 6, GAP = 90, X0 = 90, Y0 = 75;
+let tool = 'straight', first = null, lines = [], c = 0;
+const svg = G.$('#svg');
+const dot = (i) => [X0 + (i % COLS) * GAP, Y0 + Math.floor(i / COLS) * GAP];
+function type(a, b) { const [x1, y1] = dot(a), [x2, y2] = dot(b); return tool === 'curved' ? 'curved' : x1 === x2 ? 'vertical' : y1 === y2 ? 'horizontal' : 'slanting'; }
+function draw() {
+  let h = lines.map(({ a, b, t }) => {
+    const [x1, y1] = dot(a), [x2, y2] = dot(b);
+    if (t !== 'curved') return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${COL[t]}" stroke-width="9" stroke-linecap="round"/>`;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1;
+    return `<path d="M${x1} ${y1} Q${mx + dy * 0.5} ${my - dx * 0.5} ${x2} ${y2}" stroke="${COL.curved}" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+  }).join('');
+  for (let i = 0; i < COLS * ROWS; i++) { const [x, y] = dot(i); h += `<circle class="dot ${first === i ? 'sel' : ''}" cx="${x}" cy="${y}" r="${first === i ? 14 : 8}"/><circle class="hitd" data-i="${i}" cx="${x}" cy="${y}" r="38"/>`; }
+  svg.innerHTML = h;
+  const used = {}; lines.forEach((l) => (used[l.t] = true));
+  G.$('#types').innerHTML = Object.entries(COL).map(([t, c2]) => `<span class="${used[t] ? 'used' : ''}" style="background:${c2}">${t}</span>`).join('');
+}
+svg.addEventListener('pointerdown', (e) => {
+  const d = e.target.closest('.hitd'); if (!d) return;
+  const i = +d.dataset.i;
+  if (first === null) { first = i; G.sfx('pop'); }
+  else if (first === i) first = null;
+  else { const t = type(first, i); lines.push({ a: first, b: i, t }); first = null; G.sfx('good'); G.say(`${t} line`, { rate: 1 }); }
+  draw();
+});
+G.$('#tS').onclick = () => { tool = 'straight'; G.$('#tS').classList.add('on'); G.$('#tC').classList.remove('on'); };
+G.$('#tC').onclick = () => { tool = 'curved'; G.$('#tC').classList.add('on'); G.$('#tS').classList.remove('on'); G.say('Curved lines. Tap two dots.'); };
+G.$('#undo').onclick = () => { lines.pop(); draw(); };
+G.$('#clear').onclick = () => { lines = []; first = null; draw(); };
+function show() {
+  if (c >= CH.length) { G.end({ title: 'Dot artist!', msg: 'You drew with vertical, horizontal, slanting and curved lines.', onReplay: () => { c = 0; lines = []; show(); } }); return; }
+  G.$('#ch').textContent = `${c + 1}/${CH.length}: ${CH[c].t}`; G.$('#fb').innerHTML = ''; lines = []; first = null; draw();
+  G.say(CH[c].t.replace(/^[AB]\. /, ''));
+}
+G.$('#chk').onclick = () => {
+  const used = {}, n = {}; lines.forEach((l) => { used[l.t] = true; n[l.t] = (n[l.t] || 0) + 1; });
+  if (!CH[c].ok(used, n)) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 ' + CH[c].tip); G.say(CH[c].tip); return; }
+  G.star(); G.sfx('good'); G.confetti(15); G.feedback(G.$('#fb'), true, '🎉 Lovely design!'); G.say('Lovely design!');
+  c++; setTimeout(show, 2600);
+};
+G.$('#skip').onclick = () => { c++; show(); };
+show();
+</script>
+</body>
+</html>
