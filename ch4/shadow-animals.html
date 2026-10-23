@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .screen { position: relative; height: calc(100vh - 12rem); min-height: 26rem; border-radius: var(--radius); border: 0.6rem solid #8b5a2b; background: radial-gradient(circle at 50% 45%, #fff6c9 0, #ffd34d 45%, #c98a1c 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .shadow { font-size: 15rem; line-height: 1; filter: brightness(0); opacity: 0.85; transition: filter 0.8s, opacity 0.8s; }
+  .shadow.show { filter: none; opacity: 1; }
+  .hands { position: absolute; bottom: 0.4rem; left: 50%; transform: translateX(-50%); font-size: 4rem; filter: brightness(0); opacity: 0.6; }
+  .info { font-family: var(--read); font-size: 1.3rem; text-align: left; background: #fff4cc; border-radius: 1rem; padding: 0.6rem 0.9rem; margin-bottom: 0.6rem; }
+  .q { font-size: 2.4rem; font-weight: 800; margin-bottom: 0.6rem; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .choice { font-size: 2rem; min-width: 0; }
+  .sound { font-size: 2.2rem; font-weight: 800; color: var(--purple); min-height: 3rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="wrap">
+    <div class="screen"><span class="shadow" id="sh"></span><span class="hands">🙌</span></div>
+    <div class="card center">
+      <div class="info">🎭 <b>Togalu Gombeyaata</b> is a shadow puppet show from Karnataka. Nakul and his friends made animal shadows on the wall with their fingers!</div>
+      <div class="progress" id="pg"></div>
+      <div class="q">Whose shadow is this?</div>
+      <div class="opts" id="opts"></div>
+      <div class="sound" id="snd"></div>
+      <button class="big-btn ghost" id="act" style="font-size:1.2rem;min-height:3rem">🎭 Act it out! Make this shadow with your hands.</button>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Shadow Animals', subtitle: 'Shadow Story · Let us do', back: '../index.html#ch4' });
+
+/* The book asks children to make animal shadows and their sounds. Animals and sounds are our choice. */
+const ANI = [['🐕', 'dog', 'Woof, woof!'], ['🐇', 'rabbit', 'Hop, hop!'], ['🦆', 'duck', 'Quack, quack!'], ['🐈', 'cat', 'Meow, meow!'], ['🐘', 'elephant', 'Pawoo!'],
+  ['🐄', 'cow', 'Moo, moo!'], ['🐍', 'snake', 'Hiss, hiss!'], ['🦋', 'butterfly', 'Flutter, flutter!'], ['🐦', 'bird', 'Tweet, tweet!'], ['🦌', 'deer', 'Leap, leap!']];
+let list, k;
+function start() { list = G.shuffle(ANI).slice(0, 8); k = 0; next(); }
+function next() {
+  if (k >= list.length) { G.end({ title: 'Shadow expert!', msg: 'Now make your own animal shadows with a torch and your hands.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, list.length);
+  const [e, n] = list[k];
+  G.$('#sh').textContent = e; G.$('#sh').classList.remove('show'); G.$('#snd').textContent = '';
+  const wrong = G.shuffle(ANI.filter((a) => a[1] !== n)).slice(0, 3);
+  G.$('#opts').innerHTML = G.shuffle([list[k], ...wrong]).map((a) => `<button class="choice" data-v="${a[1]}">${a[1]}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== n) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    G.$$('#opts .choice').forEach((x) => (x.disabled = true));
+    b.classList.add('right'); G.star(); G.sfx('good');
+    G.$('#sh').classList.add('show'); G.$('#snd').textContent = `It is a ${n}! ${list[k][2]}`;
+    G.say(`It is a ${n}! ${list[k][2]}`);
+    k++; setTimeout(next, 3000);
+  }));
+  G.say('Whose shadow is this?');
+}
+G.$('#act').onclick = () => { G.sfx('pop'); G.say(`Make a ${list[Math.min(k, list.length - 1)][1]} shadow with your hands, and make its sound!`); };
+start();
+</script>
+</body>
+</html>

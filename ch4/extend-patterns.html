@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .seq { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; align-items: center; font-size: 4rem; font-weight: 800; margin: 1.4rem 0; min-height: 8rem; }
+  .seq span.it { min-width: 6rem; padding: 0.2rem 0.6rem; background: #fff; border-radius: 1rem; border: 0.25rem solid var(--line); }
+  .seq .m-box { height: 6rem; min-width: 7rem; font-size: 3.6rem; }
+  .choice { font-size: 3.4rem; min-width: 10rem; }
+  .lbl { font-size: 1.8rem; font-weight: 800; color: var(--purple); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Extend the patterns. What comes next?</p>
+  <div class="progress" id="pg"></div>
+  <div class="lbl" id="lbl"></div>
+  <div class="card" style="width:100%;max-width:110rem"><div class="seq" id="seq"></div></div>
+  <div class="row" id="opts" style="margin-top:1rem"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Extend the Pattern', subtitle: 'Shadow Story · Let us do', back: '../index.html#ch4' });
+
+/* Letter patterns and number patterns A–C are from the book; the shape patterns are ours. */
+const PATS = [
+  { l: 'Letter pattern', s: ['AB', 'BC', 'CD'], next: ['DE', 'EF'], o: ['DC', 'EF', 'DE', 'FG'] },
+  { l: 'Letter pattern', s: ['AA', 'BB', 'CC', 'DD', 'EE'], next: ['FF'], o: ['FF', 'EF', 'GG'] },
+  { l: 'Shape pattern', s: ['🔺', '🟦', '🔺', '🟦', '🔺'], next: ['🟦', '🔺'], o: ['🟦', '🔺', '🟡'] },
+  { l: 'Shape pattern', s: ['🔴', '🔴', '🟡', '🔴', '🔴', '🟡', '🔴'], next: ['🔴', '🟡'], o: ['🔴', '🟡', '🟦'] },
+  { l: 'Shape pattern', s: ['⭐', '🌙', '🌙', '⭐', '🌙', '🌙'], next: ['⭐', '🌙'], o: ['⭐', '🌙', '☀️'] },
+  { l: 'Number pattern A', s: [5, 10, 15], next: [20, 25, 30], o: [16, 20, 25, 30, 35] },
+  { l: 'Number pattern B', s: [7, 14, 21], next: [28, 35, 42], o: [22, 28, 35, 42, 49] },
+  { l: 'Number pattern C', s: [1, 7, 13], next: [19, 25, 31], o: [14, 19, 25, 31, 37] },
+];
+let k = 0, at = 0;
+function show() {
+  if (k >= PATS.length) { G.end({ title: 'Pattern pro!', msg: 'You can extend letter, shape and number patterns.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, PATS.length);
+  const P = PATS[k]; at = 0;
+  G.$('#lbl').textContent = P.l; G.$('#fb').innerHTML = '';
+  draw();
+  G.$('#opts').innerHTML = G.shuffle(P.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => pick(b)));
+  G.say('What comes next?');
+}
+function draw() {
+  const P = PATS[k];
+  G.$('#seq').innerHTML = [...P.s.map((x) => `<span class="it">${x}</span>`), ...P.next.map((x, i) => (i < at ? `<span class="it" style="border-color:var(--green);background:#d9f7e8">${x}</span>` : `<span class="m-box ${i === at ? 'on' : ''}">?</span>`))].join('<span>,</span>');
+}
+function pick(b) {
+  const P = PATS[k];
+  if (b.textContent !== String(P.next[at])) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); G.say('Look at how the pattern repeats.'); return; }
+  at++; draw(); G.sfx('good');
+  if (at < P.next.length) return;
+  G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+  G.say(typeof P.s[0] === 'number' ? [...P.s, ...P.next].join(', ') : G.praise());
+  k++; setTimeout(show, 2800);
+}
+show();
+</script>
+</body>
+</html>

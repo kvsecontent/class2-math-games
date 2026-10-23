@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 24rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .rug { background: #8b5a2b; border-radius: var(--radius); padding: 0.6rem; }
+  #rug { width: 100%; max-height: calc(100vh - 12rem); display: block; background: #fff8ec; border-radius: 1rem; }
+  #rug [data-s] { stroke: #2b2140; stroke-width: 3; cursor: pointer; }
+  #rug [data-s].no { animation: shake 0.4s; transform-box: fill-box; }
+  .rules { display: grid; gap: 0.4rem; font-size: 1.5rem; font-weight: 800; text-align: left; }
+  .rules span { display: flex; align-items: center; gap: 0.5rem; }
+  .rules i { display: inline-block; width: 1.6rem; height: 1.6rem; border-radius: 0.3rem; }
+  .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .sw { width: 4.2rem; height: 4.2rem; border-radius: 50%; border: 0.3rem solid #fff; box-shadow: 0 0 0 0.2rem var(--line); }
+  .sw.on { box-shadow: 0 0 0 0.4rem var(--ink); }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .count { font-size: 1.6rem; font-weight: 800; color: var(--purple); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint">Colour the carpet! Pick a colour, then tap the shapes.</p>
+  <div class="wrap">
+    <div class="rug"><svg id="rug" viewBox="0 0 800 500"></svg></div>
+    <div class="card side">
+      <div class="rules" id="rules"></div>
+      <div class="palette" id="pal"></div>
+      <div class="count" id="count"></div>
+      <button class="big-btn purple" id="own">🎨 Make my own design</button>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Colour the Carpet', subtitle: 'Shadow Story · Shapes and colours', back: '../index.html#ch4' });
+
+/* The colour rules are from the book. The carpet design is ours. */
+const RULE = { triangle: ['#e63946', 'red'], circle: ['#2bb673', 'green'], rectangle: ['#ffc93c', 'yellow'], square: ['#2f7de1', 'blue'] };
+const COLS = [['#e63946', 'red'], ['#2bb673', 'green'], ['#ffc93c', 'yellow'], ['#2f7de1', 'blue'], ['#ff8a3d', 'orange'], ['#8a5cf6', 'purple'], ['#ff6fa8', 'pink'], ['#8b5a2b', 'brown']];
+let pick = COLS[0][0], free = false, done = 0, total = 0;
+function shape(s, x, y, z = 1) {
+  if (s === 'circle') return `<circle data-s="circle" cx="${x}" cy="${y}" r="${30 * z}" fill="#fff"/>`;
+  if (s === 'square') return `<rect data-s="square" x="${x - 30 * z}" y="${y - 30 * z}" width="${60 * z}" height="${60 * z}" fill="#fff"/>`;
+  if (s === 'rectangle') return `<rect data-s="rectangle" x="${x - 46 * z}" y="${y - 24 * z}" width="${92 * z}" height="${48 * z}" fill="#fff"/>`;
+  return `<path data-s="triangle" d="M${x} ${y - 32 * z} L${x + 36 * z} ${y + 28 * z} L${x - 36 * z} ${y + 28 * z} Z" fill="#fff"/>`;
+}
+function build() {
+  // a carpet: border of triangles, rows of shapes inside, a big centre square
+  let h = '<rect x="10" y="10" width="780" height="480" rx="14" fill="none" stroke="#8b5a2b" stroke-width="6"/>';
+  for (let i = 0; i < 9; i++) { h += shape('triangle', 60 + i * 85, 52, 0.8) + shape('triangle', 60 + i * 85, 448, 0.8); }
+  const mid = ['circle', 'rectangle', 'square', 'rectangle', 'circle'];
+  [140, 360].forEach((y) => mid.forEach((s, i) => (h += shape(s, 130 + i * 135, y, 0.9))));
+  h += shape('square', 400, 250, 1.4) + shape('circle', 400, 250, 0.7) + shape('circle', 160, 250, 0.9) + shape('circle', 640, 250, 0.9) + shape('rectangle', 270, 250, 0.7) + shape('rectangle', 530, 250, 0.7);
+  G.$('#rug').innerHTML = h;
+  // inner circle sits on the big square; keep it on top
+  total = G.$$('#rug [data-s]').length; done = 0; count();
+}
+function count() { G.$('#count').textContent = free ? 'Free design – colour anything!' : `Coloured: ${done} / ${total}`; }
+G.$('#rules').innerHTML = Object.entries(RULE).map(([s, [c, n]]) => `<span><i style="background:${c}"></i>Colour the ${s}s ${n}.</span>`).join('');
+G.$('#pal').innerHTML = COLS.map(([c, n], i) => `<button class="sw ${i ? '' : 'on'}" data-c="${c}" title="${n}" style="background:${c}"></button>`).join('');
+G.$('#pal').onclick = (e) => { const b = e.target.closest('.sw'); if (!b) return; pick = b.dataset.c; G.$$('.sw').forEach((x) => x.classList.toggle('on', x === b)); G.say(b.title); };
+G.$('#rug').addEventListener('click', (e) => {
+  const el = e.target.closest('[data-s]'); if (!el) return;
+  const s = el.dataset.s;
+  if (!free) {
+    if (el.dataset.done) return;
+    if (pick !== RULE[s][0]) { el.classList.remove('no'); void el.getBBox(); el.classList.add('no'); G.sfx('bad'); G.say(`This is a ${s}. Colour the ${s}s ${RULE[s][1]}.`); return; }
+    el.dataset.done = 1; done++; count();
+  }
+  el.setAttribute('fill', pick); G.sfx('pop');
+  if (!free && done === total) { G.star(3); setTimeout(() => G.end({ title: 'Beautiful carpet!', msg: 'Now make your own design with shapes and colours.', onReplay: () => { free = false; build(); } }), 900); }
+});
+G.$('#own').onclick = () => { free = true; build(); count(); G.$('#hint').textContent = 'Make your own design! Colour the shapes any way you like.'; G.say('Make your own design.'); };
+build();
+G.say('Colour the triangles red, the circles green, the rectangles yellow and the squares blue.');
+</script>
+</body>
+</html>

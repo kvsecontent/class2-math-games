@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .paper { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); background-image: repeating-linear-gradient(#fff 0 2.4rem, #e7f1ff 2.4rem 2.5rem); }
+  #pap { width: 100%; height: calc(100vh - 15rem); display: block; }
+  #pap .obj { transition: transform 0.9s, opacity 0.9s; }
+  #pap .obj.lift { transform: translate(120px, -80px) rotate(12deg); opacity: 0.25; }
+  #pap .line { fill: none; stroke: #2b2140; stroke-width: 5; stroke-linejoin: round; stroke-dasharray: 2000; stroke-dashoffset: 2000; transition: stroke-dashoffset 2s linear; }
+  #pap .line.go { stroke-dashoffset: 0; }
+  .q { font-family: var(--read); font-size: 2.2rem; font-weight: 700; }
+  .opts { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
+  .choice { font-size: 1.8rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .pick button { font-size: 1.4rem; min-height: 3.6rem; padding: 0.2rem 0.4rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; font-weight: 800; }
+  .pick button.on { border-color: var(--orange); background: #fff4cc; }
+  .pick button.right { border-color: var(--green); background: #d9f7e8; }
+  .pick button.wrong { border-color: var(--red); background: #ffe1e3; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Let us trace! Put the object on paper, run a pencil around it, and lift it. What shape is left?</p>
+  <div class="wrap">
+    <div class="paper"><svg id="pap" viewBox="0 0 600 460"></svg></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div id="area" class="side"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Trace the Shapes', subtitle: 'Shadow Story · Let us trace', back: '../index.html#ch4' });
+
+/* Objects named in the book: eraser, leaf, matchbox, sharpener, pencil colour, bottle cap.
+   We add a coin, a bangle, a dice and a set square. out = outline path, look = how it looks. */
+const C = (r) => `M${300 - r} 230 a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+const R = (w, h) => `M${300 - w / 2} ${230 - h / 2} h${w} v${h} h${-w} Z`;
+const OBJ = {
+  eraser: { s: 'rectangle', out: R(220, 110), look: `<rect x="190" y="175" width="220" height="110" rx="10" fill="#ff9fc2" stroke="#2b2140" stroke-width="3"/><rect x="190" y="175" width="80" height="110" rx="10" fill="#2f7de1"/>` },
+  'bottle cap': { s: 'circle', out: C(80), look: `<circle cx="300" cy="230" r="80" fill="#e63946" stroke="#2b2140" stroke-width="3"/><circle cx="300" cy="230" r="62" fill="#ff6b74"/>` },
+  matchbox: { s: 'rectangle', out: R(260, 160), look: `<rect x="170" y="150" width="260" height="160" fill="#ffd34d" stroke="#2b2140" stroke-width="3"/><text x="300" y="245" font-size="40" text-anchor="middle">🦁</text>` },
+  leaf: { s: 'leaf', out: 'M160 230 Q300 80 440 230 Q300 380 160 230 Z', look: `<path d="M160 230 Q300 80 440 230 Q300 380 160 230 Z" fill="#2bb673" stroke="#2b2140" stroke-width="3"/><path d="M160 230 L440 230" stroke="#1d7a4c" stroke-width="4"/>` },
+  sharpener: { s: 'square', out: R(130, 130), look: `<rect x="235" y="165" width="130" height="130" rx="6" fill="#8a5cf6" stroke="#2b2140" stroke-width="3"/><circle cx="300" cy="230" r="26" fill="#2b2140"/>` },
+  'pencil colour': { s: 'rectangle', out: R(380, 50), look: `<rect x="110" y="205" width="380" height="50" fill="#13b5b1" stroke="#2b2140" stroke-width="3"/>` },
+  coin: { s: 'circle', out: C(60), look: `<circle cx="300" cy="230" r="60" fill="#ffc93c" stroke="#2b2140" stroke-width="3"/><text x="300" y="248" font-size="48" text-anchor="middle" font-weight="800" fill="#9a6b00">₹1</text>` },
+  dice: { s: 'square', out: R(150, 150), look: `<rect x="225" y="155" width="150" height="150" rx="16" fill="#fff" stroke="#2b2140" stroke-width="3"/>${[[260, 190], [300, 230], [340, 270]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="12" fill="#2b2140"/>`).join('')}` },
+  'set square': { s: 'triangle', out: 'M180 330 L420 330 L180 120 Z', look: `<path d="M180 330 L420 330 L180 120 Z" fill="#b6e3ff" stroke="#2b2140" stroke-width="3"/>` },
+};
+const SHAPES = ['circle', 'rectangle', 'square', 'triangle', 'leaf'];
+const TRACE = ['bottle cap', 'eraser', 'leaf', 'matchbox', 'sharpener', 'set square'];
+const THINK = [['bottle cap', 'circle'], ['eraser', 'rectangle']];
+let k = 0, total = TRACE.length + THINK.length;
+function draw(name) { const o = OBJ[name]; G.$('#pap').innerHTML = `<path class="line" d="${o.out}"/><g class="obj">${o.look}</g><text class="pencil" font-size="60" x="0" y="0" opacity="0">✏️</text>`; }
+function show() {
+  if (k >= total) { G.end({ title: 'Tracing star!', msg: 'Now trace objects around you and draw the shapes you get.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, total); G.$('#fb').innerHTML = '';
+  if (k < TRACE.length) {
+    const name = TRACE[k]; draw(name);
+    G.$('#q').textContent = `Trace the ${name}!`;
+    G.$('#area').innerHTML = '<button class="big-btn orange" id="tr">✏️ Trace it</button>';
+    G.$('#tr').onclick = () => trace(name);
+    G.say(`Trace the ${name}.`);
+  } else {
+    const [like, s] = THINK[k - TRACE.length];
+    draw(like); G.$('.obj').classList.add('lift'); G.$('.line').classList.add('go');
+    G.$('#q').textContent = `Let us think: which objects have the same trace as a ${like}? Tap them all.`;
+    G.$('#area').innerHTML = `<div class="pick">${Object.keys(OBJ).filter((n) => n !== like).map((n) => `<button data-n="${n}">${n}</button>`).join('')}</div><button class="big-btn green" id="chk">✅ Check</button>`;
+    G.$$('.pick button').forEach((b) => (b.onclick = () => { b.classList.toggle('on'); G.sfx('pop'); }));
+    G.$('#chk').onclick = () => {
+      let bad = 0;
+      G.$$('.pick button').forEach((b) => { const want = OBJ[b.dataset.n].s === s, on = b.classList.contains('on'); b.classList.remove('wrong', 'right'); if (want && on) b.classList.add('right'); else if (want !== on) { bad++; if (on) b.classList.add('wrong'); } });
+      if (bad) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Not yet. Think of the shape of each trace.'); return; }
+      const names = Object.keys(OBJ).filter((n) => n !== like && OBJ[n].s === s);
+      ok(`The ${names.join(' and the ')} also give a ${s}.`);
+    };
+    G.say(G.$('#q').textContent);
+  }
+}
+function trace(name) {
+  G.$('#area').innerHTML = '';
+  G.$('.line').classList.add('go'); G.say('Trace, trace, trace…');
+  setTimeout(() => {
+    G.$('.obj').classList.add('lift');
+    G.$('#q').textContent = 'What shape did you get?';
+    G.$('#area').innerHTML = `<div class="opts">${SHAPES.map((s) => `<button class="choice" data-v="${s}">${s}</button>`).join('')}</div>`;
+    G.$$('#area .choice').forEach((b) => (b.onclick = () => {
+      if (b.dataset.v !== OBJ[name].s) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+      b.classList.add('right'); ok(`The trace of the ${name} is a ${OBJ[name].s}.`);
+    }));
+    G.say('What shape did you get?');
+  }, 2100);
+}
+function ok(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 3200); }
+show();
+</script>
+</body>
+</html>

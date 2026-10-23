@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .desk { background: #c9a46a; border-radius: var(--radius); padding: 0.8rem; }
+  #pap { width: 100%; height: calc(100vh - 14rem); display: block; background: #e8d2a8; border-radius: 1rem; }
+  .step { font-size: 1.6rem; font-weight: 800; color: var(--orange); }
+  .say-it { font-family: var(--read); font-size: 2.2rem; font-weight: 700; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; color: var(--purple); min-height: 2.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .choice { min-width: 0; font-size: 2rem; min-height: 4rem; padding: 0.3rem 1rem; }
+  .choice svg { width: 5rem; height: 5rem; display: block; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Origami fun! Take a paper and fold along with the steps. Let us make a paper dog.</p>
+  <div class="wrap">
+    <div class="desk"><svg id="pap" viewBox="0 0 400 400"></svg></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="step" id="step"></div><div class="say-it" id="txt"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div>
+      <button class="big-btn green" id="next">Next fold ▶</button></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Origami Dog', subtitle: 'Shadow Story · Origami fun', back: '../index.html#ch4' });
+
+/* Steps A–I from the book. Questions: corners and edges of the square and of the triangle, and which shape we get. */
+const P = 'fill="#ffc93c" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"';
+const SQ = `<rect x="80" y="80" width="240" height="240" ${P}/>`;
+const TRI = `<path d="M60 120 L340 120 L200 300 Z" ${P}/>`;
+const TRI_CREASE = TRI + '<path d="M200 120 L200 300" stroke="#c99a00" stroke-width="3" stroke-dasharray="8 6"/>';
+const EARS = `<path d="M110 120 L290 120 L200 300 Z" ${P}/><path d="M110 120 L60 230 L140 170 Z" fill="#e0a23c" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"/><path d="M290 120 L340 230 L260 170 Z" fill="#e0a23c" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"/>`;
+const DOG = `<path d="M110 120 L290 120 L230 260 L170 260 Z" ${P}/><path d="M170 260 L230 260 L200 230 Z" fill="#e0a23c" stroke="#2b2140" stroke-width="3"/><path d="M110 120 L60 230 L140 170 Z" fill="#e0a23c" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"/><path d="M290 120 L340 230 L260 170 Z" fill="#e0a23c" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="170" cy="170" r="10" fill="#2b2140"/><circle cx="230" cy="170" r="10" fill="#2b2140"/><ellipse cx="200" cy="228" rx="16" ry="11" fill="#2b2140"/><path d="M200 239 Q200 252 188 252 M200 239 Q200 252 212 252" stroke="#2b2140" stroke-width="3" fill="none"/>`;
+const ICON = { triangle: '<path d="M50 12 L90 86 L10 86 Z" fill="#ffc93c" stroke="#2b2140" stroke-width="5"/>', square: '<rect x="14" y="14" width="72" height="72" fill="#ffc93c" stroke="#2b2140" stroke-width="5"/>', circle: '<circle cx="50" cy="50" r="38" fill="#ffc93c" stroke="#2b2140" stroke-width="5"/>' };
+const STEPS = [
+  { pic: SQ, t: 'Take a paper and fold it to make it a square.', qs: [{ q: 'How many corners does the square have?', o: ['4', '3', '2'] }, { q: 'How many edges does the square have?', o: ['4', '3', '5'] }] },
+  { pic: SQ + '<path d="M80 80 L320 320" stroke="#c99a00" stroke-width="4" stroke-dasharray="10 8"/>', t: 'Fold it in half by joining two corners.', qs: [{ q: 'Tick the shape which you get.', o: ['triangle', 'square', 'circle'], icon: true }] },
+  { pic: TRI, t: 'Now you have a triangle.', qs: [{ q: 'How many corners does this shape have?', o: ['3', '4', '2'] }, { q: 'How many edges does it have?', o: ['3', '4', '1'] }] },
+  { pic: TRI_CREASE, t: 'Fold the paper again into half to get a smaller triangle, and then unfold it.' },
+  { pic: EARS, t: 'Now fold down two corners of the triangle to make two ears.' },
+  { pic: DOG, t: 'Fold the third corner upwards. Make the nose and eyes. Your paper dog is ready!' },
+];
+let s = 0, qi = 0;
+function show() {
+  const st = STEPS[s];
+  G.progress(G.$('#pg'), s, STEPS.length);
+  G.$('#pap').innerHTML = st.pic; G.$('#step').textContent = `Step ${s + 1}`; G.$('#txt').textContent = st.t;
+  G.$('#fb').innerHTML = ''; qi = 0;
+  G.say(st.t);
+  ask();
+}
+function ask() {
+  const st = STEPS[s], q = st.qs?.[qi];
+  G.$('#next').style.display = q ? 'none' : '';
+  G.$('#q').textContent = q ? q.q : ''; G.$('#opts').innerHTML = '';
+  if (!q) return;
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice" data-v="${o}">${q.icon ? `<svg viewBox="0 0 100 100">${ICON[o]}</svg>` : o}</button>`).join('');
+  setTimeout(() => G.say(q.q), 1800);
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.dataset.v !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good'); G.say(q.icon ? 'A triangle!' : `${q.o[0]}!`);
+    qi++; setTimeout(ask, 1300);
+  }));
+}
+G.$('#next').onclick = () => {
+  if (++s < STEPS.length) { show(); return; }
+  G.end({ title: 'Woof! Your dog is ready!', msg: 'A square folds into triangles. Now make one with real paper!', onReplay: () => { s = 0; show(); } });
+};
+show();
+</script>
+</body>
+</html>

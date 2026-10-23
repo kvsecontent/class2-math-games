@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Shadow Story · Two players', back: '../index.html#ch4' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🎭', t: 'Togalu Gombeyaata is a shadow puppet show from ____.', o: ['Karnataka', 'Kerala', 'Punjab'] },
+  { e: '🔦', t: 'We see a shadow when something blocks the ____.', o: ['light', 'water', 'sound'] },
+  { e: '🌑', t: 'When does a shadow vanish?', o: ['when there is no light', 'when the sun shines', 'when the torch is on'] },
+  { e: '🔦', t: 'The torch comes closer to the toy. The shadow gets ____.', o: ['bigger', 'smaller', 'green'] },
+  { e: '☀️', t: 'When is your shadow shortest?', o: ['around 12 noon', 'early morning', 'evening'] },
+  { e: '🌅', t: 'When is your shadow longest?', o: ['early morning or evening', 'at noon', 'never'] },
+  { e: '🧢', t: 'The trace of a bottle cap is a ____.', o: ['circle', 'square', 'triangle'] },
+  { e: '🩹', t: 'The trace of an eraser is a ____.', o: ['rectangle', 'circle', 'triangle'] },
+  { e: '🪙', t: 'Which object has the same trace as a bottle cap?', o: ['coin', 'matchbox', 'book'] },
+  { e: '📦', t: 'Which object has the same trace as an eraser?', o: ['matchbox', 'coin', 'bangle'] },
+  { e: '🕰️', t: 'Circle can hide in the ____.', o: ['clock', 'door', 'TV'] },
+  { e: '📺', t: 'Rectangle can hide in the ____.', o: ['TV', 'coin', 'plate'] },
+  { e: '🍕', t: 'Triangle can hide in a ____.', o: ['pizza slice', 'clock', 'door'] },
+  { e: '🎲', t: 'Square can hide in a ____.', o: ['dice', 'ball', 'plate'] },
+  { e: '🔺', t: 'On the carpet, triangles are coloured ____.', o: ['red', 'green', 'blue'] },
+  { e: '⚪', t: 'On the carpet, circles are coloured ____.', o: ['green', 'yellow', 'red'] },
+  { e: '▬', t: 'On the carpet, rectangles are coloured ____.', o: ['yellow', 'blue', 'green'] },
+  { e: '⬜', t: 'On the carpet, squares are coloured ____.', o: ['blue', 'red', 'yellow'] },
+  { e: '🪑', t: 'A rectangular table has how many corners?', o: ['4', '3', '0'] },
+  { e: '⭕', t: 'Can “Catch the Corner” be played around a round table?', o: ['No', 'Yes'] },
+  { e: '👏', t: 'In Catch the Corner, who claps next?', o: ['the child not at a corner', 'the tallest child', 'the teacher'] },
+  { e: '🪙', t: 'How many corners does a coin have?', o: ['0', '1', '4'] },
+  { e: '🍕', t: 'A pizza slice has ____ edges.', o: ['straight and curved', 'only curved', 'only straight'] },
+  { e: '📕', t: 'A book has ____ edges.', o: ['straight', 'curved', 'no'] },
+  { e: '📄', t: 'Fold a square paper by joining two corners. You get a ____.', o: ['triangle', 'circle', 'square'] },
+  { e: '🔺', t: 'A triangle has how many corners?', o: ['3', '4', '2'] },
+  { e: '⬜', t: 'A square paper has how many corners?', o: ['4', '3', '6'] },
+  { e: '🔤', t: 'AB, BC, CD, ____', o: ['DE', 'DC', 'EF'] },
+  { e: '🔤', t: 'AA, BB, CC, DD, ____', o: ['EE', 'DE', 'FF'] },
+  { e: '🔢', t: '5, 10, 15, ____', o: ['20', '16', '25'] },
+  { e: '🔢', t: '7, 14, 21, ____', o: ['28', '22', '27'] },
+  { e: '🔢', t: '1, 7, 13, ____', o: ['19', '14', '20'] },
+  { e: '🐰', t: 'Kikku jumps 1, 4, 7, ____', o: ['10', '8', '11'] },
+  { e: '🐇', t: 'Kikku’s mother jumps 1, 6, 11, ____', o: ['16', '12', '15'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

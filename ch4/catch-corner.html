@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .room { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  #room { width: 100%; height: calc(100vh - 13rem); display: block; }
+  #room .kid { cursor: pointer; }
+  #room .kid.on circle { stroke: #ff8a3d; stroke-width: 8; }
+  #room .kid.right circle { stroke: #2bb673; stroke-width: 8; }
+  .q { font-family: var(--read); font-size: 2.1rem; font-weight: 700; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .choice { font-family: var(--read); font-size: 1.7rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+  .clap { font-size: 4rem; min-height: 5rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Catch the Corner! The children run around the table while one child claps. When the clapping stops, everyone stops. The child who is not at a corner is out – and claps next!</p>
+  <div class="wrap">
+    <div class="room"><svg id="room" viewBox="0 0 700 520"></svg></div>
+    <div class="card side"><div class="clap" id="clap"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Catch the Corner!', subtitle: 'Shadow Story · Corners and edges', back: '../index.html#ch4' });
+
+/* Names are from the book. The table is seen from the top; the clapper stands at the wall. */
+const COL = { Paramjeet: '#e63946', Wasim: '#2f7de1', Naysa: '#ff6fa8', Seema: '#8a5cf6', Udit: '#2bb673', Naveen: '#ff8a3d' };
+const T = { x: 190, y: 170, w: 320, h: 200 };
+const CORNERS = [[T.x, T.y], [T.x + T.w, T.y], [T.x + T.w, T.y + T.h], [T.x, T.y + T.h]];
+const PER = 2 * (T.w + T.h);
+function at(p) { // a point on the path around the table (p from 0 to PER), a little outside the table
+  p = ((p % PER) + PER) % PER; const o = 34;
+  if (p < T.w) return [T.x + p, T.y - o];
+  if ((p -= T.w) < T.h) return [T.x + T.w + o, T.y + p];
+  if ((p -= T.h) < T.w) return [T.x + T.w - p, T.y + T.h + o];
+  p -= T.w; return [T.x - o, T.y + T.h - p];
+}
+const cornerP = [0, T.w, T.w + T.h, 2 * T.w + T.h];
+const cornerPos = (i) => { const [x, y] = CORNERS[i]; return [x + (i === 1 || i === 2 ? 30 : -30), y + (i >= 2 ? 30 : -30)]; };
+let clapper = 'Naveen', runners, pos = {}, place = {}, timer = null, phase = 'run', out, round = 0;
+function draw() {
+  let h = `<rect x="0" y="0" width="700" height="40" fill="#efe6d2"/><text x="350" y="28" font-size="22" text-anchor="middle" font-weight="800" fill="#8b5a2b">wall</text>
+    <rect x="${T.x}" y="${T.y}" width="${T.w}" height="${T.h}" rx="6" fill="#c9a46a" stroke="#8b5a2b" stroke-width="6"/>
+    ${CORNERS.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9" fill="#2b2140"/>`).join('')}
+    <g><circle cx="350" cy="80" r="26" fill="${COL[clapper]}" stroke="#2b2140" stroke-width="3"/><text x="350" y="90" font-size="28" text-anchor="middle">${phase === 'run' ? '👏' : '🙂'}</text><text x="350" y="130" font-size="20" font-weight="800" text-anchor="middle">${clapper}</text></g>`;
+  runners.forEach((n) => { const [x, y] = place[n] || at(pos[n]); h += `<g class="kid" data-n="${n}"><circle cx="${x}" cy="${y}" r="24" fill="${COL[n]}" stroke="#2b2140" stroke-width="3"/><text x="${x}" y="${y + 8}" font-size="22" text-anchor="middle">🧒</text><text x="${x}" y="${y + 46}" font-size="18" font-weight="800" text-anchor="middle">${n}</text></g>`; });
+  G.$('#room').innerHTML = h;
+}
+function startRound() {
+  runners = Object.keys(COL).filter((n) => n !== clapper);
+  runners.forEach((n, i) => (pos[n] = (i * PER) / runners.length)); place = {};
+  phase = 'run'; G.$('#fb').innerHTML = '';
+  G.$('#q').textContent = `${clapper} is clapping. Everyone runs around the table!`;
+  G.$('#opts').innerHTML = '<button class="big-btn red" id="stop">✋ Stop clapping!</button>';
+  G.$('#stop').onclick = stop;
+  G.say(`${clapper} is clapping. Run, run!`);
+  timer = setInterval(() => { runners.forEach((n) => (pos[n] += 9)); draw(); }, 50);
+  let c = 0; G.$('#clap').textContent = '👏';
+  clapT = setInterval(() => { G.tone(c++ % 2 ? 700 : 900, 0, 0.08, 'square', 0.12); G.$('#clap').textContent = c % 2 ? '👏' : '🙌'; }, 450);
+}
+let clapT;
+function stop() {
+  clearInterval(timer); clearInterval(clapT); phase = 'stop'; G.$('#clap').textContent = '🤫';
+  // 4 children reach the 4 corners; 1 is caught in the middle of a side
+  const order = G.shuffle(runners); out = order[4];
+  order.slice(0, 4).forEach((n, i) => (place[n] = cornerPos(i)));
+  place[out] = at(cornerP[M_side()] + T.w / 2);
+  draw();
+  ask1();
+}
+function M_side() { return Math.random() < 0.5 ? 0 : 2; }
+function ask1() {
+  G.$('#q').textContent = 'Tap the children standing near the corners of the table.';
+  G.$('#opts').innerHTML = '<button class="big-btn green" id="chk">✅ Check</button>';
+  G.say(G.$('#q').textContent);
+  G.$('#room').onclick = (e) => { const k = e.target.closest('.kid'); if (k) { k.classList.toggle('on'); G.sfx('pop'); } };
+  G.$('#chk').onclick = () => {
+    const picked = G.$$('#room .kid.on').map((k) => k.dataset.n).sort();
+    const want = runners.filter((n) => n !== out).sort();
+    if (picked.join() !== want.join()) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Look at the four corners again.'); G.say('Look at the four corners again.'); return; }
+    G.$('#room').onclick = null; G.$$('#room .kid.on').forEach((k) => k.classList.add('right'));
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + want.join(', ')); G.say(want.join(', ') + ' are at the corners.');
+    setTimeout(ask2, 2600);
+  };
+}
+function ask2() {
+  G.$('#q').textContent = 'Who will clap next?'; G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = G.shuffle(runners).map((n) => `<button class="choice">${n}</button>`).join('');
+  G.say('Who will clap next?');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== out) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good');
+    const msg = `${out} is not at a corner. ${out} is out and will clap next!`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+    clapper = out; round++;
+    setTimeout(() => (round < 2 ? startRound() : finalQ()), 3200);
+  }));
+}
+const FINAL = [
+  { t: 'Can this game be played around a round table?', o: ['No – a round table has no corners.', 'Yes – a round table has 4 corners.'] },
+  { t: 'How many corners does a table like this have?', o: ['4', '3', '0'] },
+];
+let f = 0;
+function finalQ() {
+  if (f >= FINAL.length) { G.end({ title: 'Corner catcher!', msg: 'Tables with straight edges have corners. Round tables have none.', onReplay: () => location.reload() }); return; }
+  const q = FINAL[f];
+  G.$('#q').textContent = q.t; G.$('#fb').innerHTML = ''; G.say(q.t);
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + q.o[0]); G.say(q.o[0]); f++; setTimeout(finalQ, 2800);
+  }));
+}
+runners = Object.keys(COL).filter((n) => n !== clapper); runners.forEach((n, i) => (pos[n] = (i * PER) / 5));
+draw(); startRound();
+</script>
+</body>
+</html>

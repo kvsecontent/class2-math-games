@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .tabs { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.6rem; }
+  .tabs .on { background: var(--purple); color: #fff; }
+  .scene { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  .scene svg { width: 100%; display: block; }
+  input[type=range] { width: 100%; height: 3.6rem; accent-color: var(--orange); }
+  .ctl { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.4rem; font-size: 1.5rem; font-weight: 800; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; }
+  .choice { font-family: var(--read); font-size: 1.6rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="tabs"><button class="big-btn ghost on" id="tTorch">🔦 Torch</button><button class="big-btn ghost" id="tSun">☀️ Sun</button></div>
+  <div class="wrap">
+    <div class="scene"><svg id="svg" viewBox="0 0 800 460"></svg>
+      <div class="ctl"><span id="l1"></span><input type="range" id="rng" min="0" max="100" value="30"><span id="l2"></span></div></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Fun with Shadows', subtitle: 'Shadow Story · Torch and sun', back: '../index.html#ch4' });
+
+let mode = 'torch';
+function torch(v) {
+  // point light: the shadow on the wall grows as the torch comes closer to the toy
+  const tx = 40 + v * 2.6, objX = 420, wallX = 740, base = 380, h = 120;
+  const scale = (wallX - tx) / (objX - tx), sh = Math.min(340, h * scale);
+  const top = base - sh, ty = base - 70;
+  return `<rect x="0" y="0" width="800" height="460" fill="#3a3355"/>
+    <rect x="${wallX}" y="20" width="50" height="400" fill="#efe6d2"/>
+    <polygon points="${tx + 30},${ty - 10} ${wallX},${ty - 260} ${wallX},${ty + 200}" fill="rgba(255,240,150,0.22)"/>
+    <rect x="${wallX}" y="${top}" width="34" height="${sh}" rx="12" fill="#1d1830" opacity="0.9"/>
+    <circle cx="${wallX + 17}" cy="${top + 12}" r="${Math.max(8, 14 * scale / 2)}" fill="#1d1830" opacity="0.9"/>
+    <rect x="0" y="${base}" width="800" height="80" fill="#6b4f3a"/>
+    <text x="${objX}" y="${base}" font-size="120" text-anchor="middle">🧸</text>
+    <g transform="translate(${tx} ${ty})"><rect x="-40" y="-14" width="56" height="28" rx="6" fill="#ff8a3d" stroke="#2b2140" stroke-width="3"/><path d="M16 -20 L36 -28 L36 28 L16 20 Z" fill="#ffd34d" stroke="#2b2140" stroke-width="3"/></g>
+    <text x="${wallX + 25}" y="16" font-size="22" font-weight="800" text-anchor="middle" fill="#fff">wall</text>`;
+}
+function sun(v) {
+  // v 0..100 = 7 o'clock to 5 o'clock; the sun is highest at 12
+  const hr = 7 + v / 10, ang = Math.PI * (hr - 6) / 12, sx = 400 - Math.cos(ang) * 340, sy = 380 - Math.sin(ang) * 320;
+  const elev = Math.max(0.12, Math.sin(ang)), len = Math.max(-380, Math.min(380, 90 * Math.cos(ang) / elev));
+  const kidX = 400, base = 380;
+  const label = `${Math.floor(hr) > 12 ? Math.floor(hr) - 12 : Math.floor(hr)} o'clock`;
+  return `<rect x="0" y="0" width="800" height="${base}" fill="#bfe6ff"/><rect x="0" y="${base}" width="800" height="80" fill="#8fd67e"/>
+    <text x="${sx}" y="${sy + 24}" font-size="70" text-anchor="middle">☀️</text>
+    <ellipse cx="${kidX + len / 2}" cy="${base + 6}" rx="${Math.max(14, Math.abs(len) / 2)}" ry="12" fill="#1d1830" opacity="0.55"/>
+    <text x="${kidX}" y="${base}" font-size="110" text-anchor="middle">🧍</text>
+    <text x="20" y="40" font-size="32" font-weight="800" fill="#2b2140">🕰️ ${label}</text>`;
+}
+function draw() {
+  const v = +G.$('#rng').value;
+  G.$('#svg').innerHTML = mode === 'torch' ? torch(v) : sun(v);
+}
+function setMode(m) {
+  mode = m;
+  G.$('#tTorch').classList.toggle('on', m === 'torch'); G.$('#tSun').classList.toggle('on', m === 'sun');
+  G.$('#l1').textContent = m === 'torch' ? 'far' : 'morning'; G.$('#l2').textContent = m === 'torch' ? 'near' : 'evening';
+  G.$('#rng').value = m === 'torch' ? 30 : 10; draw();
+  G.say(m === 'torch' ? 'Move the torch. Watch the shadow on the wall.' : 'Move the sun across the sky. Watch your shadow.');
+}
+G.$('#rng').oninput = draw;
+G.$('#tTorch').onclick = () => setMode('torch');
+G.$('#tSun').onclick = () => setMode('sun');
+
+/* Questions from "Fun with Shadows" and "Let us Talk". */
+const QS = [
+  { m: 'torch', t: 'Will the size of the shadow change on changing the position of the torch?', o: ['Yes – it gets bigger when the torch comes closer.', 'No – it always stays the same.'] },
+  { m: 'sun', t: 'At what time of the day is your shadow longest?', o: ['Early morning and evening', 'At 12 noon', 'At night'] },
+  { m: 'sun', t: 'At what time of the day is your shadow shortest?', o: ['Around 12 noon', 'Early morning', 'Evening'] },
+  { m: 'sun', t: 'When do we see a shadow?', o: ['When something blocks the light', 'When it is fully dark', 'When we close our eyes'] },
+  { m: 'torch', t: 'When does a shadow vanish?', o: ['When there is no light', 'When the torch is on', 'When the sun is shining'] },
+];
+let k = 0;
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Shadow scientist!', msg: 'Light + something in the way = a shadow!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  const q = QS[k];
+  if (q.m !== mode) setMode(q.m);
+  G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); G.say('Move the slider and look again.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + q.o[0]); G.say(q.o[0]);
+    k++; setTimeout(show, 3200);
+  }));
+  setTimeout(() => G.say(q.t + ' Move the slider to find out.'), 2200);
+}
+setMode('torch'); show();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .story { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; width: 100%; max-width: 120rem; }
+  .pan { background: #fff; border: 0.25rem solid var(--line); border-radius: 1.2rem; padding: 0.4rem 0.6rem; font-family: var(--read); font-size: 1.1rem; text-align: left; min-height: 5.5rem; }
+  .pan.now { border-color: var(--orange); background: #fff4cc; }
+  .pan b { font-family: var(--head); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; width: 100%; max-width: 120rem; margin: 0.6rem 0; min-height: 6rem; }
+  .obj { display: flex; flex-direction: column; align-items: center; width: 7.6rem; min-height: 6.6rem; border: 0.25rem solid var(--line); border-radius: 1.1rem; background: #fff; box-shadow: var(--shadow); padding: 0.1rem; justify-content: center; }
+  .obj .e { font-size: 3rem; line-height: 1.1; } .obj .e svg { width: 3.2rem; height: 3.2rem; }
+  .obj b { font-size: 1rem; }
+  .obj.gone { visibility: hidden; }
+  .bins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; width: 100%; max-width: 120rem; }
+  .bin { border: 0.3rem dashed; border-radius: var(--radius); min-height: 12rem; padding: 0.4rem; display: flex; flex-direction: column; align-items: center; }
+  .bin svg.sh { width: 3.6rem; height: 3.6rem; pointer-events: none; }
+  .bin h3 { margin: 0; font-size: 1.6rem; pointer-events: none; }
+  .bin .got { display: flex; flex-wrap: wrap; gap: 0.2rem; justify-content: center; font-size: 2.4rem; pointer-events: none; }
+  .bin .got svg { width: 2.6rem; height: 2.6rem; }
+  .bin.no { animation: shake 0.4s; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="story" id="story"></div>
+  <p class="hint" style="margin:0.4rem 0 0"><button class="big-btn green" id="read" style="min-height:3rem;font-size:1.2rem;padding:0.3rem 0.8rem">🔊 Read the story</button> Where can each shape hide? Drag each object to the shape that can hide in it (or tap the object, then the shape).</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins" id="bins"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Hide and Seek', subtitle: 'Shadow Story · Circle, rectangle, triangle, square', back: '../index.html#ch4' });
+
+/* The story from the book, in short. */
+const STORY = [
+  '<b>Circle:</b> 1, 2, 3 … 10. I am coming! <b>Rectangle:</b> I look like the face of the shoe box. I will hide behind it.',
+  '<b>Circle:</b> Where are you? Are you behind the photo frame? Are you behind the TV?',
+  '<b>Circle:</b> I caught you! You are behind the shoe box. <b>Rectangle:</b> It is my turn now. 1, 2, 3 … 10.',
+  'The door bell rang. Triangle and Square came and joined the game. They all are playing together now.',
+];
+G.$('#story').innerHTML = STORY.map((s) => `<div class="pan">${s}</div>`).join('');
+let token = 0;
+G.$('#read').onclick = () => {
+  const my = ++token, ps = G.$$('.pan');
+  const go = (i) => { if (my !== token) return; ps.forEach((p, j) => p.classList.toggle('now', j === i)); if (i < ps.length) G.say(ps[i].textContent, { onend: () => setTimeout(() => go(i + 1), 300) }); };
+  go(0);
+};
+const SH = {
+  circle: '<circle cx="50" cy="50" r="40" fill="#2bb673" stroke="#2b2140" stroke-width="4"/>',
+  rectangle: '<rect x="8" y="26" width="84" height="48" fill="#ffc93c" stroke="#2b2140" stroke-width="4"/>',
+  triangle: '<path d="M50 10 L92 86 L8 86 Z" fill="#e63946" stroke="#2b2140" stroke-width="4" stroke-linejoin="round"/>',
+  square: '<rect x="14" y="14" width="72" height="72" fill="#2f7de1" stroke="#2b2140" stroke-width="4"/>',
+};
+const CARROM = '<svg viewBox="0 0 100 100"><rect x="6" y="6" width="88" height="88" fill="#f2d39b" stroke="#8b5a2b" stroke-width="8"/><circle cx="50" cy="50" r="12" fill="none" stroke="#e63946" stroke-width="3"/></svg>';
+const SHOEBOX = '<svg viewBox="0 0 100 100"><rect x="6" y="28" width="88" height="50" fill="#ff8a3d" stroke="#2b2140" stroke-width="4"/><text x="50" y="62" font-size="26" text-anchor="middle">👟</text></svg>';
+/* Clock, ball, shoe box, photo frame and TV are from the story; the rest are our suggestions. */
+const OBJ = [
+  ['🕰️', 'clock', 'circle'], ['⚽', 'ball', 'circle'], ['🪙', 'coin', 'circle'], ['🍽️', 'plate', 'circle'],
+  [SHOEBOX, 'shoe box', 'rectangle'], ['🖼️', 'photo frame', 'rectangle'], ['📺', 'TV', 'rectangle'], ['🚪', 'door', 'rectangle'],
+  ['🍕', 'pizza slice', 'triangle'], ['⚠️', 'sign board', 'triangle'], ['🥪', 'sandwich', 'triangle'],
+  ['🎲', 'dice', 'square'], [CARROM, 'carrom board', 'square'], ['🪟', 'window', 'square'],
+];
+G.$('#bins').innerHTML = Object.keys(SH).map((k) => `<div class="bin" data-s="${k}" style="border-color:${{ circle: '#2bb673', rectangle: '#ffc93c', triangle: '#e63946', square: '#2f7de1' }[k]}"><svg class="sh" viewBox="0 0 100 100">${SH[k]}</svg><h3>${k} can hide in…</h3><div class="got"></div></div>`).join('');
+G.$('#chips').innerHTML = G.shuffle(OBJ).map(([e, n, s]) => `<button class="obj" data-s="${s}" data-n="${n}"><span class="e">${e}</span><b>${n}</b></button>`).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .obj'), G.$$('#bins .bin'), (chip, bin) => {
+  const n = chip.dataset.n;
+  if (bin.dataset.s !== chip.dataset.s) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`Can ${bin.dataset.s} hide in the ${n}? Look at its shape.`); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  G.$('.got', bin).insertAdjacentHTML('beforeend', `<span>${G.$('.e', chip).innerHTML}</span>`);
+  G.sfx('good'); G.star(); G.say(`${chip.dataset.s[0].toUpperCase() + chip.dataset.s.slice(1)} can hide in the ${n}.`);
+  if (++done === OBJ.length) setTimeout(() => G.end({ title: 'Found everyone!', msg: 'Circle, rectangle, triangle and square are all around us.', onReplay: () => location.reload() }), 1600);
+});
+</script>
+</body>
+</html>

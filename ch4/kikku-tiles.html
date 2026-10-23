@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .tiles { display: grid; grid-template-columns: repeat(10, 1fr); gap: 0.35rem; width: 100%; max-width: 110rem; }
+  .t { position: relative; height: 4.9rem; border-radius: 0.9rem; border: 0.25rem solid #8b5a2b; background: #f2d39b; font-size: 2.2rem; font-weight: 800; padding: 0; }
+  .t .o, .t .x { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; pointer-events: none; }
+  .t .o { border: 0.5rem solid var(--blue); border-radius: 50%; margin: 0.3rem; }
+  .t .x { font-size: 4.6rem; color: var(--red); }
+  .t.k .o, .t.m .x { display: flex; }
+  .t.no { animation: shake 0.4s; background: #ffe1e3; }
+  .seqs { font-size: 2rem; font-weight: 800; margin: 0.3rem 0; min-height: 2.6rem; }
+  .q { font-family: var(--read); font-size: 1.9rem; font-weight: 700; margin-top: 0.4rem; }
+  .who { font-size: 3rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="row"><span class="who" id="who">🐰</span><span class="q" id="q"></span></div>
+  <div class="seqs" id="seq"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="row" id="opts" style="margin-top:0.8rem"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Kikku’s Tiles', subtitle: 'Shadow Story · Jumping patterns', back: '../index.html#ch4' });
+
+/* From the book: Kikku jumps 1, 4, … (circles) and his mother 1, 6, 11, … (crosses).
+   The tiles snake back and forth like in the book. */
+const N = 40;
+const order = []; for (let r = 0; r < 4; r++) { const row = Array.from({ length: 10 }, (_, i) => r * 10 + i + 1); order.push(...(r % 2 ? row.reverse() : row)); }
+G.$('#tiles').innerHTML = order.map((n) => `<button class="t" data-n="${n}">${n}<span class="o"></span><span class="x">✕</span></button>`).join('');
+const STAGES = [
+  { who: '🐰', cls: 'k', t: 'Kikku rabbit jumps 1, 4, … He forgot where to jump next. Circle the next tiles!', start: [1, 4], next: [7, 10, 13, 16, 19, 22] },
+  { who: '🐇', cls: 'm', t: 'Kikku’s mother jumps 1, 6, 11, … Put a cross on her next tiles!', start: [1, 6, 11], next: [16, 21, 26, 31, 36] },
+];
+let s = 0, at = 0;
+function show() {
+  const S = STAGES[s]; at = 0;
+  S.start.forEach((n) => G.$(`.t[data-n="${n}"]`).classList.add(S.cls));
+  G.$('#who').textContent = S.who; G.$('#q').textContent = S.t; G.$('#fb').innerHTML = '';
+  seq(); G.say(S.t.replace('…', ''));
+}
+function seq() { const S = STAGES[s]; G.$('#seq').textContent = [...S.start, ...S.next.slice(0, at), '?'].join(', '); }
+G.$('#tiles').onclick = (e) => {
+  const t = e.target.closest('.t'), S = STAGES[s]; if (!t || !S) return;
+  const n = +t.dataset.n;
+  if (n !== S.next[at]) { if (!t.classList.contains(S.cls)) { t.classList.remove('no'); void t.offsetWidth; t.classList.add('no'); G.sfx('bad'); G.say(`Count ${S.next[1] - S.next[0]} tiles from the last jump.`); } return; }
+  t.classList.add(S.cls); at++; G.sfx('pop'); G.say(String(n), { rate: 1 }); seq();
+  if (at < S.next.length) return;
+  G.star(); G.sfx('good');
+  const d = S.next[1] - S.next[0];
+  G.feedback(G.$('#fb'), true, `🎉 ${[...S.start, ...S.next].join(', ')} – ${d} more each time!`);
+  G.say(`${d} more each time!`);
+  s++; setTimeout(() => (s < STAGES.length ? show() : both()), 3000);
+};
+function both() {
+  G.$('#who').textContent = '🐰🐇'; G.$('#q').textContent = 'On which tiles did both Kikku and his mother jump?'; G.$('#seq').textContent = ''; G.$('#fb').innerHTML = '';
+  const o = ['1 and 16', '4 and 6', '10 and 21'];
+  G.$('#opts').innerHTML = G.shuffle(o).map((x) => `<button class="choice">${x}</button>`).join('');
+  G.say(G.$('#q').textContent);
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.say('Tiles 1 and 16 have a circle and a cross!');
+    setTimeout(() => G.end({ title: 'Hop, hop, hooray!', msg: 'Kikku jumps 3 at a time. His mother jumps 5 at a time.', onReplay: () => location.reload() }), 2400);
+  }));
+}
+show();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 26rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  canvas { width: 100%; height: calc(100vh - 12rem); background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); touch-action: none; display: block; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%; }
+  .tools button { min-height: 4.6rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; font-size: 1.2rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tools button span { font-size: 2rem; line-height: 1; }
+  .tools button.on { border-color: var(--orange); background: #fff4cc; }
+  .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .sw { width: 4rem; height: 4rem; border-radius: 50%; border: 0.3rem solid #fff; box-shadow: 0 0 0 0.2rem var(--line); }
+  .sw.on { box-shadow: 0 0 0 0.4rem var(--ink); }
+  .row button { font-size: 1.3rem; min-height: 3.8rem; padding: 0.3rem 0.8rem; min-width: 0; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">Make designs by stamping! Choose a stamp and a colour, then tap the paper. Try the mehandi hand too!</p>
+  <div class="wrap">
+    <canvas id="cv" width="1400" height="900"></canvas>
+    <div class="card side">
+      <div class="tools" id="tools"></div>
+      <div class="palette" id="pal"></div>
+      <div class="row"><button class="big-btn purple" id="hand">🖐️ Mehandi hand</button><button class="big-btn ghost" id="row">➡️ Row of stamps</button></div>
+      <div class="row"><button class="big-btn ghost" id="clear">🧽 Clear</button><button class="big-btn green" id="done">⭐ Done!</button></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Stamp Patterns', subtitle: 'Shadow Story · Patterns', back: '../index.html#ch4' });
+
+/* Stamps from the book: bottle cap, eraser, pencil, coin, leaf print. */
+const STAMPS = [['cap', '⭕', 'bottle cap'], ['eraser', '▬', 'eraser'], ['coin', '🪙', 'coin'], ['pencil', '•', 'pencil end'], ['leaf', '🍃', 'leaf'], ['tri', '🔺', 'triangle']];
+const COLS = ['#e63946', '#ff8a3d', '#ffc93c', '#2bb673', '#2f7de1', '#8a5cf6', '#ff6fa8', '#8b5a2b'];
+let tool = 'cap', col = COLS[0], rowMode = false;
+const cv = G.$('#cv'), x = cv.getContext('2d');
+if (!x.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (X, Y, w, h, r) { this.moveTo(X + r, Y); this.arcTo(X + w, Y, X + w, Y + h, r); this.arcTo(X + w, Y + h, X, Y + h, r); this.arcTo(X, Y + h, X, Y, r); this.arcTo(X, Y, X + w, Y, r); this.closePath(); };
+function stamp(t, px, py) {
+  x.fillStyle = col; x.strokeStyle = col; x.lineWidth = 8;
+  x.save(); x.translate(px, py);
+  if (t === 'cap') { x.beginPath(); x.arc(0, 0, 46, 0, 7); x.stroke(); x.beginPath(); x.arc(0, 0, 30, 0, 7); x.globalAlpha = 0.5; x.fill(); }
+  if (t === 'eraser') { x.globalAlpha = 0.85; x.fillRect(-60, -28, 120, 56); }
+  if (t === 'coin') { x.beginPath(); x.arc(0, 0, 32, 0, 7); x.globalAlpha = 0.85; x.fill(); x.globalAlpha = 1; x.lineWidth = 3; x.strokeStyle = '#fff'; x.beginPath(); x.arc(0, 0, 24, 0, 7); x.stroke(); }
+  if (t === 'pencil') { x.beginPath(); x.arc(0, 0, 12, 0, 7); x.fill(); }
+  if (t === 'leaf') { x.rotate(-0.5); x.beginPath(); x.moveTo(-70, 0); x.quadraticCurveTo(0, -60, 70, 0); x.quadraticCurveTo(0, 60, -70, 0); x.globalAlpha = 0.8; x.fill(); x.globalAlpha = 1; x.strokeStyle = '#fff'; x.lineWidth = 3; x.beginPath(); x.moveTo(-66, 0); x.lineTo(66, 0); for (let i = -40; i <= 40; i += 20) { x.moveTo(i, 0); x.lineTo(i + 14, -18); x.moveTo(i, 0); x.lineTo(i + 14, 18); } x.stroke(); }
+  if (t === 'tri') { x.beginPath(); x.moveTo(0, -42); x.lineTo(42, 32); x.lineTo(-42, 32); x.closePath(); x.globalAlpha = 0.85; x.fill(); }
+  x.restore();
+}
+function handOutline() {
+  // palm, four fingers and a thumb: stroke every part first, then fill them all, so only the outer outline shows
+  const parts = [(c) => c.roundRect(500, 470, 400, 400, 90), ...[0, 1, 2, 3].map((i) => (c) => c.roundRect(505 + i * 100, [250, 170, 160, 220][i], 90, 360, 45)), (c) => { c.translate(500, 640); c.rotate(-0.9); c.roundRect(-45, -250, 90, 280, 45); }];
+  [['stroke', 22], ['fill', 0]].forEach(([how, w]) => parts.forEach((p) => { x.save(); x.beginPath(); p(x); x.lineWidth = w; x.strokeStyle = '#8b5a2b'; x.fillStyle = '#ffe6cc'; x[how](); x.restore(); }));
+}
+function pos(e) { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * cv.width, ((e.clientY - r.top) / r.height) * cv.height]; }
+cv.addEventListener('pointerdown', (e) => {
+  e.preventDefault(); const [px, py] = pos(e);
+  if (rowMode) { for (let i = 0; i < 9; i++) stamp(tool, 90 + i * 150, py); G.sfx('good'); }
+  else { stamp(tool, px, py); G.sfx('pop'); }
+});
+G.$('#tools').innerHTML = STAMPS.map(([k, ic, n]) => `<button data-t="${k}" class="${k === tool ? 'on' : ''}"><span>${ic}</span>${n}</button>`).join('');
+G.$('#tools').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tool = b.dataset.t; G.$$('#tools button').forEach((x) => x.classList.toggle('on', x === b)); G.say(b.textContent.slice(1).trim()); };
+G.$('#pal').innerHTML = COLS.map((c, i) => `<button class="sw ${i ? '' : 'on'}" data-c="${c}" style="background:${c}"></button>`).join('');
+G.$('#pal').onclick = (e) => { const b = e.target.closest('.sw'); if (!b) return; col = b.dataset.c; G.$$('.sw').forEach((x) => x.classList.toggle('on', x === b)); };
+G.$('#hand').onclick = () => { x.clearRect(0, 0, cv.width, cv.height); handOutline(); tool = 'pencil'; G.$$('#tools button').forEach((b) => b.classList.toggle('on', b.dataset.t === 'pencil')); G.say('Decorate the hand with a mehandi pattern. Use dots and leaves!'); };
+G.$('#row').onclick = () => { rowMode = !rowMode; G.$('#row').classList.toggle('purple', rowMode); G.$('#row').classList.toggle('ghost', !rowMode); G.say(rowMode ? 'Tap once to stamp a whole row. Change the stamp and make a pattern!' : 'One stamp at a time.'); };
+G.$('#clear').onclick = () => x.clearRect(0, 0, cv.width, cv.height);
+G.$('#done').onclick = () => { G.star(3); G.confetti(30); G.sfx('win'); G.say('What a beautiful design!'); };
+G.say('Choose a stamp and a colour, then tap the paper.');
+</script>
+</body>
+</html>

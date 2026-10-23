@@ -171,7 +171,37 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 8 }, (_, i) => ({ n: i + 4, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 4, title: 'Shadow Story', unit: 'Shadows · 2D shapes · corners and edges · patterns',
+    sections: [
+      { key: 'count', name: '🔦 Shadows', games: [
+        { href: 'ch4/shadow-animals.html', ic: '🎭', t: 'Shadow Animals', d: 'Togalu Gombeyaata · whose shadow is this?' },
+        { href: 'ch4/fun-with-shadows.html', ic: '🔦', t: 'Fun with Shadows', d: 'Move the torch and the sun · long and short shadows' },
+      ]},
+      { key: 'tens', name: '✏️ Trace and find shapes', games: [
+        { href: 'ch4/trace-shapes.html', ic: '✏️', t: 'Trace the Shapes', d: 'Eraser, bottle cap, leaf, matchbox …' },
+        { href: 'ch4/hide-seek.html', ic: '🙈', t: 'Hide and Seek', d: 'Where can circle, rectangle, triangle, square hide?' },
+        { href: 'ch4/colour-carpet.html', ic: '🎨', t: 'Colour the Carpet', d: 'Triangles red, circles green, rectangles yellow, squares blue' },
+      ]},
+      { key: 'play', name: '📐 Corners and edges', games: [
+        { href: 'ch4/catch-corner.html', ic: '👏', t: 'Catch the Corner!', d: 'Who is not at a corner? Who claps next?' },
+        { href: 'ch4/edges-sort.html', ic: '〰️', t: 'Straight or Curved?', d: 'Sort objects by their edges' },
+        { href: 'ch4/origami-dog.html', ic: '🐶', t: 'Origami Dog', d: 'Fold a square into triangles and a dog' },
+      ]},
+      { key: 'compare', name: '🌿 Patterns', games: [
+        { href: 'ch4/stamp-patterns.html', ic: '🖐️', t: 'Stamp Patterns', d: 'Bottle caps, erasers, leaves · mehandi hand' },
+        { href: 'ch4/extend-patterns.html', ic: '🔤', t: 'Extend the Pattern', d: 'AB, BC, CD … · 5, 10, 15 … · 7, 14, 21 …' },
+        { href: 'ch4/kikku-tiles.html', ic: '🐰', t: 'Kikku’s Tiles', d: 'Kikku jumps 1, 4, 7 … · Mother jumps 1, 6, 11 …' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch4/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch4/shadow-race.html', ic: '🏆', t: 'Shadow Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 7 }, (_, i) => ({ n: i + 5, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');
