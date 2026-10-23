@@ -54,5 +54,16 @@ const M = (() => {
     return `<svg viewBox="0 0 100 100" class="solid">${S[kind]}</svg>`;
   }
 
-  return { strips, pad, word, rnd, solid };
+  /* A clock face. h = hour (1–12) the short hand points to, m = number the long hand points to (12 for o'clock).
+     Pass null to leave a hand out. */
+  function clock({ h, m = 12, size = 14, nums = true } = {}) {
+    const hand = (n, len, w, col) => { const a = (n % 12) * 30 * Math.PI / 180; return `<line x1="100" y1="100" x2="${100 + Math.sin(a) * len}" y2="${100 - Math.cos(a) * len}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`; };
+    let s = `<svg viewBox="0 0 200 200" class="clock" style="width:${size}rem;height:${size}rem"><circle cx="100" cy="100" r="94" fill="#fff" stroke="#2b2140" stroke-width="6"/>`;
+    for (let i = 1; i <= 12; i++) { const a = i * 30 * Math.PI / 180; s += nums ? `<text data-n="${i}" x="${100 + Math.sin(a) * 74}" y="${100 - Math.cos(a) * 74 + 9}" font-size="24" font-weight="800" text-anchor="middle" fill="#2b2140">${i}</text>` : `<circle cx="${100 + Math.sin(a) * 80}" cy="${100 - Math.cos(a) * 80}" r="4" fill="#2b2140"/>`; }
+    if (m != null) s += hand(m, 70, 6, '#2f7de1');
+    if (h != null) s += hand(h, 46, 10, '#e63946');
+    return s + '<circle cx="100" cy="100" r="8" fill="#2b2140"/></svg>';
+  }
+
+  return { strips, pad, word, rnd, solid, clock };
 })();

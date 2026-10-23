@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .tabs { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.5rem; }
+  .tabs .on { background: var(--purple); color: #fff; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 26rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .box { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.5rem; display: flex; justify-content: center; }
+  .box svg { width: 100%; max-height: calc(100vh - 14rem); }
+  .grid { display: grid; gap: 0.2rem; background: #8fd67e; padding: 0.3rem; border-radius: 1rem; }
+  .grid span { width: 6.4rem; height: 6.4rem; border-radius: 0.5rem; background: #cfe9b8; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.8rem; font-weight: 700; text-align: center; }
+  .choice { font-family: var(--read); font-size: 1.5rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+  .cmds { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; min-height: 3.4rem; font-size: 2rem; background: #f7f3ea; border-radius: 1rem; padding: 0.3rem; width: 100%; }
+  .pads button { font-size: 1.5rem; min-width: 0; padding: 0.4rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="tabs"><button class="big-btn ghost on" data-t="0">☀️ East, West, North, South</button><button class="big-btn ghost" data-t="1">🤖 Left, right, straight</button><button class="big-btn ghost" data-t="2">🧭 Our classroom</button></div>
+  <div class="wrap"><div class="box" id="box"></div><div class="card side" id="side"></div></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Which Direction?', subtitle: 'Which Season is it? · Knowing direction', back: '../index.html#ch9' });
+
+let tab = 0, done = [false, false, false];
+const side = (html) => (G.$('#side').innerHTML = html);
+function finish(i) { done[i] = true; if (done.every(Boolean)) setTimeout(() => G.end({ title: 'Direction expert!', msg: 'Face the rising sun: East in front, West behind, North on the left, South on the right.', onReplay: () => location.reload() }), 2200); }
+function quiz(qs, after) {
+  let k = 0;
+  const ask = () => {
+    if (k >= qs.length) { after(); return; }
+    const q = qs[k];
+    side(`<div class="q">${q.t}</div><div class="row" id="opts">${G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('')}</div><div class="feedback" id="fb"></div>`);
+    G.say(q.t);
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+      if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+      b.classList.add('right'); G.star(); G.sfx('good'); G.say(q.o[0]); q.then?.(); k++; setTimeout(ask, 1800);
+    }));
+  };
+  ask();
+}
+
+/* 1. The book's rhyme: face the rising sun – East; behind you West; left North; right South. */
+function sunTab() {
+  const lab = (show) => `<svg viewBox="0 0 500 420"><rect width="500" height="420" fill="#e9f6ff"/><text x="250" y="70" font-size="70" text-anchor="middle">🌅</text><text x="250" y="260" font-size="120" text-anchor="middle">🧍</text>
+    ${[['East', 250, 130], ['West', 250, 400], ['North', 70, 240], ['South', 430, 240]].map(([n, x, y]) => `<text x="${x}" y="${y}" font-size="34" font-weight="800" text-anchor="middle" fill="${show.includes(n) ? '#8a5cf6' : '#c9c9c9'}">${show.includes(n) ? n : '?'}</text>`).join('')}</svg>`;
+  const shown = [];
+  G.$('#box').innerHTML = lab(shown);
+  G.say('Let us stand to face the rising sun.');
+  quiz([
+    { t: 'Face the rising sun. Which direction is in front of you?', o: ['East', 'West', 'North', 'South'], then: () => { shown.push('East'); G.$('#box').innerHTML = lab(shown); } },
+    { t: 'Which direction is at your back?', o: ['West', 'East', 'North', 'South'], then: () => { shown.push('West'); G.$('#box').innerHTML = lab(shown); } },
+    { t: 'Put your left thumb out. Which direction is it?', o: ['North', 'South', 'East', 'West'], then: () => { shown.push('North'); G.$('#box').innerHTML = lab(shown); } },
+    { t: 'Which direction is on your right?', o: ['South', 'North', 'East', 'West'], then: () => { shown.push('South'); G.$('#box').innerHTML = lab(shown); } },
+  ], () => { side('<div class="q">🎉 East, West, North, South! Sing the rhyme with actions.</div>'); G.say('So, when we step out and move about, we know which direction to go: East, West, North or South!'); finish(0); });
+}
+
+/* 2. Like the blindfold game: give only left, right or straight to reach the star. */
+const LEVELS = [
+  { w: 5, h: 4, start: [0, 3], goal: [4, 0], block: [[2, 3], [2, 2], [1, 0]] },
+  { w: 6, h: 4, start: [0, 0], goal: [5, 3], block: [[1, 1], [2, 1], [3, 1], [4, 3], [4, 2]] },
+  { w: 6, h: 5, start: [2, 4], goal: [2, 0], block: [[1, 2], [2, 2], [3, 2], [0, 0], [4, 0]] },
+];
+const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], ARROW = ['⬆️', '➡️', '⬇️', '⬅️'];
+let lv = 0, cmds = [], bot;
+function robotTab() {
+  const L = LEVELS[lv]; cmds = []; bot = { x: L.start[0], y: L.start[1], d: 0 };
+  drawGrid();
+  side(`<div class="q">Level ${lv + 1}: help the robot reach ⭐. Use only <b>left</b>, <b>right</b> and <b>straight</b>!</div><div class="cmds" id="cmds"></div>
+    <div class="row pads"><button class="big-btn" id="cL">↰ Turn left</button><button class="big-btn green" id="cS">⬆ Straight</button><button class="big-btn" id="cR">↱ Turn right</button></div>
+    <div class="row pads"><button class="big-btn orange" id="go">▶ Go!</button><button class="big-btn ghost" id="cl">🧽 Clear</button></div><div class="feedback" id="fb"></div>`);
+  const add = (c) => { cmds.push(c); G.$('#cmds').textContent = cmds.map((x) => ({ L: '↰', R: '↱', S: '⬆' })[x]).join(' '); G.sfx('pop'); };
+  G.$('#cL').onclick = () => add('L'); G.$('#cR').onclick = () => add('R'); G.$('#cS').onclick = () => add('S');
+  G.$('#cl').onclick = () => { cmds = []; G.$('#cmds').textContent = ''; bot = { x: L.start[0], y: L.start[1], d: 0 }; drawGrid(); };
+  G.$('#go').onclick = run;
+  G.say('Help the robot reach the star. Use left, right and straight.');
+}
+function drawGrid() {
+  const L = LEVELS[lv];
+  let h = `<div class="grid" style="grid-template-columns:repeat(${L.w}, 6.4rem)">`;
+  for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) {
+    const b = L.block.some(([a, c]) => a === x && c === y);
+    h += `<span>${bot.x === x && bot.y === y ? `<span style="display:inline-block;transform:rotate(${bot.d * 90}deg);font-size:3rem">🤖</span>` : b ? '🪨' : L.goal[0] === x && L.goal[1] === y ? '⭐' : ''}</span>`;
+  }
+  G.$('#box').innerHTML = h + '</div>';
+}
+async function run() {
+  const L = LEVELS[lv]; bot = { x: L.start[0], y: L.start[1], d: 0 }; drawGrid();
+  for (const c of cmds) {
+    await new Promise((r) => setTimeout(r, 500));
+    if (c === 'L') bot.d = (bot.d + 3) % 4; else if (c === 'R') bot.d = (bot.d + 1) % 4;
+    else {
+      const nx = bot.x + DIRS[bot.d][0], ny = bot.y + DIRS[bot.d][1];
+      if (nx < 0 || ny < 0 || nx >= L.w || ny >= L.h || L.block.some(([a, b]) => a === nx && b === ny)) { G.sfx('bad'); G.say('Danger! Stop!'); G.feedback(G.$('#fb'), false, '⚠️ Danger! Try again.'); return; }
+      bot.x = nx; bot.y = ny;
+    }
+    G.sfx('pop'); drawGrid();
+  }
+  if (bot.x === L.goal[0] && bot.y === L.goal[1]) {
+    G.star(2); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 The robot reached the star!'); G.say('Well done! The robot reached the star!');
+    lv++; setTimeout(() => (lv < LEVELS.length ? robotTab() : (side('<div class="q">🎉 All levels done! Now play the blindfold game in class.</div>'), finish(1))), 2200);
+  } else { G.feedback(G.$('#fb'), false, '🙂 Not there yet. Clear and try again.'); G.say('Not there yet. Try again.'); }
+}
+
+/* 3. The book asks about desks and directions in a classroom; this classroom plan is ours. */
+function classTab() {
+  const desks = [['Anil', 'Nitin', 'Anjali'], ['Sarah', 'Haneet', 'Hiti'], ['Mira', 'Ali', 'Daneen']];
+  let h = `<svg viewBox="0 0 560 460"><rect x="70" y="50" width="420" height="360" fill="#fff8ec" stroke="#8b5a2b" stroke-width="6"/>
+    <rect x="482" y="170" width="16" height="120" fill="#2b4a3a"/><text x="470" y="160" font-size="20" font-weight="800" text-anchor="end">blackboard</text>
+    <rect x="62" y="230" width="16" height="90" fill="#8fd0ff"/><text x="30" y="285" font-size="34" text-anchor="middle">🐦</text><text x="30" y="340" font-size="18" font-weight="800" text-anchor="middle">window</text>
+    <rect x="230" y="398" width="100" height="22" fill="#8b5a2b"/><text x="280" y="445" font-size="20" font-weight="800" text-anchor="middle">almirah</text>`;
+  desks.forEach((r, y) => r.forEach((n, x) => { const cx = 150 + x * 130, cy = 110 + y * 110; h += `<rect x="${cx - 50}" y="${cy - 22}" width="100" height="44" rx="8" fill="#c97a3c"/><text x="${cx}" y="${cy + 8}" font-size="20" font-weight="800" text-anchor="middle" fill="#fff">${n}</text>`; }));
+  h += `<g transform="translate(520 60)"><circle r="34" fill="#fff" stroke="#2b2140" stroke-width="3"/><text y="-12" font-size="18" font-weight="800" text-anchor="middle">N</text><text y="28" font-size="18" font-weight="800" text-anchor="middle">S</text><text x="-22" y="6" font-size="18" font-weight="800" text-anchor="middle">W</text><text x="22" y="6" font-size="18" font-weight="800" text-anchor="middle">E</text><path d="M0 -6 L5 4 L-5 4 Z" fill="#e63946"/></g></svg>`;
+  G.$('#box').innerHTML = h;
+  quiz([
+    { t: 'Haneet’s desk is to the ___ of Sarah’s desk.', o: ['East', 'West', 'North', 'South'] },
+    { t: 'The almirah is to the ___ of Ali’s desk.', o: ['South', 'North', 'East', 'West'] },
+    { t: 'To reach the blackboard, Mira must walk towards ___.', o: ['North and then East', 'South and then West', 'West and then South'] },
+    { t: 'To feed the birds at the window, Nitin has to walk ___.', o: ['West and then South', 'East and then North', 'South and then East'] },
+  ], () => { side('<div class="q">🎉 A compass helps us find directions!</div>'); G.say('A compass is a tool for finding direction.'); finish(2); });
+}
+const TABS = [sunTab, robotTab, classTab];
+G.$$('.tabs button').forEach((b) => (b.onclick = () => { tab = +b.dataset.t; G.$$('.tabs button').forEach((x) => x.classList.toggle('on', x === b)); TABS[tab](); }));
+sunTab();
+</script>
+</body>
+</html>

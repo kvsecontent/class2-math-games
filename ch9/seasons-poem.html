@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .poem { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; width: 100%; max-width: 120rem; }
+  .st { background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.6rem; text-align: left; display: flex; flex-direction: column; gap: 0.3rem; }
+  .st .ic { font-size: 4rem; text-align: center; line-height: 1.1; }
+  .st h3 { margin: 0; text-align: center; font-size: 1.8rem; }
+  .st p { margin: 0; font-family: var(--read); font-size: 1.45rem; line-height: 1.45; }
+  .st.now { border-color: var(--orange); background: #fff4cc; transform: scale(1.03); transition: transform 0.2s; }
+  .intro { font-family: var(--read); font-size: 1.9rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .talk { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; width: 100%; max-width: 120rem; margin-top: 0.8rem; }
+  .talk button { font-family: var(--read); font-size: 1.35rem; font-weight: 700; min-height: 5rem; border-radius: 1rem; border: 0.25rem solid var(--purple); background: #f6f1ff; padding: 0.4rem; }
+  .talk button.done { background: #d9f7e8; border-color: var(--green); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="intro" id="intro">“Five seasons in a year”</div>
+  <div class="poem" id="poem"></div>
+  <div class="row" style="margin-top:0.8rem"><button class="big-btn green" id="read">🔊 Read the poem</button><button class="big-btn orange" id="act">🎭 Act it out!</button></div>
+  <p class="hint" style="margin:0.6rem 0 0">Let us discuss! Tap a question, talk about it with your class, then tap it again.</p>
+  <div class="talk" id="talk"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Seasons', subtitle: 'Which Season is it? · Poem', back: '../index.html#ch9' });
+
+/* The poem and the discussion questions are from the book. */
+const ST = [
+  { n: 'Spring', ic: '🌸🐦', t: 'Spring begins with a cheer, flowers bloom, the birds sing when comes the merry spring.', act: 'Make flowers bloom with your hands and sing like birds!' },
+  { n: 'Summer', ic: '☀️🏏', t: 'Summer comes with the shining sun and a long day for children to play.', act: 'Fan yourself – it is hot! Now play!' },
+  { n: 'Rainy', ic: '🌧️🦚🐸', t: 'Rainy season comes with the water drops; peacock dances and the frog hops.', act: 'Dance like a peacock and hop like a frog!' },
+  { n: 'Autumn', ic: '🍂🍃', t: 'Leaves fall on the ground. Pleasant winds on the way, is when it is an autumn day.', act: 'Fall slowly to the ground like a leaf!' },
+  { n: 'Winter', ic: '❄️🧣', t: 'Winter is when I’m all in snow from head to toe.', act: 'Shiver! Rub your hands to keep warm!' },
+];
+const TALK = ['In which season do you go on a vacation?', 'Your birthday falls in which season of the year?', 'Which is your favourite season? Why?', 'What is special about your favourite season?'];
+G.$('#poem').innerHTML = ST.map((s, i) => `<button class="st" data-i="${i}"><span class="ic">${s.ic}</span><h3>${s.n}</h3><p>${s.t}</p></button>`).join('');
+G.$('#talk').innerHTML = TALK.map((t) => `<button>💬 ${t}</button>`).join('');
+let token = 0, acted = 0;
+function mark(i) { G.$$('.st').forEach((s, j) => s.classList.toggle('now', j === i)); }
+G.$('#read').onclick = () => {
+  const my = ++token;
+  const go = (i) => { if (my !== token) return; mark(i); if (i < ST.length) G.say((i ? '' : 'Five seasons in a year. ') + ST[i].t, { onend: () => setTimeout(() => go(i + 1), 300) }); };
+  go(0);
+};
+G.$$('.st').forEach((b) => (b.onclick = () => { const s = ST[+b.dataset.i]; token++; mark(+b.dataset.i); G.say(s.t); }));
+G.$('#act').onclick = () => {
+  const s = ST[acted % ST.length]; token++; mark(acted % ST.length); G.say(`${s.n}! ${s.act}`); G.star(); acted++;
+};
+G.$$('#talk button').forEach((b) => (b.onclick = () => {
+  if (!b.classList.contains('done')) { G.say(b.textContent.slice(2)); b.classList.add('done'); G.star(); G.sfx('good'); }
+  if (G.$$('#talk button.done').length === TALK.length) setTimeout(() => G.end({ title: 'Season talkers!', msg: 'What food and clothes do we enjoy in each season?', onReplay: () => location.reload() }), 1500);
+}));
+</script>
+</body>
+</html>

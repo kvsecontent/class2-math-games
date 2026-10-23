@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; width: 100%; max-width: 120rem; min-height: 7rem; }
+  .obj { display: flex; flex-direction: column; align-items: center; width: 10rem; min-height: 7.4rem; border: 0.25rem solid var(--line); border-radius: 1.2rem; background: #fff; box-shadow: var(--shadow); justify-content: center; padding: 0.2rem; }
+  .obj .e { font-size: 3.2rem; line-height: 1.1; }
+  .obj b { font-size: 1.15rem; text-align: center; }
+  .obj.gone { visibility: hidden; }
+  .bins { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%; max-width: 120rem; margin-top: 0.8rem; }
+  .bin { border: 0.35rem dashed; border-radius: var(--radius); min-height: 20rem; padding: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .bin .ic { font-size: 3.4rem; pointer-events: none; }
+  .bin h3 { margin: 0; font-size: 2.2rem; pointer-events: none; }
+  .bin span.f { font-size: 1.4rem; font-weight: 800; background: #fff; border-radius: 0.6rem; padding: 0.15rem 0.5rem; pointer-events: none; }
+  .bin.no { animation: shake 0.4s; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">How long does it take? Match each activity with the time it needs – hours, days or months.</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins">
+    <div class="bin" data-k="hours" style="border-color:var(--blue);background:#e7f1ff"><span class="ic">⏰</span><h3>Hours</h3></div>
+    <div class="bin" data-k="days" style="border-color:var(--orange);background:#fff4e0"><span class="ic">📆</span><h3>Days</h3></div>
+    <div class="bin" data-k="months" style="border-color:var(--green);background:#e6f8ef"><span class="ic">🗓️</span><h3>Months</h3></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'How Long Does it Take?', subtitle: 'Which Season is it? · Hours, days, months', back: '../index.html#ch9' });
+
+/* Activities from the book's matching task. */
+const A = [['🍳', 'Cooking', 'hours'], ['🧘', 'Yoga', 'hours'], ['🚰', 'Filling a water tank', 'hours'], ['⚽', 'Playing', 'hours'],
+  ['🌱', 'Seed to grow into a plant', 'days'], ['🧶', 'Knitting a sweater', 'days'],
+  ['🍂', 'Change of season', 'months'], ['🏖️', 'Summer vacation', 'months']];
+G.$('#chips').innerHTML = G.shuffle(A).map(([e, n, k]) => `<button class="obj" data-k="${k}" data-n="${n}"><span class="e">${e}</span><b>${n}</b></button>`).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .obj'), G.$$('.bin'), (chip, bin) => {
+  const n = chip.dataset.n;
+  if (chip.dataset.k !== bin.dataset.k) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`Does ${n.toLowerCase()} take ${bin.dataset.k}? Think again.`); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  bin.insertAdjacentHTML('beforeend', `<span class="f">${G.$('.e', chip).textContent} ${n}</span>`);
+  G.sfx('good'); G.star(); G.say(`${n} takes ${bin.dataset.k}.`);
+  if (++done === A.length) setTimeout(() => G.end({ title: 'Time detective!', msg: 'What else takes hours, days or months? Talk with your friends!', onReplay: () => location.reload() }), 1600);
+});
+G.say('How long does it take? Hours, days or months?');
+</script>
+</body>
+</html>

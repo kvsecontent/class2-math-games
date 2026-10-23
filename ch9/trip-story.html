@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .line { display: flex; gap: 0.3rem; width: 100%; max-width: 120rem; margin-bottom: 0.6rem; }
+  .line button { flex: 1; min-height: 4.6rem; border-radius: 0.8rem; border: 0.2rem solid var(--line); background: #fff; font-size: 1.1rem; font-weight: 800; line-height: 1.2; }
+  .line button.seen { background: #f6f1ff; }
+  .line button.on { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .slide { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 1rem; min-height: 26rem; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+  .slide .when { display: flex; gap: 1rem; font-size: 1.8rem; font-weight: 800; }
+  .slide .when span { background: #fff4cc; border-radius: 1rem; padding: 0.2rem 0.8rem; }
+  .slide .pic { font-size: 6rem; line-height: 1; }
+  .slide .t { font-family: var(--read); font-size: 1.9rem; line-height: 1.45; text-align: left; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.8rem; font-weight: 700; text-align: center; }
+  .choice { font-family: var(--read); font-size: 1.5rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+  .fact { font-family: var(--read); font-size: 1.3rem; background: #e7f1ff; border-radius: 1rem; padding: 0.5rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="line" id="line"></div>
+  <div class="wrap">
+    <div class="slide" id="slide"></div>
+    <div class="card side"><div class="q" id="q">Read the whole story first. Tap ▶ or the times above.</div><div class="row" id="opts"></div><div class="feedback" id="fb"></div>
+      <div class="row"><button class="big-btn ghost" id="read">🔊 Read</button><button class="big-btn green" id="next">Next ▶</button></div>
+      <div class="fact">🚄 <b>Do you know?</b> Vande Bharat is the fastest train in India. It was designed in India and is India's first train with a built-in engine instead of a separate engine coach.</div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'The Family Trip', subtitle: 'Which Season is it? · Days and hours', back: '../index.html#ch9' });
+
+/* The story, dates and times are from the book. */
+const SL = [
+  { d: '24 Nov', tm: '8:25 AM', p: '🚆🎒', t: 'Trip to Vijayawada! “Hurry! The train is about to leave.”' },
+  { d: '24 Nov', tm: '1:15 PM', p: '🚆👴', t: '“It is 1:15 PM, Dada Ji. How much more time will it take to reach Nani’s house?” “Just 1 more hour to reach Vijayawada Railway Station.”' },
+  { d: '25 Nov', tm: '10:00 PM', p: '💒🎉', t: 'Mama Ji’s wedding! “Maa, look at Mama Ji, he is looking very handsome.” “Yes dear! It’s his wedding after all.” “God bless you dear.”' },
+  { d: '26 Nov', tm: '8:00 AM', p: '⛰️🗺️', t: '“Mangalagiri hills at 11:00 AM. Can we go for sightseeing?” “Yes, we will go!”' },
+  { d: '26 Nov', tm: '5:00 PM', p: '🌳🌺', t: '“See Dadi, how beautiful these trees and plants are. There are so many flowers too.” “Children, it’s 5:00 PM, we will be late. Let us go back.”' },
+  { d: '27 Nov', tm: '9:00 AM', p: '🚌🏰', t: 'The family goes to Kondapalli fort by bus at 9:00 AM. “Have a nice trip. I will come after 8 hours to pick you all.”' },
+  { d: '28 Nov', tm: '7:00 PM', p: '🚄', t: '“Oh Papa, our trip ended and now we have to go back home. But I am excited to travel by the fastest train in India, Vande Bharat!”' },
+  { d: '28 Nov', tm: '11:30 PM', p: '🏠😊', t: '“Mummy, I can’t wait to tell my friends about this exciting trip!” “Yes, we will make such a trip again very soon!”' },
+];
+const QS = [
+  { t: 'Why did the family plan a trip, and where did they go?', o: ['For Mama Ji’s wedding, to Vijayawada', 'For a cricket match, to Delhi', 'To see snow, in Kashmir'] },
+  { t: 'They began on 24 Nov and came back on 28 Nov. How many days was the trip?', o: ['5 days', '4 days', '28 days'] },
+  { t: 'Which places did they visit?', o: ['Mangalagiri hills and Kondapalli fort', 'The Taj Mahal', 'A zoo and a beach'] },
+  { t: 'At Mangalagiri hills: from 11:00 AM to 5:00 PM. How many hours?', o: ['6 hours', '5 hours', '11 hours'] },
+  { t: 'Kondapalli fort: from 9:00 AM for 8 hours. When did they come back?', o: ['5:00 PM', '1:00 PM', '9:00 PM'] },
+  { t: 'Going: train left at 8:25 AM and reached at about 2:15 PM. About how long?', o: ['about 6 hours', 'about 2 hours', 'about 10 hours'] },
+  { t: 'Coming back: 7:00 PM to 11:30 PM. How long?', o: ['4 and a half hours', '7 hours', '11 hours'] },
+  { t: 'Which journey took longer?', o: ['Going to Vijayawada', 'Coming back by Vande Bharat'] },
+];
+let s = 0, k = -1;
+G.$('#line').innerHTML = SL.map((x, i) => `<button data-i="${i}">${x.d}<br>${x.tm}</button>`).join('');
+G.$$('#line button').forEach((b) => (b.onclick = () => { s = +b.dataset.i; slide(); }));
+function slide() {
+  const x = SL[s];
+  G.$$('#line button').forEach((b, i) => { b.classList.toggle('on', i === s); if (i === s) b.classList.add('seen'); });
+  G.$('#slide').innerHTML = `<div class="when"><span>📅 ${x.d}</span><span>🕒 ${x.tm}</span></div><div class="pic">${x.p}</div><div class="t">${x.t}</div>`;
+  G.say(`${x.d.replace('Nov', 'November')}, ${x.tm.replace(':00', '').replace('AM', 'A M').replace('PM', 'P M')}. ${x.t}`);
+}
+G.$('#read').onclick = slide;
+G.$('#next').onclick = () => { if (s < SL.length - 1) { s++; slide(); } else { G.$('#next').style.display = 'none'; k = 0; ask(); } };
+function ask() {
+  if (k >= QS.length) { G.end({ title: 'Trip expert!', msg: 'Have you been on a trip? What did you enjoy most?', onReplay: () => location.reload() }); return; }
+  const q = QS[k]; G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); G.say('Look at the dates and times again.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + q.o[0]); G.say(q.o[0]); k++; setTimeout(ask, 2400);
+  }));
+  G.say(q.t);
+}
+slide();
+</script>
+</body>
+</html>

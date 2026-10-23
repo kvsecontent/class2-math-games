@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Which Season is it? · Two players', back: '../index.html#ch9' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🌸', t: 'Flowers bloom and birds sing. Which season?', o: ['Spring', 'Winter', 'Autumn'] },
+  { e: '☀️', t: 'The shining sun and a long day to play. Which season?', o: ['Summer', 'Winter', 'Rainy'] },
+  { e: '🦚', t: 'The peacock dances and the frog hops. Which season?', o: ['Rainy', 'Summer', 'Autumn'] },
+  { e: '🍂', t: 'Leaves fall on the ground. Which season?', o: ['Autumn', 'Spring', 'Rainy'] },
+  { e: '❄️', t: 'All in snow from head to toe. Which season?', o: ['Winter', 'Summer', 'Spring'] },
+  { e: '🎨', t: 'Holi comes in ____.', o: ['Spring', 'Winter', 'Rainy season'] },
+  { e: '🎄', t: 'Christmas and Lohri come in ____.', o: ['Winter', 'Summer', 'Spring'] },
+  { e: '🇮🇳', t: 'Independence Day and Raksha Bandhan come in the ____.', o: ['Monsoon', 'Winter', 'Spring'] },
+  { e: '🏹', t: 'Dussehra comes in ____.', o: ['Autumn', 'Summer', 'Spring'] },
+  { e: '📅', t: 'How many days are there in a week?', o: ['7', '5', '30'] },
+  { e: '📅', t: 'How many days are there in January?', o: ['31', '30', '28'] },
+  { e: '📅', t: 'How many days are there in April?', o: ['30', '31', '28'] },
+  { e: '📅', t: 'How many days did February 2023 have?', o: ['28', '30', '31'] },
+  { e: '📅', t: 'April 30 days + March 31 days = ____ days', o: ['61', '60', '1'] },
+  { e: '📅', t: 'How many Sundays were there in April 2023?', o: ['5', '4', '7'] },
+  { e: '📅', t: 'Why do we use a calendar?', o: ['to know the day and date', 'to tell the time', 'to measure weight'] },
+  { e: '🍳', t: 'Cooking takes ____.', o: ['hours', 'months', 'years'] },
+  { e: '🌱', t: 'A seed growing into a plant takes ____.', o: ['days', 'seconds', 'hours'] },
+  { e: '🍂', t: 'A change of season takes ____.', o: ['months', 'hours', 'minutes'] },
+  { e: '🚆', t: 'The family went to Vijayawada for ____.', o: ['Mama Ji’s wedding', 'a cricket match', 'a picnic'] },
+  { e: '⛰️', t: 'They were at Mangalagiri hills from 11 AM to 5 PM. How many hours?', o: ['6', '5', '16'] },
+  { e: '🚄', t: 'Which is the fastest train in India?', o: ['Vande Bharat', 'a goods train', 'a toy train'] },
+  { e: '🕕', t: 'The long hand is on 12 and the short hand is on 6. The time is ____.', o: ['6 O’clock', '12 O’clock', '9 O’clock'] },
+  { e: '🕒', t: 'The short hand is on 3 and the long hand is on 12. The time is ____.', o: ['3 O’clock', '12 O’clock', '6 O’clock'] },
+  { e: '⏰', t: 'Gargi wakes up at ____.', o: ['6 O’clock', '1 O’clock', '9 O’clock'] },
+  { e: '🎒', t: 'Gargi goes to school at ____.', o: ['7 O’clock', '12 O’clock', '10 O’clock'] },
+  { e: '🌅', t: 'Face the rising sun. In front of you is ____.', o: ['East', 'West', 'North'] },
+  { e: '🌅', t: 'Face the rising sun. Behind you is ____.', o: ['West', 'East', 'South'] },
+  { e: '👈', t: 'Face the rising sun. On your left is ____.', o: ['North', 'South', 'West'] },
+  { e: '👉', t: 'Face the rising sun. On your right is ____.', o: ['South', 'North', 'East'] },
+  { e: '🧭', t: 'A tool for finding direction is a ____.', o: ['compass', 'clock', 'ruler'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

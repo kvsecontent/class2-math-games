@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .map { display: grid; grid-template-columns: repeat(11, 1fr); gap: 0.15rem; background: #8fd67e; padding: 0.3rem; border-radius: var(--radius); }
+  .c { aspect-ratio: 1; max-height: calc((100vh - 14rem) / 7); border: 0; border-radius: 0.4rem; background: #cfe9b8; font-size: 2.2rem; line-height: 1; padding: 0; }
+  .c.road { background: #e7e0d0; }
+  .c.block { background: none; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.8rem; font-weight: 700; text-align: center; }
+  .who { font-size: 2.2rem; font-weight: 800; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Sarah's way to school! The green line is Sarah's path. Draw a path for Aastha and Nia: tap the squares one by one from home to school.</p>
+  <div class="wrap">
+    <div class="map" id="map"></div>
+    <div class="card side"><div class="who" id="who"></div><div class="q" id="q"></div><button class="big-btn ghost" id="undo">↩️ Undo</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Way to School', subtitle: 'Which Season is it? · Sarah’s way to school', back: '../index.html#ch9' });
+
+/* Our own map. Sarah's green path is drawn; children draw Aastha's and Nia's. */
+const W = 11, H = 7;
+const BLOCK = { '3,1': '🌳', '3,2': '🌳', '6,4': '🌊', '7,4': '🌊', '6,5': '🌊', '2,5': '🌳', '8,1': '🏬', '5,2': '🌳' };
+const SCHOOL = [10, 3];
+const KIDS = [
+  { n: 'Sarah', e: '👧🏽', home: [0, 0], col: '#2bb673', path: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [7, 1], [7, 2], [8, 2], [9, 2], [10, 2], [10, 3]] },
+  { n: 'Aastha', e: '👧🏻', home: [0, 6], col: '#2f7de1' },
+  { n: 'Nia', e: '👧🏾', home: [4, 6], col: '#ff6fa8' },
+];
+let who = 1, path = [];
+const key = ([x, y]) => `${x},${y}`;
+function draw() {
+  let h = '';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = `${x},${y}`;
+    let fill = '', txt = BLOCK[k] || '';
+    KIDS.forEach((kd, i) => { const p = i === who ? path : kd.done || []; if (p.some((q) => key(q) === k)) fill = kd.col; if (key(kd.home) === k) txt = kd.e; });
+    if (key(SCHOOL) === k) txt = '🏫';
+    h += `<button class="c ${BLOCK[k] ? 'block' : ''}" data-x="${x}" data-y="${y}" style="${fill ? `background:${fill}` : ''}">${txt}</button>`;
+  }
+  G.$('#map').innerHTML = h;
+}
+function start() {
+  KIDS[0].done = KIDS[0].path; who = 1; next();
+}
+function next() {
+  if (who >= KIDS.length) { draw(); G.end({ title: 'Everyone reached school!', msg: 'There are many ways to reach the same place. Which way is the shortest?', onReplay: () => location.reload() }); return; }
+  const K = KIDS[who]; path = [K.home];
+  G.$('#who').innerHTML = `${K.e} <span style="color:${K.col}">${K.n}</span>`;
+  G.$('#q').textContent = `Draw ${K.n}'s path to school. Tap the next square.`; G.$('#fb').innerHTML = '';
+  draw(); G.say(`Help ${K.n} reach school.`);
+}
+G.$('#map').addEventListener('click', (e) => {
+  const c = e.target.closest('.c'); if (!c || who >= KIDS.length) return;
+  const p = [+c.dataset.x, +c.dataset.y], last = path[path.length - 1], k = key(p);
+  if (BLOCK[k]) { G.sfx('bad'); G.say('You cannot walk there!'); return; }
+  if (Math.abs(p[0] - last[0]) + Math.abs(p[1] - last[1]) !== 1) { G.sfx('bad'); G.say('Tap a square next to the path.'); return; }
+  if (path.some((q) => key(q) === k)) return;
+  path.push(p); G.sfx('pop'); draw();
+  if (k === key(SCHOOL)) {
+    KIDS[who].done = [...path]; G.star(2); G.sfx('good');
+    const msg = `${KIDS[who].n} reached school in ${path.length - 1} steps!`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); who++; setTimeout(next, 2400);
+  }
+});
+G.$('#undo').onclick = () => { if (path.length > 1) { path.pop(); draw(); } };
+start();
+</script>
+</body>
+</html>

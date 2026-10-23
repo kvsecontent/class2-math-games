@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1rem; width: 100%; max-width: 120rem; align-items: start; }
+  .year { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+  .mon { background: #fff; border: 0.2rem solid var(--line); border-radius: 0.8rem; padding: 0.2rem; cursor: pointer; }
+  .mon.on { border-color: var(--orange); background: #fff4cc; }
+  .mon.right { border-color: var(--green); background: #e6f8ef; }
+  .mon h4 { margin: 0; font-size: 1.1rem; text-align: center; color: var(--purple); }
+  .mon .g { display: grid; grid-template-columns: repeat(7, 1fr); font-size: 0.72rem; font-weight: 800; text-align: center; line-height: 1.32; }
+  .mon .g .s { color: var(--red); }
+  .mon .g .hl { background: #ffd34d; border-radius: 0.3rem; }
+  .mon .g .bd { background: var(--pink); color: #fff; border-radius: 50%; }
+  .side { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.6rem; font-weight: 700; text-align: center; }
+  .choice { font-family: var(--read); font-size: 1.4rem; min-width: 0; min-height: 3.6rem; padding: 0.3rem 0.7rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Calendar fun! This is the calendar of 2023. Look at it and answer the questions.</p>
+  <div class="wrap">
+    <div class="year" id="year"></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div id="padbox" class="side" style="display:none"><div class="m-box on" id="show">?</div><div id="pad"></div></div><button class="big-btn green" id="chk" style="display:none">✅ Check</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Calendar Fun', subtitle: 'Which Season is it? · Calendar 2023', back: '../index.html#ch9' });
+
+/* The book's calendar is for 2023; we build it from real dates. */
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const days = (m) => new Date(2023, m + 1, 0).getDate();
+const first = (m) => new Date(2023, m, 1).getDay();
+const sundays = (m) => Array.from({ length: days(m) }, (_, d) => d + 1).filter((d) => new Date(2023, m, d).getDay() === 0);
+let bday = null;
+function year(hl = {}) {
+  G.$('#year').innerHTML = MONTHS.map((n, m) => `<div class="mon ${hl.on?.includes(m) ? 'on' : ''}" data-m="${m}"><h4>${n}</h4><div class="g">${'SMTWTFS'.split('').map((d, i) => `<b class="${i ? '' : 's'}">${d}</b>`).join('')}${'<span></span>'.repeat(first(m))}${Array.from({ length: days(m) }, (_, d) => {
+    const dd = d + 1, sun = new Date(2023, m, dd).getDay() === 0;
+    return `<span class="${sun ? 's' : ''} ${hl.sun === m && sun ? 'hl' : ''} ${bday && bday[0] === m && bday[1] === dd ? 'bd' : ''}" data-d="${dd}">${dd}</span>`;
+  }).join('')}</div></div>`).join('');
+}
+/* Table and "Let us talk" questions from the book. */
+const QS = [
+  { t: 'How many days are there in January, March, May, July, August, October and December?', pad: 31, on: [0, 2, 4, 6, 7, 9, 11] },
+  { t: 'How many days are there in February 2023?', pad: 28, on: [1] },
+  { t: 'How many days are there in April, June, September and November?', pad: 30, on: [3, 5, 8, 10] },
+  { t: 'Why do we use a calendar?', o: ['To know the day, date and month', 'To tell the time in hours', 'To measure length'] },
+  { t: 'Does February have the same number of days in every year?', o: ['No – sometimes 28, sometimes 29', 'Yes – always 30'] },
+  { t: 'How many days are there in a week?', pad: 7 },
+  { t: 'How many Sundays are there in April?', pad: 5, sun: 3 },
+  { t: 'Which months have 5 Sundays? Tap all of them, then Check.', months: [0, 3, 6, 9, 11] },
+  { t: 'Find the total number of days in April and March. 30 + 31 = ?', pad: 61, on: [2, 3] },
+  { t: 'Make your own calendar! Tap your birthday month, then tap your birthday.', bday: true },
+];
+let k = 0, picked = new Set();
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Calendar champion!', msg: 'Months, weeks and days – you can read a calendar!', onReplay: () => location.reload() }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  const q = QS[k]; picked.clear();
+  year({ on: q.on, sun: q.sun });
+  G.$('#q').textContent = q.t; G.$('#fb').innerHTML = ''; pad.clear();
+  G.$('#padbox').style.display = q.pad ? '' : 'none'; G.$('#chk').style.display = q.months ? '' : 'none';
+  G.$('#opts').innerHTML = q.o ? G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('') : '';
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); win(q.o[0]); }));
+  G.say(q.t.replace('?', '').replace('= ?', ''));
+}
+G.$('#year').addEventListener('click', (e) => {
+  const q = QS[k]; if (!q) return;
+  const mon = e.target.closest('.mon'); if (!mon) return;
+  const m = +mon.dataset.m;
+  if (q.months) { picked.has(m) ? picked.delete(m) : picked.add(m); mon.classList.toggle('on'); G.sfx('pop'); return; }
+  if (q.bday) {
+    const d = e.target.closest('[data-d]');
+    if (!d) { G.say(MONTHS[m] + '. Now tap your birthday.'); return; }
+    bday = [m, +d.dataset.d]; year(); G.star(2); G.sfx('win');
+    win(`Happy birthday on ${bday[1]} ${MONTHS[m]}! It is a ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(2023, m, bday[1]).getDay()]} in 2023.`);
+  }
+});
+G.$('#chk').onclick = () => {
+  const want = QS[k].months;
+  if (want.length !== picked.size || !want.every((m) => picked.has(m))) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the red Sundays in each month.'); G.say('Count the red Sundays in each month.'); return; }
+  want.forEach((m) => G.$(`.mon[data-m="${m}"]`).classList.add('right'));
+  win('January, April, July, October and December have 5 Sundays.');
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => { pad.clear(); const q = QS[k]; if (v !== q.pad) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Look at the calendar again.'); return; } win(`${v}!`); },
+});
+function win(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 2800); }
+show();
+</script>
+</body>
+</html>

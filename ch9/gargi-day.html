@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .day { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
+  .act { background: #fff; border: 0.25rem solid var(--line); border-radius: var(--radius); padding: 0.4rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+  .act.on { border-color: var(--orange); background: #fff4cc; }
+  .act.done { border-color: var(--green); }
+  .act .e { font-size: 2.6rem; line-height: 1; }
+  .act b { font-size: 1.2rem; }
+  .act .tm { font-size: 1.4rem; font-weight: 800; color: var(--purple); min-height: 1.8rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+  .tip { font-size: 1.2rem; color: var(--muted); font-weight: 800; text-align: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Gargi's day! Look at the short hand (hour hand) and the long hand (minute hand). At what time does Gargi do each thing?</p>
+  <div class="wrap">
+    <div class="day" id="day"></div>
+    <div class="card side"><div class="q" id="q"></div><div class="row"><div class="m-box on" id="show">?</div><b style="font-size:1.6rem">O’clock</b></div><div id="pad"></div><div class="tip">🔴 short hand = hour · 🔵 long hand on 12 = o’clock</div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Gargi’s Day', subtitle: 'Which Season is it? · Reading the clock', back: '../index.html#ch9' });
+
+/* Wakes up at 6 and goes to school at 7 are in the book; the other times are our own. */
+const DAY = [['⏰', 'Wakes up', 6], ['🎒', 'Goes to school', 7], ['🍱', 'Takes lunch', 1], ['🏠', 'Comes back home', 2], ['🎨', 'Draws', 4], ['⚽', 'Plays with friends', 5], ['📚', 'Studies', 6], ['😴', 'Goes to sleep', 9]];
+let k = 0;
+function draw() {
+  G.$('#day').innerHTML = DAY.map(([e, n, h], i) => `<div class="act ${i === k ? 'on' : ''} ${i < k ? 'done' : ''}"><span class="e">${e}</span><b>${n}</b>${M.clock({ h, size: 8.4 })}<span class="tm">${i < k ? h + ' O’clock' : ''}</span></div>`).join('');
+}
+function show() {
+  if (k >= DAY.length) { draw(); G.end({ title: 'Clock reader!', msg: 'At what time do you wake up, go to school and have lunch?', onReplay: () => { k = 0; show(); } }); return; }
+  draw(); G.$('#fb').innerHTML = ''; pad.clear();
+  const [, n] = DAY[k]; G.$('#q').textContent = `At what time does Gargi ${n.toLowerCase().replace('goes', 'go').replace('wakes', 'wake').replace('takes', 'take').replace('comes', 'come').replace('draws', 'draw').replace('plays', 'play').replace('studies', 'study')}?`;
+  G.say(G.$('#q').textContent);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    pad.clear(); const [, n, h] = DAY[k];
+    if (v !== h) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Look where the short red hand points.'); G.say('Look where the short red hand points.'); return; }
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, `🎉 ${h} O’clock`); G.say(`${n} at ${h} o'clock.`);
+    k++; setTimeout(show, 2000);
+  },
+});
+show();
+</script>
+</body>
+</html>

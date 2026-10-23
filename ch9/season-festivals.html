@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; width: 100%; max-width: 120rem; min-height: 4.4rem; margin-bottom: 0.8rem; }
+  .chip { font-size: 1.5rem; font-weight: 800; padding: 0.3rem 0.9rem; min-height: 4rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; box-shadow: var(--shadow); }
+  .chip.gone { display: none; }
+  .bins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.7rem; width: 100%; max-width: 120rem; }
+  .bin { border: 0.3rem dashed; border-radius: var(--radius); min-height: 22rem; padding: 0.4rem; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .bin .ic { font-size: 3rem; pointer-events: none; }
+  .bin h3 { margin: 0; font-size: 1.6rem; pointer-events: none; text-align: center; }
+  .bin small { font-size: 1.1rem; color: var(--muted); font-weight: 800; pointer-events: none; }
+  .bin span.f { font-size: 1.2rem; font-weight: 800; background: #fff; border-radius: 0.6rem; padding: 0.15rem 0.5rem; pointer-events: none; }
+  .bin.no { animation: shake 0.4s; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.4rem">Match the festivals with their seasons. Drag each festival into its season (or tap the festival, then the season).</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins" id="bins"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Seasons and Festivals', subtitle: 'Which Season is it? · Match the seasons', back: '../index.html#ch9' });
+
+/* The seasons, their Hindi names, and the festival groups are from the book's matching activity. */
+const S = [
+  { k: 'spring', n: 'Spring', h: 'Vasant', ic: '🌸', c: '#ff6fa8', f: ['Gudi Padwa', 'Shivratri', 'Baisakhi', 'Holi'] },
+  { k: 'summer', n: 'Summer', h: 'Grishma', ic: '☀️', c: '#ff8a3d', f: ['Guru Purnima', 'Buddha Purnima', 'Ram Navami', 'Mahavir Jayanti'] },
+  { k: 'monsoon', n: 'Monsoon', h: 'Varsha', ic: '🌧️', c: '#2f7de1', f: ['Janmashtami', 'Raksha Bandhan', 'Independence Day'] },
+  { k: 'autumn', n: 'Autumn', h: 'Sharad', ic: '🍂', c: '#c97a3c', f: ['Dussehra', 'Sharad Purnima'] },
+  { k: 'winter', n: 'Winter', h: 'Shishir', ic: '❄️', c: '#13b5b1', f: ['Lohri', 'Christmas', 'Republic Day', 'Gurunanak Jayanti', 'Bihu'] },
+];
+G.$('#bins').innerHTML = S.map((s) => `<div class="bin" data-k="${s.k}" style="border-color:${s.c};background:${s.c}18"><span class="ic">${s.ic}</span><h3>${s.n}</h3><small>${s.h}</small></div>`).join('');
+const ALL = S.flatMap((s) => s.f.map((f) => [f, s.k]));
+G.$('#chips').innerHTML = G.shuffle(ALL).map(([f, k]) => `<button class="chip" data-k="${k}">${f}</button>`).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .chip'), G.$$('#bins .bin'), (chip, bin) => {
+  const s = S.find((x) => x.k === bin.dataset.k);
+  if (chip.dataset.k !== bin.dataset.k) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`Is ${chip.textContent} in ${s.n}? Think again.`); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  bin.insertAdjacentHTML('beforeend', `<span class="f">${chip.textContent}</span>`);
+  G.sfx('good'); G.star(); G.say(`${chip.textContent} comes in ${s.n}.`);
+  if (++done === ALL.length) setTimeout(() => G.end({ title: 'Festival friends!', msg: 'Some festivals, like Eid, are not tied to one season – they come at different times of the year.', onReplay: () => location.reload() }), 1600);
+});
+G.say('Match the festivals with their seasons.');
+</script>
+</body>
+</html>

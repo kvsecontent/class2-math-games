@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 110rem; align-items: center; }
+  #face { display: flex; justify-content: center; cursor: pointer; }
+  #face .clock { width: min(36rem, calc(100vh - 14rem)) !important; height: auto !important; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 2.2rem; font-weight: 700; text-align: center; }
+  .step { font-size: 1.6rem; font-weight: 800; color: var(--orange); min-height: 2.2rem; }
+  .choice { font-size: 1.8rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div id="face"></div>
+    <div class="card side"><div class="q" id="q"></div><div class="step" id="step"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Set the Clock', subtitle: 'Which Season is it? · Hour hand and minute hand', back: '../index.html#ch9' });
+
+/* A: read the clock (our times). B: draw the hands for 3, 9, 11, 12, 4 and 6 o'clock (from the book).
+   C: mark when you study, play and have lunch. */
+const READ = G.shuffle([1, 2, 5, 7, 8, 10]).slice(0, 3);
+const STEPS = [...READ.map((h) => ({ read: h })), ...[3, 9, 11, 12, 4, 6].map((h) => ({ set: h })), ...['study', 'play', 'have lunch'].map((a) => ({ free: a }))];
+let k = 0, mm = null, hh = null, stage = 0;
+function face() { G.$('#face').innerHTML = M.clock({ h: hh, m: mm, size: 30 }); }
+function show() {
+  if (k >= STEPS.length) { G.end({ title: 'Clock master!', msg: 'The long hand on 12 and the short hand on the hour – that is o’clock!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, STEPS.length);
+  const st = STEPS[k]; G.$('#fb').innerHTML = ''; G.$('#opts').innerHTML = ''; G.$('#step').textContent = '';
+  if (st.read) {
+    hh = st.read; mm = 12; face();
+    G.$('#q').textContent = 'A. Read the time on the clock.';
+    const o = G.shuffle([st.read, (st.read % 12) + 1, ((st.read + 5) % 12) + 1]);
+    G.$('#opts').innerHTML = o.map((x) => `<button class="choice" data-v="${x}">${x} O’clock</button>`).join('');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => { if (+b.dataset.v !== st.read) { b.classList.add('wrong'); G.sfx('bad'); G.say('Look at the short hand.'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); win(`${st.read} o'clock!`); }));
+  } else {
+    hh = null; mm = null; stage = 0; face();
+    G.$('#q').textContent = st.set ? `B. Draw the hands to show ${st.set} O’clock.` : `C. When do you ${st.free}? Set the clock!`;
+    G.$('#step').textContent = 'Step 1: tap where the long (minute) hand goes.';
+  }
+  G.say(G.$('#q').textContent.replace(/^[ABC]\. /, '') + (st.read ? '' : ' First, the long hand.'));
+}
+G.$('#face').addEventListener('click', (e) => {
+  const st = STEPS[k]; if (!st || st.read) return;
+  const svg = G.$('#face svg'), r = svg.getBoundingClientRect();
+  const x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
+  let n = Math.round(((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360 / 30) % 12 || 12;
+  if (stage === 0) {
+    mm = n; face(); G.sfx('pop');
+    if (n !== 12) { G.feedback(G.$('#fb'), false, '🙂 For o’clock, the long hand points to 12.'); G.say('For o clock, the long hand points to 12.'); return; }
+    stage = 1; G.$('#fb').innerHTML = ''; G.$('#step').textContent = 'Step 2: tap where the short (hour) hand goes.'; G.say('Now the short hand.');
+  } else {
+    hh = n; face(); G.sfx('pop');
+    if (st.set && n !== st.set) { G.feedback(G.$('#fb'), false, `🙂 The short hand should point to ${st.set}.`); G.say(`The short hand should point to ${st.set}.`); return; }
+    win(st.set ? `${st.set} o'clock!` : `You ${st.free} at ${n} o'clock.`);
+  }
+});
+function win(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 2400); }
+show();
+</script>
+</body>
+</html>

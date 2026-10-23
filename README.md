@@ -12,5 +12,6 @@ Interactive games for a 75" smartboard. Open `index.html` → pick a chapter tab
 - `ch6/` – Chapter 6 "Decoration for Festival" (12 games; `jump-line`, `columns` and `stories` take `?add` or `?sub`)
 - `ch7/` – Chapter 7 "Rani’s Gift" (11 games)
 - `ch8/` – Chapter 8 "Grouping and Sharing" (12 games; `groups-times.html?traffic` is the wheels set)
+- `ch9/` – Chapter 9 "Which Season is it?" (11 games)
 
 Chapter PDFs: Google Drive › Lesson Plan Organiser Class 1-5 › Class 2 Math.

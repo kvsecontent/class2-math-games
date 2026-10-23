@@ -305,7 +305,33 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 3 }, (_, i) => ({ n: i + 9, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 9, title: 'Which Season is it?', unit: 'Seasons · calendar · time · directions',
+    sections: [
+      { key: 'count', name: '🌦️ Seasons', games: [
+        { href: 'ch9/seasons-poem.html', ic: '🌸', t: 'Seasons', d: 'Five seasons in a year – read and act' },
+        { href: 'ch9/season-festivals.html', ic: '🪔', t: 'Seasons and Festivals', d: 'Holi, Baisakhi, Dussehra, Lohri, Bihu …' },
+      ]},
+      { key: 'tens', name: '📅 Calendar and time', games: [
+        { href: 'ch9/calendar-2023.html', ic: '📅', t: 'Calendar Fun', d: 'Days in each month · 5 Sundays · my birthday' },
+        { href: 'ch9/how-long.html', ic: '⏳', t: 'How Long Does it Take?', d: 'Hours, days or months?' },
+        { href: 'ch9/trip-story.html', ic: '🚄', t: 'The Family Trip', d: 'Vijayawada trip: days and hours' },
+        { href: 'ch9/gargi-day.html', ic: '⏰', t: 'Gargi’s Day', d: 'Read the clock: wakes up at 6 O’clock' },
+        { href: 'ch9/set-clock.html', ic: '🕒', t: 'Set the Clock', d: 'Draw the hands for 3, 9, 11, 12, 4, 6 O’clock' },
+      ]},
+      { key: 'play', name: '🧭 Directions', games: [
+        { href: 'ch9/way-to-school.html', ic: '🏫', t: 'Way to School', d: 'Draw paths for Aastha and Nia' },
+        { href: 'ch9/directions.html', ic: '🧭', t: 'Which Direction?', d: 'East, West, North, South · left, right, straight' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch9/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch9/season-race.html', ic: '🏆', t: 'Train Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 2 }, (_, i) => ({ n: i + 10, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');
