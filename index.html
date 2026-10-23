@@ -114,7 +114,34 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 10 }, (_, i) => ({ n: i + 2, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 2, title: 'Shapes Around Us', unit: 'Solid shapes · faces, edges and corners',
+    sections: [
+      { key: 'count', name: '🎵 Musical instruments', games: [
+        { href: 'ch2/instruments.html', ic: '🥁', t: 'Shapes of Instruments', d: 'Like a drum? Like a matka? Cross the odd one out' },
+        { href: 'ch2/how-played.html', ic: '🎸', t: 'How Do We Play It?', d: 'Beat it · strings · blow air' },
+      ]},
+      { key: 'tens', name: '🧊 Solid shapes', games: [
+        { href: 'ch2/shape-match.html', ic: '🎲', t: 'Match the Shapes', d: 'Cube · cuboid · cone · cylinder · sphere' },
+        { href: 'ch2/gift-box.html', ic: '🎁', t: 'Decorate the Gift Box', d: 'Stars on faces, ribbons on edges, pompoms on corners' },
+        { href: 'ch2/faces-table.html', ic: '📋', t: 'Faces, Edges, Corners', d: 'Fill the table for each shape' },
+      ]},
+      { key: 'play', name: '🖐️ Let us play', games: [
+        { href: 'ch2/mystery-bag.html', ic: '👜', t: 'Mystery Bag', d: 'Touch and tell. Who am I?' },
+        { href: 'ch2/corners-sort.html', ic: '📐', t: 'Count the Corners', d: 'No corners · one corner · three · eight' },
+      ]},
+      { key: 'order', name: '✂️ Project work', games: [
+        { href: 'ch2/make-shapes.html', ic: '✂️', t: 'Make Your Own Shapes', d: 'A shape with four faces · a shape with one face' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch2/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch2/shape-race.html', ic: '🏆', t: 'Shape Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 9 }, (_, i) => ({ n: i + 3, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

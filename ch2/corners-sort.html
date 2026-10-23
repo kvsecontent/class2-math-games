@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; width: 100%; max-width: 120rem; min-height: 7rem; }
+  .obj { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 8.4rem; min-height: 7.6rem; border: 0.25rem solid var(--line); border-radius: 1.2rem; background: #fff; box-shadow: var(--shadow); padding: 0.2rem; }
+  .obj .e { font-size: 3.4rem; line-height: 1.1; }
+  .obj .e svg { width: 3.6rem; height: 3.6rem; }
+  .obj b { font-size: 1.1rem; }
+  .obj.gone { visibility: hidden; }
+  .bins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; max-width: 120rem; margin-top: 1rem; }
+  .bin { border: 0.35rem dashed; border-radius: var(--radius); min-height: 16rem; padding: 0.5rem; display: flex; flex-direction: column; align-items: center; }
+  .bin h3 { margin: 0; font-size: 2.2rem; pointer-events: none; }
+  .bin .dots { font-size: 1.6rem; color: var(--muted); pointer-events: none; min-height: 2rem; }
+  .bin .got { display: flex; flex-wrap: wrap; gap: 0.2rem; justify-content: center; font-size: 2.8rem; pointer-events: none; }
+  .bin .got svg { width: 3rem; height: 3rem; }
+  .bin.no { animation: shake 0.4s; }
+  .bin:nth-child(1) { border-color: var(--blue); background: #e7f1ff; } .bin:nth-child(2) { border-color: var(--pink); background: #fff0f6; }
+  .bin:nth-child(3) { border-color: var(--green); background: #e6f8ef; } .bin:nth-child(4) { border-color: var(--orange); background: #fff4e0; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">How many corners? Drag each object into the right box (or tap it, then tap the box). A corner is a pointed part.</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins" id="bins"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Count the Corners', subtitle: 'Shapes Around Us · Let us do', back: '../index.html#ch2' });
+
+/* The book asks for objects with no corners, one corner, three corners and "___ corners".
+   The objects are our examples. */
+const CAP = `<svg viewBox="0 0 100 100"><path d="M50 6 L80 84 A30 9 0 0 1 20 84 Z" fill="#ff6fa8" stroke="#2b2140" stroke-width="3"/><path d="M38 38 L62 38 M30 60 L70 60" stroke="#ffd34d" stroke-width="6"/></svg>`;
+const SAMOSA = `<svg viewBox="0 0 100 100"><path d="M50 10 L90 86 L10 86 Z" fill="#e0a23c" stroke="#8b5a2b" stroke-width="4" stroke-linejoin="round"/><path d="M50 22 L50 80" stroke="#c9822a" stroke-width="3"/></svg>`;
+const BINS = [[0, 'No corners'], [1, 'One corner'], [3, 'Three corners'], [8, 'Eight corners']];
+const OBJ = [
+  ['⚽', 'ball', 0], ['🍊', 'orange', 0], ['🥚', 'egg', 0], ['🪙', 'coin', 0],
+  ['🍦', 'ice-cream cone', 1], [CAP, 'birthday cap', 1], ['🥕', 'carrot', 1],
+  [SAMOSA, 'samosa', 3], ['🍕', 'pizza slice', 3],
+  ['🎲', 'dice', 8], ['🎁', 'gift box', 8], ['🧱', 'brick', 8],
+];
+G.$('#bins').innerHTML = BINS.map(([n, t]) => `<div class="bin" data-n="${n}"><h3>${t}</h3><div class="dots">${n ? '•'.repeat(n) : '—'}</div><div class="got"></div></div>`).join('');
+G.$('#chips').innerHTML = G.shuffle(OBJ).map(([e, n, c]) => `<button class="obj" data-c="${c}" data-n="${n}"><span class="e">${e}</span><b>${n}</b></button>`).join('');
+const WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+let done = 0;
+G.tapDrag(G.$$('#chips .obj'), G.$$('#bins .bin'), (chip, bin) => {
+  const n = chip.dataset.n, c = +chip.dataset.c;
+  if (+bin.dataset.n !== c) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`Count the corners of the ${n} again.`); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  G.$('.got', bin).insertAdjacentHTML('beforeend', `<span>${G.$('.e', chip).innerHTML}</span>`);
+  G.sfx('good'); G.star();
+  G.say(c ? `The ${n} has ${WORD[c]} corner${c > 1 ? 's' : ''}.` : `The ${n} has no corners.`);
+  if (++done === OBJ.length) setTimeout(() => G.end({ title: 'Corner counter!', msg: 'Now find more objects in your classroom and count their corners.', onReplay: () => location.reload() }), 1600);
+});
+G.say('How many corners? Sort the objects.');
+</script>
+</body>
+</html>

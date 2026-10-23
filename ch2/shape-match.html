@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; width: 100%; max-width: 120rem; min-height: 7rem; }
+  .obj { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 8.4rem; min-height: 7.6rem; border: 0.25rem solid var(--line); border-radius: 1.2rem; background: #fff; box-shadow: var(--shadow); padding: 0.2rem; }
+  .obj .e { font-size: 3.4rem; line-height: 1.1; }
+  .obj .e svg { width: 3.6rem; height: 3.6rem; }
+  .obj b { font-size: 1.1rem; }
+  .obj.gone { visibility: hidden; }
+  .bins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; width: 100%; max-width: 120rem; margin-top: 1rem; }
+  .bin { border: 0.3rem dashed var(--purple); border-radius: var(--radius); background: #f6f1ff; min-height: 16rem; padding: 0.4rem; display: flex; flex-direction: column; align-items: center; }
+  .bin .solid { width: 5.6rem; height: 5.6rem; pointer-events: none; }
+  .bin h3 { margin: 0 0 0.3rem; font-size: 1.9rem; pointer-events: none; }
+  .bin .got { display: flex; flex-wrap: wrap; gap: 0.2rem; justify-content: center; font-size: 2.6rem; pointer-events: none; }
+  .bin .got svg { width: 2.8rem; height: 2.8rem; }
+  .bin.no { animation: shake 0.4s; background: #ffe1e3; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Match the objects with their solid shapes. Drag each object to its shape (or tap the object, then tap the shape).</p>
+  <div class="chips" id="chips"></div>
+  <div class="bins" id="bins"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Match the Shapes', subtitle: 'Shapes Around Us · Solid shapes', back: '../index.html#ch2' });
+
+const CAP = `<svg viewBox="0 0 100 100"><path d="M50 6 L80 84 A30 9 0 0 1 20 84 Z" fill="#ff6fa8" stroke="#2b2140" stroke-width="3"/><path d="M38 38 L62 38 M30 60 L70 60" stroke="#ffd34d" stroke-width="6"/><circle cx="50" cy="8" r="7" fill="#ffd34d" stroke="#2b2140" stroke-width="2"/></svg>`;
+const OBJ = [
+  ['⚽', 'football', 'sphere'], ['🍊', 'orange', 'sphere'], ['🌍', 'globe', 'sphere'],
+  ['🎲', 'dice', 'cube'], ['🧊', 'ice cube', 'cube'],
+  ['🎁', 'gift box', 'cuboid'], ['🧱', 'brick', 'cuboid'], ['📦', 'carton', 'cuboid'],
+  ['🍦', 'ice-cream cone', 'cone'], [CAP, 'birthday cap', 'cone'],
+  ['🥫', 'tin', 'cylinder'], ['🕯️', 'candle', 'cylinder'], ['🥁', 'drum', 'cylinder'], ['🔋', 'battery', 'cylinder'],
+];
+const SH = ['cube', 'cuboid', 'cone', 'cylinder', 'sphere'];
+const COL = { cube: '#2f7de1', cuboid: '#ff8a3d', cone: '#ff6fa8', cylinder: '#2bb673', sphere: '#ffc93c' };
+G.$('#bins').innerHTML = SH.map((k) => `<div class="bin" data-s="${k}">${M.solid(k, COL[k])}<h3>${k}</h3><div class="got"></div></div>`).join('');
+G.$('#chips').innerHTML = G.shuffle(OBJ).map(([e, n, s]) => `<button class="obj" data-s="${s}" data-n="${n}"><span class="e">${e}</span><b>${n}</b></button>`).join('');
+let done = 0;
+G.tapDrag(G.$$('#chips .obj'), G.$$('#bins .bin'), (chip, bin) => {
+  const n = chip.dataset.n;
+  if (bin.dataset.s !== chip.dataset.s) { bin.classList.remove('no'); void bin.offsetWidth; bin.classList.add('no'); G.sfx('bad'); G.say(`Is the ${n} a ${bin.dataset.s}? Look again.`); setTimeout(() => bin.classList.remove('no'), 500); return; }
+  chip.classList.add('gone'); chip.dataset.locked = 1;
+  G.$('.got', bin).insertAdjacentHTML('beforeend', `<span>${G.$('.e', chip).innerHTML}</span>`);
+  G.sfx('good'); G.star();
+  G.say(`The ${n} is like a ${chip.dataset.s}.`);
+  if (++done === OBJ.length) setTimeout(() => G.end({ title: 'Shape matcher!', msg: 'Cube, cuboid, cone, cylinder and sphere – you know them all!', onReplay: () => location.reload() }), 1600);
+});
+G.say('Match the objects with their solid shapes.');
+</script>
+</body>
+</html>

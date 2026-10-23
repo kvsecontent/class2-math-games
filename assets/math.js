@@ -38,5 +38,20 @@ const M = (() => {
   }
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
-  return { strips, pad, word, rnd };
+  /* Solid shapes as small SVG pictures: cube, cuboid, cone, cylinder, sphere */
+  function solid(kind, col = '#ffc93c') {
+    const o = 'stroke="#2b2140" stroke-width="2.5" stroke-linejoin="round"';
+    const mix = (t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(col.slice(i, i + 2), 16) * 0.7 + t * 0.3).toString(16).padStart(2, '0')).join('');
+    const dk = mix(0), lt = mix(255);
+    const S = {
+      cube: `<path d="M18 36 L58 36 L58 86 L18 86 Z" fill="${col}" ${o}/><path d="M18 36 L38 18 L78 18 L58 36 Z" fill="${lt}" ${o}/><path d="M58 36 L78 18 L78 68 L58 86 Z" fill="${dk}" ${o}/>`,
+      cuboid: `<path d="M6 46 L70 46 L70 86 L6 86 Z" fill="${col}" ${o}/><path d="M6 46 L24 30 L88 30 L70 46 Z" fill="${lt}" ${o}/><path d="M70 46 L88 30 L88 70 L70 86 Z" fill="${dk}" ${o}/>`,
+      cone: `<path d="M50 8 L84 78 A34 10 0 0 1 16 78 Z" fill="${col}" ${o}/><path d="M16 78 A34 10 0 0 0 84 78" fill="none" stroke="#2b2140" stroke-width="1.5" stroke-dasharray="4 3"/>`,
+      cylinder: `<path d="M18 20 L18 80 A32 10 0 0 0 82 80 L82 20" fill="${col}" ${o}/><ellipse cx="50" cy="20" rx="32" ry="10" fill="${lt}" ${o}/>`,
+      sphere: `<defs><radialGradient id="sg${col.replace('#', '')}" cx="35%" cy="32%"><stop offset="0" stop-color="#fff"/><stop offset="0.35" stop-color="${lt}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs><circle cx="50" cy="50" r="38" fill="url(#sg${col.replace('#', '')})" ${o}/><path d="M12 50 A38 11 0 0 0 88 50" fill="none" stroke="#2b2140" stroke-width="1.2" stroke-dasharray="4 3"/>`,
+    };
+    return `<svg viewBox="0 0 100 100" class="solid">${S[kind]}</svg>`;
+  }
+
+  return { strips, pad, word, rnd, solid };
 })();

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .race { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+  .lane { position: relative; height: 6.4rem; border-radius: 1.2rem; background: radial-gradient(circle at 20% 40%, #fff 0.12rem, transparent 0.15rem) 0 0 / 5rem 3rem, #2b2140; border: 0.3rem solid #8a5cf6; overflow: hidden; }
+  .lane::after { content: '🏁'; position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); font-size: 3.6rem; }
+  .lane .name { position: absolute; left: 0.8rem; top: 0.3rem; font-weight: 800; font-size: 1.2rem; color: #fff; text-shadow: 0 1px 2px #000; z-index: 1; }
+  .rider { position: absolute; top: 50%; font-size: 4.6rem; line-height: 1; transition: left 0.9s cubic-bezier(.3, 1.4, .5, 1); transform: translateY(-50%); }
+  .rider span { display: inline-block; transform: rotate(45deg); }
+  .lane.turn { box-shadow: 0 0 0 0.4rem var(--yellow); }
+  .lane.a { border-color: var(--red); } .lane.b { border-color: var(--blue); }
+  .turn-tag { font-size: 1.8rem; font-weight: 800; padding: 0.3rem 1.2rem; border-radius: 1rem; color: #fff; display: inline-block; }
+  .q .e { font-size: 5rem; line-height: 1; }
+  .q .t { font-family: var(--read); font-size: 2.5rem; margin: 0.4rem 0 1rem; }
+  .choice { font-family: var(--read); font-size: 2.2rem; }
+  .setup .row input { font-family: var(--head); font-size: 1.8rem; padding: 0.5rem 1rem; border-radius: 1rem; border: 0.2rem solid var(--line); width: 16rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="race" style="width:100%">
+    <div class="lane a" id="laneA"><span class="name" id="nameA">Team A</span><div class="rider" id="rA" style="left:1%"><span>🚀</span></div></div>
+    <div class="lane b" id="laneB"><span class="name" id="nameB">Team B</span><div class="rider" id="rB" style="left:1%"><span>🛸</span></div></div>
+  </div>
+  <div class="card setup center" id="setup" style="width:100%;max-width:70rem">
+    <div class="prompt">🏁 Shape Race</div>
+    <p class="hint">Two teams take turns. Each right answer moves your rocket forward. First to the 🏁 wins!</p>
+    <div class="row"><input id="inA" value="Team A" aria-label="Team A name"><input id="inB" value="Team B" aria-label="Team B name"></div>
+    <br><button class="big-btn green" id="go">▶ Start the race</button>
+  </div>
+  <div class="card" id="game" style="width:100%;max-width:76rem;display:none"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Shape Race', subtitle: 'Shapes Around Us · Whole chapter challenge', back: '../index.html#ch2' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🥁', t: 'A drum looks like a ____.', o: ['cylinder', 'cube', 'cone'] },
+  { e: '🏺', t: 'A matka is round like a ____.', o: ['sphere', 'cuboid', 'cone'] },
+  { e: '🎺', t: 'A shehnai is shaped like a ____.', o: ['cone', 'cube', 'sphere'] },
+  { e: '🎹', t: 'A harmonium is shaped like a ____.', o: ['cuboid', 'sphere', 'cone'] },
+  { e: '🎶', t: 'A flute is like a long ____.', o: ['cylinder', 'cube', 'sphere'] },
+  { e: '🥁', t: 'How do we play a drum or a tabla?', o: ['by beating it', 'by blowing air', 'by pulling strings'] },
+  { e: '🎸', t: 'How do we play a guitar or a sitar?', o: ['with the strings', 'by blowing air', 'by beating it'] },
+  { e: '💨', t: 'How do we play a flute or a shehnai?', o: ['by blowing air', 'with the strings', 'by beating it'] },
+  { e: '🎁', t: 'A gift box has how many faces?', o: ['6', '4', '8'] },
+  { e: '🎀', t: 'A gift box has how many edges?', o: ['12', '6', '8'] },
+  { e: '🔴', t: 'A gift box has how many corners?', o: ['8', '6', '12'] },
+  { e: '⭐', t: 'One star on each face of a box. How many stars?', o: ['6', '8', '12'] },
+  { e: '🎲', t: 'A dice is shaped like a ____.', o: ['cube', 'cone', 'cylinder'] },
+  { e: '🧱', t: 'A brick is shaped like a ____.', o: ['cuboid', 'sphere', 'cone'] },
+  { e: '⚽', t: 'A ball is shaped like a ____.', o: ['sphere', 'cube', 'cylinder'] },
+  { e: '🍦', t: 'An ice-cream cone is shaped like a ____.', o: ['cone', 'cube', 'cuboid'] },
+  { e: '🥫', t: 'A tin is shaped like a ____.', o: ['cylinder', 'cone', 'cube'] },
+  { e: '🍦', t: 'How many corners does a cone have?', o: ['1', '0', '8'] },
+  { e: '⚽', t: 'How many corners does a sphere have?', o: ['0', '1', '2'] },
+  { e: '🥫', t: 'How many corners does a cylinder have?', o: ['0', '2', '8'] },
+  { e: '🥫', t: 'How many flat faces does a cylinder have?', o: ['2', '1', '6'] },
+  { e: '⚽', t: 'Which shape has only one face?', o: ['sphere', 'cube', 'cuboid'] },
+  { e: '🍦', t: 'Which shape has one flat face and one curved face?', o: ['cone', 'cube', 'cuboid'] },
+  { e: '🎲', t: 'Which shape has 6 square faces?', o: ['cube', 'cone', 'cylinder'] },
+  { e: '🌍', t: 'Which shape can roll everywhere?', o: ['sphere', 'cube', 'cuboid'] },
+  { e: '📦', t: 'Which shape has 8 corners?', o: ['cuboid', 'sphere', 'cylinder'] },
+  { e: '🍕', t: 'How many corners does a pizza slice have?', o: ['3', '1', '0'] },
+  { e: '🍊', t: 'An orange has how many corners?', o: ['0', '1', '3'] },
+  { e: '✘', t: 'Odd one out: drum, tabla, dholak, harmonium', o: ['harmonium', 'drum', 'tabla'] },
+  { e: '✘', t: 'Odd one out: ball, orange, dice', o: ['dice', 'ball', 'orange'] },
+  { e: '✂️', t: 'A cardboard shape made of 4 triangles has how many faces?', o: ['4', '3', '6'] },
+  { e: '📏', t: 'Where two faces meet, we get an ____.', o: ['edge', 'orange', 'ball'] },
+];
+const STEPS = 7;
+const T = [{ id: 'A', pos: 0, col: 'var(--red)' }, { id: 'B', pos: 0, col: 'var(--blue)' }];
+let turn = 0, deck = [], name = ['Team A', 'Team B'];
+
+function place() { T.forEach((t) => (G.$('#r' + t.id).style.left = 1 + (t.pos / STEPS) * 84 + '%')); }
+
+G.$('#go').onclick = () => {
+  name = [G.$('#inA').value || 'Team A', G.$('#inB').value || 'Team B'];
+  G.$('#nameA').textContent = name[0];
+  G.$('#nameB').textContent = name[1];
+  G.$('#setup').style.display = 'none';
+  G.$('#game').style.display = '';
+  start();
+};
+
+function start() {
+  T.forEach((t) => (t.pos = 0));
+  turn = 0;
+  deck = G.shuffle(BANK);
+  place();
+  ask();
+}
+
+function ask() {
+  if (!deck.length) deck = G.shuffle(BANK);
+  const q = deck.pop();
+  const t = T[turn];
+  G.$('#laneA').classList.toggle('turn', turn === 0);
+  G.$('#laneB').classList.toggle('turn', turn === 1);
+  const g = G.$('#game');
+  g.innerHTML = `<span class="turn-tag" style="background:${t.col}">${name[turn]}'s turn</span>
+    <div class="q"><div class="e">${q.e}</div><div class="t">${q.t}</div></div>
+    <div class="row" id="opts"></div><div class="feedback" id="fb"></div>`;
+  G.say(name[turn] + '. ' + q.t.replace(/_+/g, 'blank').replace(/…/g, ','));
+  G.shuffle(q.o).forEach((o) => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.textContent = o;
+    b.onclick = () => answer(b, o === q.o[0], q);
+    G.$('#opts').append(b);
+  });
+}
+
+function answer(b, ok, q) {
+  G.$$('#opts .choice').forEach((x) => (x.disabled = true));
+  const fb = G.$('#fb');
+  if (ok) {
+    b.classList.add('right');
+    G.sfx('good');
+    G.feedback(fb, true, `🎉 Right! ${name[turn]} moves ahead!`);
+    G.say('Right!');
+    T[turn].pos++;
+    place();
+    if (T[turn].pos >= STEPS) {
+      setTimeout(() => G.end({ title: `🏆 ${name[turn]} wins!`, msg: 'Great race, everyone!', onReplay: start }), 1200);
+      return;
+    }
+  } else {
+    b.classList.add('wrong');
+    G.$$('#opts .choice').find((x) => x.textContent === q.o[0]).classList.add('right');
+    G.sfx('bad');
+    G.feedback(fb, false, `Oops! The answer is “${q.o[0]}”.`);
+    G.say('The answer is ' + q.o[0]);
+  }
+  turn = 1 - turn;
+  setTimeout(ask, 2600);
+}
+</script>
+</body>
+</html>

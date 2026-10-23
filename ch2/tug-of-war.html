@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Shapes Around Us · Two players', back: '../index.html#ch2' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🥁', t: 'A drum looks like a ____.', o: ['cylinder', 'cube', 'cone'] },
+  { e: '🏺', t: 'A matka is round like a ____.', o: ['sphere', 'cuboid', 'cone'] },
+  { e: '🎺', t: 'A shehnai is shaped like a ____.', o: ['cone', 'cube', 'sphere'] },
+  { e: '🎹', t: 'A harmonium is shaped like a ____.', o: ['cuboid', 'sphere', 'cone'] },
+  { e: '🎶', t: 'A flute is like a long ____.', o: ['cylinder', 'cube', 'sphere'] },
+  { e: '🥁', t: 'How do we play a drum or a tabla?', o: ['by beating it', 'by blowing air', 'by pulling strings'] },
+  { e: '🎸', t: 'How do we play a guitar or a sitar?', o: ['with the strings', 'by blowing air', 'by beating it'] },
+  { e: '💨', t: 'How do we play a flute or a shehnai?', o: ['by blowing air', 'with the strings', 'by beating it'] },
+  { e: '🎁', t: 'A gift box has how many faces?', o: ['6', '4', '8'] },
+  { e: '🎀', t: 'A gift box has how many edges?', o: ['12', '6', '8'] },
+  { e: '🔴', t: 'A gift box has how many corners?', o: ['8', '6', '12'] },
+  { e: '⭐', t: 'One star on each face of a box. How many stars?', o: ['6', '8', '12'] },
+  { e: '🎲', t: 'A dice is shaped like a ____.', o: ['cube', 'cone', 'cylinder'] },
+  { e: '🧱', t: 'A brick is shaped like a ____.', o: ['cuboid', 'sphere', 'cone'] },
+  { e: '⚽', t: 'A ball is shaped like a ____.', o: ['sphere', 'cube', 'cylinder'] },
+  { e: '🍦', t: 'An ice-cream cone is shaped like a ____.', o: ['cone', 'cube', 'cuboid'] },
+  { e: '🥫', t: 'A tin is shaped like a ____.', o: ['cylinder', 'cone', 'cube'] },
+  { e: '🍦', t: 'How many corners does a cone have?', o: ['1', '0', '8'] },
+  { e: '⚽', t: 'How many corners does a sphere have?', o: ['0', '1', '2'] },
+  { e: '🥫', t: 'How many corners does a cylinder have?', o: ['0', '2', '8'] },
+  { e: '🥫', t: 'How many flat faces does a cylinder have?', o: ['2', '1', '6'] },
+  { e: '⚽', t: 'Which shape has only one face?', o: ['sphere', 'cube', 'cuboid'] },
+  { e: '🍦', t: 'Which shape has one flat face and one curved face?', o: ['cone', 'cube', 'cuboid'] },
+  { e: '🎲', t: 'Which shape has 6 square faces?', o: ['cube', 'cone', 'cylinder'] },
+  { e: '🌍', t: 'Which shape can roll everywhere?', o: ['sphere', 'cube', 'cuboid'] },
+  { e: '📦', t: 'Which shape has 8 corners?', o: ['cuboid', 'sphere', 'cylinder'] },
+  { e: '🍕', t: 'How many corners does a pizza slice have?', o: ['3', '1', '0'] },
+  { e: '🍊', t: 'An orange has how many corners?', o: ['0', '1', '3'] },
+  { e: '✘', t: 'Odd one out: drum, tabla, dholak, harmonium', o: ['harmonium', 'drum', 'tabla'] },
+  { e: '✘', t: 'Odd one out: ball, orange, dice', o: ['dice', 'ball', 'orange'] },
+  { e: '✂️', t: 'A cardboard shape made of 4 triangles has how many faces?', o: ['4', '3', '6'] },
+  { e: '📏', t: 'Where two faces meet, we get an ____.', o: ['edge', 'orange', 'ball'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

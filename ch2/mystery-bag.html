@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .top { display: flex; align-items: center; gap: 1.6rem; justify-content: center; }
+  .bag { position: relative; width: 12rem; height: 12rem; }
+  .bag .b { font-size: 10rem; line-height: 1; }
+  .bag .out { position: absolute; left: 50%; top: 0; width: 9rem; height: 9rem; transform: translate(-50%, 2rem) scale(0.3); opacity: 0; transition: all 0.6s; }
+  .bag .out.show { transform: translate(-50%, -4rem) scale(1); opacity: 1; }
+  .clue { font-family: var(--read); font-size: 3rem; font-weight: 700; max-width: 60rem; background: #fff; border-radius: var(--radius); padding: 1rem 1.4rem; border: 0.25rem solid var(--line); box-shadow: var(--shadow); }
+  .clue small { display: block; font-size: 1.4rem; color: var(--muted); font-family: var(--head); }
+  .choice.sh { display: flex; flex-direction: column; align-items: center; font-size: 1.7rem; padding: 0.4rem 1.2rem; }
+  .choice.sh .solid { width: 7rem; height: 7rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Touch and Tell! A shape is hiding in the bag. Listen to the clue. Who am I?<br><small>In class: blindfold a friend and let them pick the object from a real bag by touch.</small></p>
+  <div class="progress" id="pg"></div>
+  <div class="top"><div class="bag"><div class="b">👜</div><div class="out" id="out"></div></div><div class="clue" id="clue"></div><button class="say" id="again">🔊</button></div>
+  <div class="row" id="opts" style="margin-top:1rem"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Mystery Bag', subtitle: 'Shapes Around Us · Touch and tell. Who am I?', back: '../index.html#ch2' });
+
+/* Our clues use faces, edges and corners from this chapter. */
+const CLUES = [
+  ['I have one corner.', 'cone'], ['I have no corners and no edges. I can roll everywhere.', 'sphere'],
+  ['I have 2 flat faces and 1 curved face.', 'cylinder'], ['I have 6 faces. All my faces are squares.', 'cube'],
+  ['I have 6 faces. Some of my faces are long rectangles.', 'cuboid'], ['I have 2 edges and no corners.', 'cylinder'],
+  ['I have 1 flat face and 1 curved face.', 'cone'], ['I have only one face. It is curved.', 'sphere'],
+  ['I have 8 corners. I look like a dice.', 'cube'], ['I have 12 edges and 8 corners. I look like a brick.', 'cuboid'],
+];
+const SH = ['cube', 'cuboid', 'cone', 'cylinder', 'sphere'];
+const COL = { cube: '#2f7de1', cuboid: '#ff8a3d', cone: '#ff6fa8', cylinder: '#2bb673', sphere: '#ffc93c' };
+let list, k;
+function start() { list = G.shuffle(CLUES).slice(0, 8); k = 0; next(); }
+function next() {
+  if (k >= list.length) { G.end({ title: 'Shape detective!', msg: 'You found every shape in the bag.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, list.length);
+  const [t] = list[k];
+  G.$('#out').className = 'out'; G.$('#out').innerHTML = '';
+  G.$('#clue').innerHTML = `${t}<small>Who am I?</small>`;
+  G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = SH.map((s) => `<button class="choice sh" data-v="${s}">${M.solid(s, COL[s])}${s}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => pick(b)));
+  G.say(t + ' Who am I?');
+}
+function pick(b) {
+  const [t, a] = list[k];
+  if (b.dataset.v !== a) { b.classList.add('wrong'); G.sfx('bad'); G.say(`Not a ${b.dataset.v}. Listen again. ${t}`); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+  G.$$('#opts .choice').forEach((x) => (x.disabled = true));
+  b.classList.add('right'); G.star(); G.sfx('good');
+  G.$('#out').innerHTML = M.solid(a, COL[a]); G.$('#out').classList.add('show');
+  G.feedback(G.$('#fb'), true, `🎉 I am a ${a}!`); G.say(`Yes! I am a ${a}.`);
+  k++; setTimeout(next, 2600);
+}
+G.$('#again').onclick = () => G.say(list[k][0] + ' Who am I?');
+start();
+</script>
+</body>
+</html>

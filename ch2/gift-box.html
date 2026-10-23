@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 30rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .board { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  #box { width: 100%; height: calc(100vh - 13rem); display: block; }
+  #box .face { stroke: #2b2140; stroke-width: 3; }
+  #box .hit { stroke: transparent; stroke-width: 30; stroke-linecap: round; }
+  #box .edge { stroke: #2b2140; stroke-width: 4; stroke-linecap: round; pointer-events: none; }
+  #box .edge.on { stroke: #e63946; stroke-width: 14; }
+  #box .cor { fill: #fff; stroke: #2b2140; stroke-width: 3; }
+  #box .cor.on { fill: #ff6fa8; }
+  #box.mode-face .face, #box.mode-edge .hit, #box.mode-cor .cor { cursor: pointer; }
+  #box.mode-face .face:hover { filter: brightness(1.08); }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .talk { font-family: var(--read); font-size: 1.7rem; font-weight: 700; background: #f6f1ff; border-radius: 1rem; padding: 0.5rem 0.8rem; text-align: left; }
+  .talk b { color: var(--purple); }
+  .count { font-size: 2.4rem; font-weight: 800; }
+  .step { font-size: 1.8rem; font-weight: 800; color: var(--orange); text-align: center; }
+  .choice { font-size: 2rem; min-width: 6rem; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="wrap">
+    <div class="board"><svg id="box" viewBox="0 0 600 520"></svg></div>
+    <div class="side card">
+      <div class="talk" id="talk"></div>
+      <div class="step" id="step"></div>
+      <div class="count" id="count"></div>
+      <button class="big-btn purple" id="turn">🔄 Turn the box</button>
+      <div class="row" id="ask"></div>
+      <div class="feedback" id="fb"></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Decorate the Gift Box', subtitle: 'Shapes Around Us · Faces, edges and corners', back: '../index.html#ch2' });
+
+/* Heena and Atif put one star on each face, a ribbon on each edge and a pompom ball on each corner.
+   The box is a cube; we draw it from the front, and "Turn the box" shows the back. */
+const V = [];
+for (let x = 0; x < 2; x++) for (let y = 0; y < 2; y++) for (let z = 0; z < 2; z++) V.push([x, y, z]);
+const vid = (p) => V.findIndex((q) => q[0] === p[0] && q[1] === p[1] && q[2] === p[2]);
+const FACES = [];
+for (let a = 0; a < 3; a++) for (let v = 0; v < 2; v++) {
+  const [b, c] = [0, 1, 2].filter((i) => i !== a);
+  const pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, j]) => { const p = [0, 0, 0]; p[a] = v; p[b] = i; p[c] = j; return vid(p); });
+  FACES.push({ id: `${'xyz'[a]}${v}`, a, v, pts });
+}
+const EDGES = [];
+V.forEach((p, i) => V.forEach((q, j) => { if (i < j && p.filter((t, k) => t !== q[k]).length === 1) EDGES.push([i, j]); }));
+const COL = { x: '#ffc93c', y: '#ff8a3d', z: '#ffe08a' };
+const STEPS = [
+  { mode: 'face', what: 'stars', one: 'star', total: 6, part: 'face', say: 'Put one star on each face of the box.', talk: '<b>Heena:</b> We will place one star on each face of the box.' },
+  { mode: 'edge', what: 'ribbons', one: 'ribbon', total: 12, part: 'edge', say: 'Put a ribbon on each side, or edge.', talk: '<b>Atif:</b> Let me put ribbons on its sides. Some will be short and some will be long.' },
+  { mode: 'cor', what: 'pompom balls', one: 'pompom ball', total: 8, part: 'corner', say: 'Put a pompom ball on each corner.', talk: '<b>Heena:</b> Can we put these balls on the corners?' },
+];
+let view = 0, step = 0;
+const done = { face: new Set(), edge: new Set(), cor: new Set() };
+
+function proj(i) {
+  let [x, y, z] = V[i];
+  if (view) [x, y, z] = [1 - x, 1 - y, 1 - z];
+  return [300 + (x - y) * 220 * 0.866, 260 + (x + y) * 220 * 0.5 - z * 220];
+}
+const seen = (f) => (view ? f.v === 0 : f.v === 1);
+function draw() {
+  const vis = FACES.filter(seen);
+  let h = '';
+  vis.forEach((f) => {
+    const P = f.pts.map(proj);
+    const c = P.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+    h += `<polygon class="face" data-f="${f.id}" points="${P.map((p) => p.join(',')).join(' ')}" fill="${COL[f.id[0]]}"/>`;
+    if (done.face.has(f.id)) h += `<text x="${c[0]}" y="${c[1] + 22}" font-size="64" text-anchor="middle" pointer-events="none">⭐</text>`;
+  });
+  const visV = new Set(vis.flatMap((f) => f.pts));
+  EDGES.forEach(([i, j], k) => {
+    if (!vis.some((f) => f.pts.includes(i) && f.pts.includes(j))) return;
+    const [a, b] = [proj(i), proj(j)];
+    h += `<line class="edge ${done.edge.has(k) ? 'on' : ''}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/><line class="hit" data-e="${k}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
+  });
+  visV.forEach((i) => { const p = proj(i); h += `<circle class="cor ${done.cor.has(i) ? 'on' : ''}" data-c="${i}" cx="${p[0]}" cy="${p[1]}" r="${done.cor.has(i) ? 20 : 11}"/>`; });
+  const box = G.$('#box');
+  box.innerHTML = h;
+  box.setAttribute('class', 'mode-' + (STEPS[step]?.mode || ''));
+}
+function count() {
+  const st = STEPS[step];
+  G.$('#count').textContent = `${st.mode === 'face' ? '⭐' : st.mode === 'edge' ? '🎀' : '🔴'} ${done[st.mode].size}`;
+}
+function start() {
+  step = 0; view = 0; Object.values(done).forEach((s) => s.clear());
+  begin();
+}
+function begin() {
+  const st = STEPS[step];
+  G.$('#talk').innerHTML = st.talk;
+  G.$('#step').textContent = `Step ${step + 1}: put ${st.what} on the ${st.part}s`;
+  G.$('#ask').innerHTML = ''; G.$('#fb').innerHTML = '';
+  count(); draw();
+  G.say(st.say + ' Turn the box to see the other side.');
+}
+G.$('#box').addEventListener('click', (e) => {
+  const st = STEPS[step]; if (!st || G.$('#ask').innerHTML) return;
+  const t = e.target;
+  let key = null;
+  if (st.mode === 'face' && t.dataset.f) key = t.dataset.f;
+  if (st.mode === 'edge' && t.dataset.e) key = +t.dataset.e;
+  if (st.mode === 'cor' && t.dataset.c) key = +t.dataset.c;
+  if (key === null) { G.say(st.say); return; }
+  if (done[st.mode].has(key)) { G.say(`This ${st.part} already has a ${st.one}.`); return; }
+  done[st.mode].add(key); G.sfx('pop'); count(); draw();
+  G.say(String(done[st.mode].size), { rate: 1 });
+  if (done[st.mode].size === st.total) setTimeout(ask, 700);
+});
+function ask() {
+  const st = STEPS[step];
+  G.$('#fb').innerHTML = '';
+  G.say(`All done! How many ${st.what} did we need?`);
+  const wrong = G.shuffle([st.total - 2, st.total + 2, st.total === 8 ? 6 : 8].filter((n) => n !== st.total)).slice(0, 2);
+  G.$('#ask').innerHTML = G.shuffle([st.total, ...wrong]).map((n) => `<button class="choice" data-v="${n}">${n}</button>`).join('');
+  G.$$('#ask .choice').forEach((b) => (b.onclick = () => {
+    if (+b.dataset.v !== st.total) { b.classList.add('wrong'); G.sfx('bad'); G.say('Count again.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good');
+    const msg = `It has ${st.total} ${st.part}s, so we need ${st.total} ${st.what}.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+    step++;
+    setTimeout(() => (step < STEPS.length ? begin() : G.end({ title: 'What a lovely gift!', msg: 'A box has 6 faces, 12 edges and 8 corners.', onReplay: start })), 3400);
+  }));
+}
+G.$('#turn').onclick = () => { view = 1 - view; draw(); G.sfx('pop'); };
+start();
+</script>
+</body>
+</html>

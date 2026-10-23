@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .card h2 { margin: 0 0 0.2rem; font-size: 1.9rem; }
+  .pics { display: flex; gap: 1rem; justify-content: center; align-items: center; }
+  .pics svg { height: 8.4rem; width: auto; }
+  .steps { text-align: left; font-family: var(--read); font-size: 1.55rem; line-height: 1.4; margin: 0.3rem 0; padding-left: 2.4rem; }
+  .steps li.now { background: #fff4cc; border-radius: 0.6rem; }
+  .q { font-family: var(--read); font-size: 1.8rem; font-weight: 700; margin: 0.3rem 0 0.3rem; }
+  .choice { font-size: 2rem; min-width: 6rem; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">Project work: make solid shapes with your own hands! Tap 🔊 to hear each step.</p>
+  <div class="two">
+    <div class="card center">
+      <h2>✂️ An object with four faces</h2>
+      <div class="pics">
+        <svg viewBox="0 0 220 200" id="net"><g stroke="#2b2140" stroke-width="3" stroke-linejoin="round">
+          <path d="M110 10 L160 96 L60 96 Z" fill="#ffc93c"/><path d="M60 96 L160 96 L110 182 Z" fill="#ff8a3d"/>
+          <path d="M60 96 L110 182 L10 182 Z" fill="#ffe08a"/><path d="M160 96 L210 182 L110 182 Z" fill="#ffd34d"/></g>
+          <g stroke="#2b2140" stroke-width="2" stroke-dasharray="6 5"><path d="M60 96 L160 96 M60 96 L110 182 M160 96 L110 182"/></g></svg>
+        <span style="font-size:3rem">➡️</span>
+        <svg viewBox="0 0 200 200"><g stroke="#2b2140" stroke-width="3" stroke-linejoin="round">
+          <path d="M100 18 L30 160 L130 180 Z" fill="#ffc93c"/><path d="M100 18 L130 180 L175 140 Z" fill="#ff8a3d"/></g>
+          <path d="M30 160 L175 140" stroke="#2b2140" stroke-width="2" stroke-dasharray="6 5"/></svg>
+      </div>
+      <ol class="steps" id="s1">
+        <li>Take a cardboard sheet. Draw 4 triangles like this.</li>
+        <li>Cut along the outside lines.</li>
+        <li>Fold along the dotted lines.</li>
+        <li>Bring the points together and tape them.</li>
+        <li>Count the faces of your shape!</li>
+      </ol>
+      <div class="row"><button class="big-btn green" id="r1">🔊 Read the steps</button></div>
+      <div class="q">How many faces does your shape have?</div>
+      <div class="row" data-a="4"><button class="choice">3</button><button class="choice">4</button><button class="choice">6</button></div>
+    </div>
+    <div class="card center">
+      <h2>🟠 An object with one face</h2>
+      <div class="pics"><svg viewBox="0 0 100 100" style="height:9rem"><defs><radialGradient id="cl" cx="35%" cy="32%"><stop offset="0" stop-color="#fff"/><stop offset="0.4" stop-color="#ff9a5c"/><stop offset="1" stop-color="#c9551b"/></radialGradient></defs><circle cx="50" cy="52" r="40" fill="url(#cl)" stroke="#2b2140" stroke-width="2.5"/></svg></div>
+      <ol class="steps" id="s2">
+        <li>Take some clay or dough.</li>
+        <li>Roll it between your palms.</li>
+        <li>Make it round like a ball.</li>
+      </ol>
+      <div class="row"><button class="big-btn green" id="r2">🔊 Read the steps</button></div>
+      <div class="q">What shape did you make?</div>
+      <div class="row" data-a="sphere"><button class="choice">cube</button><button class="choice">sphere</button><button class="choice">cone</button></div>
+      <p class="hint" style="margin-top:0.8rem">Now make objects with <b>one</b>, <b>two</b>, <b>three</b> or <b>no</b> corners from clay!</p>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Make Your Own Shapes', subtitle: 'Shapes Around Us · Project work', back: '../index.html#ch2' });
+
+let token = 0, right = 0;
+function readSteps(id) {
+  const my = ++token, li = G.$$(`#${id} li`);
+  const go = (i) => {
+    if (my !== token) return;
+    li.forEach((l, j) => l.classList.toggle('now', j === i));
+    if (i >= li.length) return;
+    G.say(`Step ${i + 1}. ${li[i].textContent}`, { onend: () => setTimeout(() => go(i + 1), 400) });
+  };
+  go(0);
+}
+G.$('#r1').onclick = () => readSteps('s1');
+G.$('#r2').onclick = () => readSteps('s2');
+G.$$('.row[data-a]').forEach((row) => row.querySelectorAll('.choice').forEach((b) => (b.onclick = () => {
+  if (b.textContent !== row.dataset.a) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+  if (b.classList.contains('right')) return;
+  b.classList.add('right'); G.star(); G.sfx('good');
+  G.say(row.dataset.a === '4' ? 'Yes! It has 4 faces. All of them are triangles.' : 'Yes! A ball is a sphere. It has only one face, and it is curved.');
+  if (++right === 2) setTimeout(() => G.end({ title: 'Clever hands!', msg: 'You made a shape with four faces and a shape with one face.', onReplay: () => location.reload() }), 2600);
+})));
+</script>
+</body>
+</html>
