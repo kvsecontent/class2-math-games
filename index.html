@@ -252,7 +252,33 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 5 }, (_, i) => ({ n: i + 7, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 7, title: 'Rani’s Gift', unit: 'Measuring length, weight and capacity',
+    sections: [
+      { key: 'count', name: '📏 Length', games: [
+        { href: 'ch7/rani-story.html', ic: '👑', t: 'Rani’s Gift', d: 'The Raja’s bed: 10, 8 or 14 handspans?' },
+        { href: 'ch7/measure-it.html', ic: '📘', t: 'Estimate and Measure', d: 'Desk, blackboard, window with a textbook' },
+        { href: 'ch7/paths.html', ic: '🧵', t: 'Long and Short Paths', d: 'Longest path · shortest path · Kavita’s way' },
+        { href: 'ch7/block-heights.html', ic: '🦒', t: 'How Many Blocks?', d: 'The giraffe is ___ blocks tall' },
+      ]},
+      { key: 'compare', name: '⚖️ Weight', games: [
+        { href: 'ch7/heavy-light.html', ic: '🎃', t: 'Heavy or Light?', d: 'Pumpkin’s Chaupal · use the balance' },
+        { href: 'ch7/seesaw.html', ic: '🍉', t: 'Fruits in the Park', d: 'How many mangoes balance a watermelon?' },
+      ]},
+      { key: 'tens', name: '🥛 Capacity', games: [
+        { href: 'ch7/nimbu-pani.html', ic: '🍋', t: 'Nimbu Pani', d: 'Ingredients for 3 glasses' },
+        { href: 'ch7/bottles.html', ic: '🍶', t: 'Fill the Bottles', d: 'Raghu’s bottle holds 4 glasses' },
+        { href: 'ch7/jal-tarang.html', ic: '🎵', t: 'Jal Tarang', d: 'Glasses with water make music' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch7/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch7/measure-race.html', ic: '🏆', t: 'Royal Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 4 }, (_, i) => ({ n: i + 8, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

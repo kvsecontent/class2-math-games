@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .park { background: linear-gradient(#bfe6ff 0 70%, #8fd67e 70%); border-radius: var(--radius); border: 0.25rem solid var(--line); }
+  #svg { width: 100%; display: block; }
+  #plank { transition: transform 0.8s cubic-bezier(.3, 1.4, .5, 1); transform-origin: 400px 250px; transform-box: view-box; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.9rem; font-weight: 700; text-align: center; }
+  .count { font-size: 2.2rem; font-weight: 800; color: var(--purple); }
+  .choice { font-size: 2rem; min-width: 6rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Fruits in the park! Watermelon sits on the see-saw but cannot go up. Mango calls his friends to sit on the other side.</p>
+  <div class="wrap">
+    <div class="park"><svg id="svg" viewBox="0 0 800 420"></svg></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="count" id="count"></div><div class="row" id="ctl"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Fruits in the Park', subtitle: 'Rani’s Gift · Balancing on a see-saw', back: '../index.html#ch7' });
+
+/* From the book: mangoes balance a watermelon, and 1 coconut weighs the same as 2 mangoes.
+   In our picture, 6 mangoes balance the watermelon. */
+const MANGOES = 6;
+let mode = 'mango', n = 0, k = 0;
+function draw() {
+  const right = mode === 'mango' ? n : n * 2, d = MANGOES - right, ang = d > 0 ? -14 : d < 0 ? 14 : 0;
+  const e = mode === 'mango' ? '🥭' : '🥥', items = Array.from({ length: n }, (_, i) => `<text x="${520 + (i % 4) * 50}" y="${222 - Math.floor(i / 4) * 46}" font-size="48" text-anchor="middle">${e}</text>`).join('');
+  G.$('#svg').innerHTML = `<path d="M370 380 L400 250 L430 380 Z" fill="#8b5a2b"/><g id="plank" style="transform:rotate(${ang}deg)"><rect x="90" y="240" width="620" height="20" rx="10" fill="#e63946"/><text x="200" y="232" font-size="110" text-anchor="middle">🍉</text>${items}</g>`;
+}
+const STEPS = [
+  { mode: 'mango', t: 'Add mangoes until the see-saw is balanced.', q: 'How many mangoes balance the watermelon?', a: MANGOES },
+  { mode: 'coconut', t: '1 coconut weighs the same as 2 mangoes. Add coconuts until the see-saw is balanced.', q: 'How many coconuts balance the watermelon?', a: MANGOES / 2 },
+];
+function show() {
+  if (k >= STEPS.length) { G.end({ title: 'Perfect balance!', msg: 'Where can you check your own weight? Who in your family weighs more or less than you?', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, STEPS.length);
+  const st = STEPS[k]; mode = st.mode; n = 0; draw();
+  G.$('#q').textContent = st.t; G.$('#fb').innerHTML = ''; G.$('#count').textContent = '';
+  G.$('#ctl').innerHTML = `<button class="big-btn green" id="add">➕ Add a ${mode}</button><button class="big-btn ghost" id="take">➖ Take one off</button>`;
+  G.$('#add').onclick = () => { n++; upd(); };
+  G.$('#take').onclick = () => { if (n) { n--; upd(); } };
+  G.say(st.t);
+}
+function upd() {
+  draw(); G.sfx('pop');
+  const st = STEPS[k], right = mode === 'mango' ? n : n * 2;
+  G.$('#count').textContent = `${n} ${mode}${n === 1 ? '' : 's'}`;
+  if (right === MANGOES) setTimeout(ask, 900);
+  else if (right > MANGOES) G.say('Too many! The see-saw goes down on this side.');
+}
+function ask() {
+  const st = STEPS[k]; G.$('#q').textContent = st.q;
+  const opts = G.shuffle([st.a, st.a + 2, Math.max(1, st.a - 1)]);
+  G.$('#ctl').innerHTML = opts.map((o) => `<button class="choice">${o}</button>`).join('');
+  G.say(st.q);
+  G.$$('#ctl .choice').forEach((b) => (b.onclick = () => {
+    if (+b.textContent !== st.a) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good');
+    const msg = mode === 'mango' ? `${st.a} mangoes balance the watermelon.` : `${st.a} coconuts balance the watermelon, because ${st.a} coconuts weigh the same as ${MANGOES} mangoes.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(show, 3600);
+  }));
+}
+show();
+</script>
+</body>
+</html>

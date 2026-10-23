@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1.3fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .recipe { font-family: var(--read); font-size: 1.8rem; line-height: 1.7; text-align: left; }
+  .recipe h3 { margin: 0; font-family: var(--head); font-size: 2rem; }
+  .jug { font-size: 9rem; line-height: 1; text-align: center; }
+  .glasses { font-size: 4rem; text-align: center; }
+  .ing { display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem 0.8rem; align-items: center; font-size: 1.8rem; font-weight: 800; }
+  .ing button { width: 4.4rem; height: 4.4rem; border-radius: 50%; border: 0; font-size: 2.2rem; font-weight: 800; color: #fff; box-shadow: var(--shadow); }
+  .ing .p { background: var(--green); } .ing .m { background: var(--red); }
+  .ing .v { min-width: 5rem; text-align: center; font-size: 2.6rem; color: var(--purple); }
+  .ing .v.ok { color: var(--green); }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 0.6rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Let us make nimbu pani! Raghu made nimbu pani for his grandmother. Now he wants to make it for himself and his two friends.</p>
+  <div class="wrap">
+    <div class="card"><div class="recipe"><h3>🍋 For 1 glass</h3>💧 Water: 1 glass<br>🥄 Sugar: 1 spoon<br>🍋 Lemon juice: 2 spoons<br>🧂 Salt: a pinch</div><div class="glasses" id="gl"></div></div>
+    <div class="card"><div class="q" id="q">Raghu has to make 3 glasses. How much of each does he need? Use + and −.</div><div class="ing" id="ing"></div>
+      <div class="row" style="margin-top:0.8rem"><button class="big-btn green" id="mix">🥤 Mix it!</button></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Nimbu Pani', subtitle: 'Rani’s Gift · Project work', back: '../index.html#ch7' });
+
+/* The recipe for 1 glass is from the book. For 3 glasses everything is 3 times. */
+const ING = [['💧 Water', 'glasses', 1], ['🥄 Sugar', 'spoons', 1], ['🍋 Lemon juice', 'spoons', 2], ['🧂 Salt', 'pinches', 1]];
+let glasses = 3, v = ING.map(() => 0);
+function draw() {
+  G.$('#gl').textContent = '🥛'.repeat(glasses);
+  G.$('#ing').innerHTML = ING.map(([n, u], i) => `<span>${n} (${u})</span><button class="m" data-i="${i}">−</button><span class="v" id="v${i}">${v[i]}</span><button class="p" data-i="${i}">+</button>`).join('');
+  G.$$('#ing button').forEach((b) => (b.onclick = () => { const i = +b.dataset.i; v[i] = Math.max(0, v[i] + (b.classList.contains('p') ? 1 : -1)); G.$('#v' + i).textContent = v[i]; G.sfx('pop'); }));
+}
+G.$('#mix').onclick = () => {
+  const bad = ING.map(([n, u, per], i) => (v[i] === per * glasses ? null : `${n.slice(2)}: ${per} for 1 glass, so ${per * glasses} for ${glasses} glasses`)).filter(Boolean);
+  ING.forEach(([, , per], i) => G.$('#v' + i).classList.toggle('ok', v[i] === per * glasses));
+  if (bad.length) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Check: ' + bad[0]); G.say('Check again. ' + bad[0]); return; }
+  G.star(3); G.sfx('good'); G.confetti(20);
+  const msg = `Water ${glasses} glasses, sugar ${glasses} spoons, lemon juice ${glasses * 2} spoons and ${glasses} pinches of salt. Cheers!`;
+  G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+  if (glasses === 3) setTimeout(() => { glasses = 5; v = ING.map(() => 0); draw(); G.$('#q').textContent = 'Now 5 friends want nimbu pani! How much of each for 5 glasses?'; G.$('#fb').innerHTML = ''; G.say(G.$('#q').textContent); }, 5000);
+  else setTimeout(() => G.end({ title: 'Tasty nimbu pani!', msg: 'What is your favourite drink at home? Find out its ingredients!', onReplay: () => location.reload() }), 4000);
+};
+draw();
+G.say('Raghu has to make 3 glasses of nimbu pani. How much of each does he need?');
+</script>
+</body>
+</html>

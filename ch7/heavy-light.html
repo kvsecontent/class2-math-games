@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .bal { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.3rem; }
+  #svg { width: 100%; display: block; }
+  #beam { transition: transform 0.8s cubic-bezier(.3, 1.4, .5, 1); transform-origin: 300px 120px; transform-box: view-box; }
+  .veg { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin-top: 0.5rem; }
+  .veg button { width: 6.6rem; min-height: 6rem; border: 0.25rem solid var(--line); border-radius: 1rem; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .veg button span { font-size: 2.8rem; line-height: 1.1; }
+  .veg button b { font-size: 0.95rem; }
+  .veg button.picked { outline: 0.3rem dashed var(--orange); }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.9rem; font-weight: 700; text-align: center; }
+  .choice { font-size: 1.5rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Pumpkin's Chaupal! Tap a vegetable, then tap a pan of the balance. The heavier side goes down.</p>
+  <div class="wrap">
+    <div><div class="bal"><svg id="svg" viewBox="0 0 600 330"></svg></div><div class="veg" id="veg"></div></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="row" id="opts"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Heavy or Light?', subtitle: 'Rani’s Gift · Pumpkin’s Chaupal', back: '../index.html#ch7' });
+
+/* Vegetables from the book's picture. The weights (grams) are our typical sizes, used only to tip the balance. */
+const V = { pumpkin: ['🎃', 3000], watermelon: ['🍉', 2500], 'bottle gourd': ['🥒', 1000], cauliflower: ['🥦', 700], muskmelon: ['🍈', 600], brinjal: ['🍆', 200], capsicum: ['🫑', 150], tomato: ['🍅', 100], carrot: ['🥕', 80], chilli: ['🌶️', 10] };
+let L = null, R = null, picked = null;
+function draw() {
+  const w = (n) => (n ? V[n][1] : 0), d = w(L) - w(R), ang = d === 0 ? 0 : d > 0 ? -12 : 12;
+  G.$('#svg').innerHTML = `<rect x="285" y="120" width="30" height="180" fill="#8b5a2b"/><rect x="220" y="295" width="160" height="22" rx="8" fill="#6b4220"/>
+    <g id="beam" style="transform:rotate(${ang}deg)"><rect x="80" y="112" width="440" height="16" rx="8" fill="#c97a3c"/><circle cx="300" cy="120" r="14" fill="#ffd34d" stroke="#2b2140" stroke-width="3"/>
+      ${[[110, L, 'L'], [490, R, 'R']].map(([x, n, s]) => `<g class="pan" data-s="${s}" style="cursor:pointer"><path d="M${x} 128 L${x - 60} 220 M${x} 128 L${x + 60} 220" stroke="#555" stroke-width="3"/><path d="M${x - 75} 220 Q${x} 270 ${x + 75} 220 Z" fill="#ffd34d" stroke="#2b2140" stroke-width="3"/>
+      <rect x="${x - 80}" y="150" width="160" height="90" fill="transparent"/>${n ? `<text x="${x}" y="225" font-size="70" text-anchor="middle" style="transform-box:fill-box;transform-origin:center;transform:rotate(${-ang}deg)">${V[n][0]}</text>` : `<text x="${x}" y="212" font-size="22" text-anchor="middle" fill="#9a6b00">tap here</text>`}</g>`).join('')}</g>`;
+  G.$$('#svg .pan').forEach((p) => p.addEventListener('click', () => place(p.dataset.s)));
+}
+function place(s) {
+  if (!picked) { G.say('First tap a vegetable.'); return; }
+  if (s === 'L') L = picked; else R = picked;
+  picked = null; G.$$('#veg button').forEach((b) => b.classList.remove('picked')); draw(); G.sfx('pop');
+  if (L && R) setTimeout(() => G.say(V[L][1] === V[R][1] ? 'They balance!' : `The ${V[L][1] > V[R][1] ? L : R} is heavier.`), 700);
+}
+G.$('#veg').innerHTML = Object.entries(V).map(([n, [e]]) => `<button data-n="${n}"><span>${e}</span><b>${n}</b></button>`).join('');
+G.$$('#veg button').forEach((b) => (b.onclick = () => { picked = b.dataset.n; G.$$('#veg button').forEach((x) => x.classList.toggle('picked', x === b)); G.say(b.dataset.n); }));
+
+/* Questions from the book: fill in the blanks B–F, circle heaviest/lightest, which side goes down, sand or leaves. */
+const QS = [
+  { t: 'A. Muskmelon is heavier than carrot. Check it on the balance!', show: ['muskmelon', 'carrot'], o: ['Yes, muskmelon goes down', 'No, carrot goes down'] },
+  { t: 'B. Capsicum is lighter than ___.', o: ['cauliflower', 'chilli', 'carrot'], show: ['capsicum', 'cauliflower'] },
+  { t: 'E. Which is the heaviest of all?', o: ['pumpkin', 'tomato', 'chilli'] },
+  { t: 'F. Which is the lightest of all?', o: ['chilli', 'pumpkin', 'cauliflower'] },
+  { t: 'Circle the heaviest one: tomato, bottle gourd, carrot', o: ['bottle gourd', 'tomato', 'carrot'] },
+  { t: 'Circle the lightest one: watermelon, brinjal, cauliflower', o: ['brinjal', 'watermelon', 'cauliflower'] },
+  { t: 'Brinjal and pumpkin are on the balance. Which side goes down?', show: ['brinjal', 'pumpkin'], o: ['the pumpkin side', 'the brinjal side'], after: true },
+  { t: 'What do you think is heavier – a pumpkin or a watermelon?', o: ['It depends on their size – check with a balance!', 'A watermelon is always heavier.'] },
+  { t: 'Two same bags: one with sand, one with dry leaves. Which is heavier?', o: ['the bag of sand', 'the bag of dry leaves'] },
+];
+let k = 0;
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Balance boss!', msg: 'Make your own balance with a hanger, thread and two cups!', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  const q = QS[k]; G.$('#q').textContent = q.t; G.$('#fb').innerHTML = '';
+  if (q.show && !q.after) { [L, R] = q.show; draw(); }
+  if (q.after) { L = R = null; draw(); }
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); G.say('Try it on the balance!'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); if (q.show) { [L, R] = q.show; draw(); }
+    G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise()); G.say(q.t.includes('___') ? q.t.replace('___', q.o[0]).slice(3) : q.o[0]);
+    k++; setTimeout(show, 3000);
+  }));
+  G.say(q.t.replace('___', 'blank').replace(/^[A-F]\. /, ''));
+}
+draw(); show();
+</script>
+</body>
+</html>

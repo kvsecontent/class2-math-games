@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .room { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  #bed { width: 100%; display: block; }
+  .page { font-family: var(--read); font-size: 2rem; line-height: 1.5; min-height: 9rem; }
+  .page b { font-family: var(--head); color: var(--purple); }
+  .hands { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
+  .hands button { font-size: 1.5rem; min-height: 4.4rem; }
+  .count { font-size: 3rem; font-weight: 800; color: var(--orange); min-height: 3.6rem; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .choice { font-family: var(--read); font-size: 1.6rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="wrap">
+    <div class="room"><svg id="bed" viewBox="0 0 900 420"></svg></div>
+    <div class="card side"><div class="progress" id="pg"></div><div class="page" id="page"></div><div class="count" id="count"></div><div class="hands" id="hands"></div><div class="row" id="opts"></div>
+      <div class="row"><button class="big-btn ghost" id="read">🔊 Read</button><button class="big-btn green" id="next">Next ▶</button></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Rani’s Gift', subtitle: 'Rani’s Gift · Let us read', back: '../index.html#ch7' });
+
+/* The story from the book: the Raja asks for a bed 10 handspans long. The carpenter uses his own (smaller)
+   hand, so the bed is only 8 of the Raja's handspans – and 14 handspans of a child. Hand sizes are chosen to match. */
+const BED = 700, HANDS = { raja: ['👑 Raja', BED / 8, '#ff8a3d'], carpenter: ['🪚 Carpenter', BED / 10, '#2f7de1'], child: ['🧒 Child', BED / 14, '#2bb673'] };
+const PAGES = [
+  { t: 'Once upon a time, <b>Raja Jagdeep</b> wanted to make a beautiful carved bed for his queen. He called his best carpenter from the town.' },
+  { t: '<b>Raja:</b> I want a bed which is <b>10 handspans</b> long. <b>Carpenter:</b> Ok, Maharaj. The carpenter measured with <b>his</b> hand and started making the bed.', hand: 'carpenter' },
+  { t: '<b>Queen:</b> I am unable to fit in! <b>Raja:</b> Let me measure. 1, 2 … It is only <b>8</b> handspans! But how is it possible?', hand: 'raja' },
+  { t: 'Then a child measured the same bed. 1, 2, 3 … <b>14</b>. It is 14 handspans! Everyone including the Raja was confused.', hand: 'child' },
+  { t: 'Why did they get 10, 8 and 14 for the same bed?', q: ['Their hands are of different sizes.', 'The bed kept changing.', 'They cannot count.'] },
+  { t: '<b>Mantri:</b> I have a solution for this! What should everyone do?', q: ['Use the same measure, like one stick, for everyone.', 'Use the biggest hand only sometimes.', 'Stop measuring things.'] },
+];
+let p = 0, busy = false;
+function draw(spans = 0, w = 0, col = '#ff8a3d') {
+  let h = `<rect x="0" y="0" width="900" height="420" fill="#fbeedd"/><rect x="100" y="210" width="${BED}" height="70" rx="12" fill="#c97a3c" stroke="#6b4220" stroke-width="5"/>
+    <rect x="110" y="190" width="${BED - 20}" height="30" rx="12" fill="#fff" stroke="#c9c9c9" stroke-width="3"/><rect x="90" y="150" width="30" height="190" rx="8" fill="#8b5a2b"/><rect x="${100 + BED - 10}" y="170" width="30" height="170" rx="8" fill="#8b5a2b"/>
+    <path d="M100 340 L100 370 M${100 + BED} 340 L${100 + BED} 370" stroke="#6b4220" stroke-width="10"/>`;
+  for (let i = 0; i < spans; i++) h += `<rect x="${100 + i * w}" y="120" width="${w}" height="40" fill="${col}" opacity="${i % 2 ? 0.55 : 0.85}" stroke="#2b2140" stroke-width="2"/><text x="${100 + i * w + w / 2}" y="148" font-size="22" font-weight="800" text-anchor="middle" fill="#fff">${i + 1}</text>`;
+  if (spans) h += `<text x="${100 + (spans - 1) * w + w / 2}" y="110" font-size="44" text-anchor="middle">✋</text>`;
+  G.$('#bed').innerHTML = h;
+}
+function measure(key) {
+  if (busy) return; busy = true;
+  const [name, w, col] = HANDS[key], n = Math.round(BED / w); let i = 0;
+  const t = setInterval(() => { i++; draw(i, w, col); G.$('#count').textContent = `${name}: ${i}`; G.say(String(i), { rate: 1.2 }); if (i >= n) { clearInterval(t); busy = false; G.say(`${n} handspans!`); } }, 650);
+}
+function show() {
+  const P = PAGES[p];
+  G.progress(G.$('#pg'), p, PAGES.length);
+  G.$('#page').innerHTML = P.t; G.$('#count').textContent = ''; G.$('#opts').innerHTML = ''; draw();
+  G.$('#hands').innerHTML = p >= 1 ? Object.entries(HANDS).map(([k, v]) => `<button class="big-btn ${k === P.hand ? '' : 'ghost'}" data-k="${k}">✋ ${v[0]}</button>`).join('') : '';
+  G.$$('#hands button').forEach((b) => (b.onclick = () => measure(b.dataset.k)));
+  G.$('#next').style.display = P.q ? 'none' : '';
+  if (P.q) {
+    G.$('#opts').innerHTML = G.shuffle(P.q).map((o) => `<button class="choice">${o}</button>`).join('');
+    G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+      if (b.textContent !== P.q[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+      b.classList.add('right'); G.star(); G.sfx('good'); G.say(P.q[0]);
+      setTimeout(() => { if (++p < PAGES.length) show(); else G.end({ title: 'Problem solved!', msg: 'Hands are different. A common measure gives the same answer for everyone.', onReplay: () => { p = 0; show(); } }); }, 2600);
+    }));
+  }
+  const my = p;
+  G.say(G.$('#page').textContent, { onend: () => P.hand && my === p && setTimeout(() => measure(P.hand), 400) });
+}
+G.$('#read').onclick = () => G.say(G.$('#page').textContent);
+G.$('#next').onclick = () => { if (!busy) { p++; show(); } };
+show();
+</script>
+</body>
+</html>

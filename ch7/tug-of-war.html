@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Rani’s Gift · Two players', back: '../index.html#ch7' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '👑', t: 'Raja Jagdeep wanted a bed ____ handspans long.', o: ['10', '8', '14'] },
+  { e: '🛏️', t: 'Why did the Raja and the carpenter get different lengths?', o: ['Their hands are different sizes.', 'The bed grew.', 'They forgot to count.'] },
+  { e: '📏', t: 'To get the same answer, everyone should use ____.', o: ['the same measure', 'their own hand', 'no measure'] },
+  { e: '✋', t: 'A big hand measures a bed. A small hand will count ____ handspans.', o: ['more', 'fewer', 'the same'] },
+  { e: '📘', t: 'We guess a length before measuring. This is called ____.', o: ['estimating', 'adding', 'colouring'] },
+  { e: '🧵', t: 'Which path is the shortest between two points?', o: ['a straight path', 'a zig-zag path', 'a wavy path'] },
+  { e: '〰️', t: 'We can check the length of a curvy path with a ____.', o: ['thread', 'spoon', 'leaf'] },
+  { e: '🦒', t: 'The giraffe is 9 blocks tall. The monkey is 4 blocks tall. Who is taller?', o: ['giraffe', 'monkey'] },
+  { e: '🧸', t: 'The teddy is 5 blocks and the elephant is 7 blocks. How many more for the elephant?', o: ['2', '12', '5'] },
+  { e: '🎃', t: 'Which is heavier?', o: ['pumpkin', 'chilli'] },
+  { e: '🥕', t: 'Which is lighter?', o: ['carrot', 'watermelon'] },
+  { e: '⚖️', t: 'On a balance, the heavier side goes ____.', o: ['down', 'up', 'away'] },
+  { e: '⚖️', t: 'If both sides of a balance are level, the weights are ____.', o: ['equal', 'heavy', 'light'] },
+  { e: '🥦', t: 'Capsicum is lighter than ____.', o: ['cauliflower', 'chilli', 'a pea'] },
+  { e: '🛍️', t: 'Two same bags, one with sand and one with dry leaves. Heavier?', o: ['sand', 'dry leaves'] },
+  { e: '🍉', t: '6 mangoes balance a watermelon. 1 coconut = 2 mangoes. How many coconuts balance it?', o: ['3', '6', '12'] },
+  { e: '🥥', t: '1 coconut weighs the same as ____ mangoes.', o: ['2', '1', '10'] },
+  { e: '🍋', t: 'For 1 glass of nimbu pani we need ____ spoons of lemon juice.', o: ['2', '1', '3'] },
+  { e: '🍋', t: 'For 3 glasses of nimbu pani, how many glasses of water?', o: ['3', '1', '6'] },
+  { e: '🍋', t: 'For 3 glasses of nimbu pani, how many spoons of lemon juice?', o: ['6', '3', '2'] },
+  { e: '🥄', t: 'For 3 glasses, how many spoons of sugar?', o: ['3', '1', '6'] },
+  { e: '🍶', t: 'Raghu’s bottle holds ____ glasses of water.', o: ['4', '3', '6'] },
+  { e: '🍶', t: 'Tara’s bottle holds 6 glasses. Raghu’s holds 4. Tara’s holds ____.', o: ['more', 'less', 'equal'] },
+  { e: '🍶', t: 'Meena’s bottle holds 3 glasses. Raghu’s holds 4. Meena’s holds ____.', o: ['less', 'more', 'equal'] },
+  { e: '🎵', t: 'In a jal tarang, a glass with more water rings ____.', o: ['lower', 'higher', 'louder only'] },
+  { e: '💧', t: 'What should we do with water?', o: ['Use it well and not waste it', 'Leave taps open', 'Throw it away'] },
+  { e: '🚪', t: 'What can we use to measure a door?', o: ['handspans', 'a cup', 'a balance'] },
+  { e: '⚖️', t: 'What do we use to compare weights?', o: ['a balance', 'a ruler', 'a glass'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .row7 { display: flex; gap: 1rem; justify-content: center; align-items: flex-end; width: 100%; max-width: 120rem; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 1rem; }
+  .g { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .g svg { width: 9rem; height: 17rem; cursor: pointer; }
+  .g svg.hit { animation: shake 0.3s; }
+  .g .ctl { display: flex; gap: 0.3rem; }
+  .g .ctl button { width: 3.6rem; height: 3.6rem; border-radius: 50%; border: 0; font-size: 1.8rem; font-weight: 800; color: #fff; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; margin: 0.8rem 0 0.4rem; text-align: center; }
+  .choice { font-size: 1.7rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Jal tarang! Fill the glasses with different amounts of water. Tap a glass to hear it ring.</p>
+  <div class="row7" id="gl"></div>
+  <div class="row" style="margin-top:0.8rem"><button class="big-btn purple" id="tune">🎵 Play all</button><button class="big-btn ghost" id="steps">📶 Make steps</button></div>
+  <div class="q" id="q">When a glass has more water, is its sound higher or lower?</div>
+  <div class="row" id="opts"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Jal Tarang', subtitle: 'Rani’s Gift · Project work', back: '../index.html#ch7' });
+
+/* A real jal tarang rings lower when a glass holds more water. */
+const COLS = ['#e63946', '#ff8a3d', '#ffc93c', '#2bb673', '#13b5b1', '#2f7de1', '#8a5cf6'];
+let lv = [6, 3, 7, 1, 4, 2, 5];
+const freq = (l) => 1050 - l * 75;
+function glass(i) {
+  const l = lv[i], top = 40 + (8 - l) * 26;
+  return `<svg viewBox="0 0 120 260" data-i="${i}"><defs><clipPath id="cg${i}"><path d="M14 30 L106 30 L94 250 L26 250 Z"/></clipPath></defs>
+    <rect x="0" y="${top}" width="120" height="260" fill="${COLS[i]}" opacity="0.65" clip-path="url(#cg${i})"/>
+    <path d="M14 30 L106 30 L94 250 L26 250 Z" fill="none" stroke="#2b2140" stroke-width="5"/></svg>`;
+}
+function draw() {
+  G.$('#gl').innerHTML = lv.map((_, i) => `<div class="g">${glass(i)}<div class="ctl"><button style="background:var(--red)" data-i="${i}" data-d="-1">−</button><button style="background:var(--green)" data-i="${i}" data-d="1">+</button></div></div>`).join('');
+  G.$$('#gl svg').forEach((s) => s.addEventListener('pointerdown', () => ring(+s.dataset.i)));
+  G.$$('#gl .ctl button').forEach((b) => (b.onclick = () => { const i = +b.dataset.i; lv[i] = Math.min(8, Math.max(0, lv[i] + +b.dataset.d)); draw(); ring(i); }));
+}
+function ring(i) {
+  if (G.isMuted()) return;
+  const f = freq(lv[i]); G.tone(f, 0, 0.9, 'sine', 0.3); G.tone(f * 2.01, 0, 0.5, 'sine', 0.08);
+  const s = G.$(`#gl svg[data-i="${i}"]`); s.classList.remove('hit'); void s.getBBox(); s.classList.add('hit');
+}
+G.$('#tune').onclick = () => lv.forEach((_, i) => setTimeout(() => ring(i), i * 380));
+G.$('#steps').onclick = () => { lv = [7, 6, 5, 4, 3, 2, 1]; draw(); G.say('Now the water goes down step by step. Listen!'); setTimeout(() => G.$('#tune').click(), 1600); };
+const O = ['lower', 'higher'];
+G.$('#opts').innerHTML = O.map((o) => `<button class="choice">${o}</button>`).join('');
+G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+  if (b.textContent !== 'lower') { b.classList.add('wrong'); G.sfx('bad'); G.say('Listen again. Tap a full glass, then an empty one.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+  b.classList.add('right'); G.star(2); G.sfx('good');
+  G.feedback(G.$('#fb'), true, '🎉 More water makes a lower sound!'); G.say('Yes! More water makes a lower sound. Less water makes a higher sound.');
+  setTimeout(() => G.end({ title: 'Music maker!', msg: 'Make a jal tarang at home with 5 to 7 glasses or bowls. Do not waste the water – water the plants after!', onReplay: () => location.reload() }), 4000);
+}));
+draw();
+G.say('Tap a glass to hear it ring.');
+</script>
+</body>
+</html>

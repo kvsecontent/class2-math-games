@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .bench { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.4rem; }
+  #svg { width: 100%; display: block; }
+  table { border-collapse: collapse; width: 100%; background: #fff; margin-top: 0.6rem; border-radius: 1rem; overflow: hidden; }
+  th, td { border: 0.15rem solid var(--ink); padding: 0.2rem 0.4rem; font-size: 1.4rem; text-align: center; }
+  th { background: #fff4cc; }
+  tr.now td { background: #fffbe8; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.8rem; font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">First guess (estimate) how many units long it is. Then measure and check!</p>
+  <div class="wrap">
+    <div><div class="bench"><svg id="svg" viewBox="0 0 1000 300"></svg></div>
+      <table><thead><tr><th>Object</th><th>Measured with</th><th>Estimated length</th><th>Actual length</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="card side"><div class="q" id="q"></div><div id="padbox" class="side"><div class="m-box on" id="show">?</div><div id="pad"></div></div><button class="big-btn orange" id="go" style="display:none">📏 Measure!</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Estimate and Measure', subtitle: 'Rani’s Gift · Let us do', back: '../index.html#ch7' });
+
+/* Desk, blackboard and window with a textbook are from the book; bed, door and wall (project work)
+   with a pencil, handspan or eraser. The sizes are our own pictures. n = actual count. */
+const ITEMS = [
+  { o: 'desk', e: '🪑', u: 'textbook', ue: '📘', n: 4, col: '#c97a3c' },
+  { o: 'blackboard', e: '⬛', u: 'textbook', ue: '📘', n: 8, col: '#2b4a3a' },
+  { o: 'window', e: '🪟', u: 'textbook', ue: '📘', n: 3, col: '#8fd0ff' },
+  { o: 'bed', e: '🛏️', u: 'pencil', ue: '✏️', n: 11, col: '#ff8a3d' },
+  { o: 'door', e: '🚪', u: 'handspan', ue: '✋', n: 13, col: '#8b5a2b' },
+  { o: 'table top', e: '🍽️', u: 'eraser', ue: '🧽', n: 15, col: '#e0a23c' },
+];
+G.$('#tb').innerHTML = ITEMS.map((it, i) => `<tr data-r="${i}"><td>${it.e} ${it.o}</td><td>${it.ue} ${it.u}</td><td class="es"></td><td class="ac"></td></tr>`).join('');
+let k = 0, est;
+function draw(placed = 0) {
+  const it = ITEMS[k], len = 860, w = len / it.n;
+  let h = `<rect x="70" y="150" width="${len}" height="70" rx="10" fill="${it.col}" stroke="#2b2140" stroke-width="4"/><text x="500" y="270" font-size="34" font-weight="800" text-anchor="middle">${it.e} ${it.o}</text>`;
+  for (let i = 0; i < placed; i++) h += `<rect x="${70 + i * w}" y="92" width="${w}" height="50" fill="${i % 2 ? '#ffd34d' : '#ffe9a6'}" stroke="#2b2140" stroke-width="2"/><text x="${70 + i * w + w / 2}" y="127" font-size="${Math.min(28, w * 0.6)}" text-anchor="middle">${it.ue}</text><text x="${70 + i * w + w / 2}" y="80" font-size="22" font-weight="800" text-anchor="middle">${i + 1}</text>`;
+  h += `<text x="70" y="50" font-size="30" font-weight="800">Unit: ${it.ue} 1 ${it.u}</text>`;
+  G.$('#svg').innerHTML = h;
+}
+function show() {
+  if (k >= ITEMS.length) { G.end({ title: 'Measuring star!', msg: 'Estimate first, then measure. The more you practise, the closer your guess!', onReplay: () => location.reload() }); return; }
+  const it = ITEMS[k];
+  G.$$('#tb tr').forEach((t) => t.classList.toggle('now', +t.dataset.r === k));
+  draw(); G.$('#fb').innerHTML = ''; G.$('#go').style.display = 'none'; G.$('#padbox').style.display = ''; pad.clear();
+  G.$('#q').textContent = `Estimate: how many ${it.u}s long is the ${it.o}?`;
+  G.say(G.$('#q').textContent);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    est = v; pad.clear(); G.$(`#tb tr[data-r="${k}"] .es`).textContent = v;
+    G.$('#padbox').style.display = 'none'; G.$('#go').style.display = '';
+    G.$('#q').textContent = `You guessed ${v}. Now measure!`; G.say(G.$('#q').textContent);
+  },
+});
+G.$('#go').onclick = () => {
+  const it = ITEMS[k]; let i = 0; G.$('#go').style.display = 'none';
+  const t = setInterval(() => {
+    i++; draw(i); G.say(String(i), { rate: 1.2 });
+    if (i >= it.n) {
+      clearInterval(t); G.$(`#tb tr[data-r="${k}"] .ac`).textContent = it.n;
+      const d = Math.abs(est - it.n), msg = d === 0 ? 'Exactly right! Wow!' : d <= 2 ? `Very close! It is ${it.n} ${it.u}s long.` : `It is ${it.n} ${it.u}s long. Good try!`;
+      G.star(d <= 2 ? 2 : 1); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+      k++; setTimeout(show, 3400);
+    }
+  }, 450);
+};
+show();
+</script>
+</body>
+</html>

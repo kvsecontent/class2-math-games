@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .shelf { display: flex; gap: 1.4rem; justify-content: center; align-items: flex-end; width: 100%; max-width: 120rem; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 1rem; }
+  .bt { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; cursor: pointer; border: 0.3rem solid transparent; border-radius: 1rem; padding: 0.3rem; background: none; }
+  .bt.on { border-color: var(--orange); background: #fff4cc; }
+  .bt svg { display: block; }
+  .bt b { font-size: 1.5rem; }
+  .bt span { font-size: 1.4rem; font-weight: 800; color: var(--purple); min-height: 2rem; }
+  .q { font-family: var(--read); font-size: 2.1rem; font-weight: 700; margin: 0.6rem 0; text-align: center; }
+  .choice { font-size: 1.8rem; min-width: 0; min-height: 4rem; padding: 0.3rem 1rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Raghu's bottle is filled with four glasses of water. How many glasses fill the other bottles? Tap “Pour a glass” to find out!</p>
+  <div class="shelf" id="shelf"></div>
+  <div class="q" id="q"></div>
+  <div class="row" id="ctl"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Fill the Bottles', subtitle: 'Rani’s Gift · How much water?', back: '../index.html#ch7' });
+
+/* Raghu's bottle holds 4 glasses (from the book). The friends' bottles are ours. */
+const B = [{ n: 'Raghu', cap: 4, col: '#2f7de1', h: 200, w: 90 }, { n: 'Meena', cap: 3, col: '#ff6fa8', h: 150, w: 90 }, { n: 'Sahil', cap: 4, col: '#2bb673', h: 160, w: 112 }, { n: 'Tara', cap: 6, col: '#ff8a3d', h: 240, w: 110 }];
+const fill = B.map(() => 0);
+let cur = 1, k = 0;
+function bottle(b, f) {
+  const H = b.h, W = b.w, lvl = (f / b.cap) * (H - 30);
+  return `<svg viewBox="0 0 ${W + 20} ${H + 50}" style="height:${(H + 50) / 18}rem"><defs><clipPath id="c${b.n}"><rect x="10" y="40" width="${W}" height="${H}" rx="18"/></clipPath></defs>
+    <rect x="${10 + W / 2 - 14}" y="8" width="28" height="34" rx="6" fill="${b.col}"/><rect x="10" y="40" width="${W}" height="${H}" rx="18" fill="#eef8ff" stroke="#2b2140" stroke-width="4"/>
+    <rect x="10" y="${40 + H - lvl}" width="${W}" height="${lvl}" fill="#5ec3f0" clip-path="url(#c${b.n})"/>${Array.from({ length: b.cap - 1 }, (_, i) => `<line x1="12" y1="${40 + H - ((i + 1) / b.cap) * (H - 30)}" x2="26" y2="${40 + H - ((i + 1) / b.cap) * (H - 30)}" stroke="#2b2140" stroke-width="2"/>`).join('')}</svg>`;
+}
+function draw() {
+  G.$('#shelf').innerHTML = B.map((b, i) => `<button class="bt ${i === cur ? 'on' : ''}" data-i="${i}">${bottle(b, i === 0 ? b.cap : fill[i])}<b>${b.n}'s bottle</b><span>${i === 0 ? '4 glasses' : fill[i] ? fill[i] + ' glass' + (fill[i] > 1 ? 'es' : '') : ''}</span></button>`).join('');
+}
+function pourStep() {
+  const b = B[cur];
+  G.$('#q').textContent = `Fill ${b.n}'s bottle. Pour glasses until it is full!`;
+  G.$('#ctl').innerHTML = '<button class="big-btn" id="pour">🥛 Pour a glass</button>';
+  G.$('#pour').onclick = () => {
+    if (fill[cur] >= b.cap) return;
+    fill[cur]++; draw(); G.sfx('pop'); G.say(String(fill[cur]));
+    if (fill[cur] === b.cap) setTimeout(compare, 800);
+  };
+  G.say(G.$('#q').textContent); draw();
+}
+function compare() {
+  const b = B[cur], ans = b.cap === 4 ? 'equal' : b.cap > 4 ? 'more' : 'less';
+  G.$('#q').textContent = `${b.n}'s bottle is full with ${b.cap} glasses. Does it hold equal, more or less water than Raghu's bottle?`;
+  G.$('#ctl').innerHTML = ['equal', 'more', 'less'].map((o) => `<button class="choice">${o}</button>`).join('');
+  G.say(G.$('#q').textContent);
+  G.$$('#ctl .choice').forEach((x) => (x.onclick = () => {
+    if (x.textContent !== ans) { x.classList.add('wrong'); G.sfx('bad'); setTimeout(() => x.classList.remove('wrong'), 500); return; }
+    x.classList.add('right'); G.star(); G.sfx('good');
+    const msg = `${b.cap} glasses. That is ${ans === 'equal' ? 'equal to' : ans + ' than'} Raghu's 4 glasses.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg);
+    setTimeout(() => { G.$('#fb').innerHTML = ''; if (++cur < B.length) pourStep(); else names(); }, 3200);
+  }));
+}
+const NAMES = [['Whose bottle carries equal water as Raghu’s?', 'Sahil'], ['Whose bottle carries less water than Raghu’s?', 'Meena'], ['Whose bottle carries more water than Raghu’s?', 'Tara']];
+function names() {
+  cur = -1; draw();
+  if (k >= NAMES.length) { G.end({ title: 'Water wise!', msg: 'Water is precious. Use it well and never waste it!', onReplay: () => location.reload() }); return; }
+  const [q, a] = NAMES[k]; G.$('#q').textContent = q;
+  G.$('#ctl').innerHTML = ['Meena', 'Sahil', 'Tara'].map((o) => `<button class="choice">${o}</button>`).join('');
+  G.say(q);
+  G.$$('#ctl .choice').forEach((x) => (x.onclick = () => {
+    if (x.textContent !== a) { x.classList.add('wrong'); G.sfx('bad'); setTimeout(() => x.classList.remove('wrong'), 500); return; }
+    x.classList.add('right'); G.star(); G.sfx('good'); G.say(`${a}!`); k++; setTimeout(names, 1800);
+  }));
+}
+pourStep();
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%; max-width: 120rem; }
+  .pc { background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.3rem; }
+  .pc svg { width: 100%; display: block; }
+  .pc.right { border-color: var(--green); background: #effcf5; }
+  .pc.wrong { border-color: var(--red); animation: shake 0.4s; }
+  .map { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); width: 100%; max-width: 110rem; }
+  .map svg { width: 100%; height: calc(100vh - 19rem); display: block; }
+  .q { font-family: var(--read); font-size: 2.2rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+  .thread { transition: all 1.5s; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="progress" id="pg"></div>
+  <div class="q" id="q"></div>
+  <div id="area" class="center" style="width:100%"></div>
+  <div class="row" id="ctl" style="margin-top:0.6rem"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Long and Short Paths', subtitle: 'Rani’s Gift · Let us do', back: '../index.html#ch7' });
+
+/* The tasks are from the book (longest path, shortest path, Kavita's way to school). The paths are our drawings. */
+const A = [40, 150], B = [360, 150];
+const PATHS = [
+  'M40 150 L100 60 L160 240 L220 60 L280 240 L360 150',
+  'M40 150 Q120 40 200 150 T360 150',
+  'M40 150 L120 110 L200 170 L280 120 L360 150',
+];
+const dots = `<circle cx="${A[0]}" cy="${A[1]}" r="14" fill="#2f7de1"/><text x="${A[0]}" y="${A[1] - 22}" font-size="26" font-weight="800" text-anchor="middle">A</text><circle cx="${B[0]}" cy="${B[1]}" r="14" fill="#e63946"/><text x="${B[0]}" y="${B[1] - 22}" font-size="26" font-weight="800" text-anchor="middle">B</text>`;
+let step = 0;
+function lenOf(d) { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.style.position = 'absolute'; s.append(p); document.body.append(s); const L = p.getTotalLength(); s.remove(); return L; }
+function threads(ds, cols) {
+  // show each path's length as a straight thread
+  const max = Math.max(...ds.map(lenOf));
+  return ds.map((d, i) => `<rect class="thread" x="40" y="${280 + i * 0}" width="${(lenOf(d) / max) * 320}" height="10" rx="5" fill="${cols[i]}"/>`);
+}
+function longest() {
+  G.$('#q').textContent = 'Choose the longest path from A to B.';
+  const order = G.shuffle([0, 1, 2]), cols = ['#ff8a3d', '#8a5cf6', '#2bb673'];
+  const th = threads(PATHS, cols);
+  G.$('#area').innerHTML = `<div class="cards">${order.map((i, j) => `<button class="pc" data-i="${i}"><svg viewBox="0 0 400 300"><path d="${PATHS[i]}" fill="none" stroke="${cols[i]}" stroke-width="7" stroke-linejoin="round"/>${dots}<g class="th" style="display:none">${th[i]}<text x="40" y="275" font-size="20" font-weight="800">thread</text></g></svg></button>`).join('')}</div>`;
+  G.$('#ctl').innerHTML = '<button class="big-btn ghost" id="thr">🧵 Check with a thread</button>';
+  G.$('#thr').onclick = () => { G.$$('.th').forEach((g) => (g.style.display = '')); G.say('Lay a thread along each path, then pull it straight. The longest thread is the longest path.'); };
+  G.$$('.pc').forEach((b) => (b.onclick = () => {
+    if (+b.dataset.i !== 0) { b.classList.add('wrong'); G.sfx('bad'); G.say('Use a thread to check!'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.$$('.th').forEach((g) => (g.style.display = '')); win('The zig-zag path is the longest. It goes up and down a lot!');
+  }));
+  G.say(G.$('#q').textContent);
+}
+function shortest() {
+  G.$('#q').textContent = 'Now make the shortest path between A and B. Tap A, then tap B.';
+  G.$('#ctl').innerHTML = '';
+  G.$('#area').innerHTML = `<div class="map" style="max-width:70rem"><svg viewBox="0 0 400 300" id="sv">${PATHS.map((d) => `<path d="${d}" fill="none" stroke="#d6d0c4" stroke-width="5"/>`).join('')}${dots}</svg></div>`;
+  let first = false;
+  G.$('#sv').addEventListener('click', (e) => {
+    const s = G.$('#sv'), p = s.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(s.getScreenCTM().inverse());
+    const near = (P) => Math.hypot(q.x - P[0], q.y - P[1]) < 40;
+    if (!first && near(A)) { first = true; G.sfx('pop'); G.say('Now tap B.'); return; }
+    if (first && near(B)) { s.insertAdjacentHTML('beforeend', `<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="#e63946" stroke-width="8" stroke-linecap="round"/>`); win('A straight line is the shortest path between two points!'); first = 'done'; }
+  });
+  G.say(G.$('#q').textContent);
+}
+function kavita() {
+  G.$('#q').textContent = 'Kavita is getting late for school. Which path should she use to reach school fast? Tap it.';
+  G.$('#ctl').innerHTML = '';
+  const R = [
+    { d: 'M110 400 L110 110 L520 110 L520 300 L780 300', c: '#ff8a3d', n: 'orange' },
+    { d: 'M110 400 L400 400 L400 300 L780 300', c: '#2f7de1', n: 'blue' },
+    { d: 'M110 400 Q300 560 500 470 Q700 380 640 220 L780 300', c: '#2bb673', n: 'green' },
+  ];
+  G.$('#area').innerHTML = `<div class="map"><svg viewBox="0 0 900 560"><rect width="900" height="560" fill="#dff5d6"/>
+    ${R.map((r) => `<path d="${r.d}" fill="none" stroke="#fff" stroke-width="34" stroke-linejoin="round"/><path class="road" data-n="${r.n}" d="${r.d}" fill="none" stroke="${r.c}" stroke-width="18" stroke-linejoin="round" style="cursor:pointer"/>`).join('')}
+    <text x="110" y="460" font-size="70" text-anchor="middle">🏠</text><text x="110" y="510" font-size="26" font-weight="800" text-anchor="middle">Home</text>
+    <text x="800" y="300" font-size="70" text-anchor="middle">🏫</text><text x="800" y="350" font-size="26" font-weight="800" text-anchor="middle">School</text>
+    <text x="300" y="220" font-size="50">🌳</text><text x="620" y="190" font-size="50">🌳</text><text x="250" y="330" font-size="44">🏡</text></svg></div>`;
+  const best = R.map((r) => [r.n, lenOf(r.d)]).sort((a, b) => a[1] - b[1])[0][0];
+  G.$$('.road').forEach((p) => p.addEventListener('click', () => {
+    if (p.dataset.n !== best) { G.sfx('bad'); G.say(`The ${p.dataset.n} road is longer. Try another one.`); return; }
+    p.setAttribute('stroke-width', 26); win(`The ${best} road is the shortest. Kavita will reach school fast!`);
+  }));
+  G.say(G.$('#q').textContent);
+}
+const STEPS = [longest, shortest, kavita];
+function win(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); step++; setTimeout(go, 3400); }
+function go() {
+  if (step >= STEPS.length) { G.end({ title: 'Path finder!', msg: 'A straight path is the shortest. Check lengths with a thread!', onReplay: () => { step = 0; go(); } }); return; }
+  G.progress(G.$('#pg'), step, STEPS.length); G.$('#fb').innerHTML = ''; STEPS[step]();
+}
+go();
+</script>
+</body>
+</html>
