@@ -355,7 +355,29 @@ const CHAPTERS = [
       ]},
     ],
   },
-  { n: 11, title: 'Coming soon', unit: '', sections: [] },
+  {
+    n: 11, title: 'Data Handling', unit: 'Tables, face charts, surveys and puzzles',
+    sections: [
+      { key: 'count', name: '📊 Count and chart', games: [
+        { href: 'ch11/data-chart.html?set=colours', ic: '🎨', t: 'Favourite Colours', d: 'Count · table · chart · most and least liked' },
+        { href: 'ch11/data-chart.html?set=fruits', ic: '🍎', t: 'Picnic Day', d: 'Fruit party: apple, banana, orange, guava, kiwi' },
+        { href: 'ch11/data-chart.html?set=school', ic: '🚌', t: 'Coming to School', d: 'On foot, auto, bus, bike, bicycle' },
+        { href: 'ch11/data-chart.html?set=games', ic: '🏏', t: 'Games we Play', d: 'Gilli-danda, kabaddi, pithu, football, cricket' },
+      ]},
+      { key: 'tens', name: '🗳️ Class survey', games: [
+        { href: 'ch11/survey.html', ic: '🗳️', t: 'Class Survey', d: 'Vegetables we like · people at home · grandparents' },
+      ]},
+      { key: 'play', name: '🧩 Puzzles', games: [
+        { href: 'ch11/puzzles.html', ic: '🧩', t: 'Puzzles', d: 'Number trick, number names, make 30, same total …' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch11/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch11/data-race.html', ic: '🏆', t: 'Picnic Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
 ];
 
 const tabs = document.getElementById('tabs');

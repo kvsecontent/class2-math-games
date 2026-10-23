@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .pic { background: #e9f6ff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; min-height: 13rem; align-content: center; }
+  .kid { border: 0.2rem solid transparent; border-radius: 1rem; background: #fff; padding: 0.15rem 0.3rem; display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
+  .kid .a { font-size: 1.8rem; } .kid .b { font-size: 1.7rem; }
+  .kid .b svg { width: 1.7rem; height: 1.7rem; }
+  .kid.tick { border-color: var(--green); background: #d9f7e8; }
+  .tbl { display: grid; gap: 0.3rem; margin-top: 0.6rem; }
+  .tbl .r { display: grid; grid-template-columns: 12rem 1fr; gap: 0.5rem; align-items: center; }
+  .tbl .lab { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; }
+  .tbl .lab svg { width: 1.8rem; height: 1.8rem; }
+  .tbl .faces { display: flex; align-items: center; gap: 0.2rem; min-height: 2.9rem; background: #fff; border-radius: 0.8rem; border: 0.2rem solid var(--line); padding: 0 0.4rem; cursor: pointer; }
+  .tbl .faces.on { border-color: var(--orange); }
+  .tbl .faces span { font-size: 1.9rem; }
+  .tbl .m-box { height: 2.7rem; min-width: 3.6rem; font-size: 1.8rem; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+  .choice { font-size: 1.5rem; min-width: 0; min-height: 3.6rem; padding: 0.3rem 0.8rem; }
+  .key { font-size: 1.3rem; font-weight: 800; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint" style="margin-bottom:0.3rem"></p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div><div class="pic" id="pic"></div><div class="tbl" id="tbl"></div><div id="padbox" class="row" style="margin-top:0.5rem"><div class="m-box on" id="show">?</div><div id="pad"></div></div></div>
+    <div class="card side"><div class="q" id="q"></div><div class="key" id="key"></div><div class="row" id="opts"></div><button class="big-btn green" id="chk" style="display:none">✅ Check the chart</button><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+/* The four data activities from the book. The book's pictures are not available to us,
+   so the pictures and the numbers in them are our own; the questions follow the book. */
+const GUAVA = '<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="15" ry="14" fill="#9bd36a" stroke="#4c8a2a" stroke-width="2"/><circle cx="14" cy="18" r="1.5" fill="#4c8a2a"/><circle cx="24" cy="26" r="1.5" fill="#4c8a2a"/><path d="M20 8 L22 3" stroke="#6b4220" stroke-width="2"/></svg>';
+const PITHU = '<svg viewBox="0 0 40 40"><ellipse cx="20" cy="34" rx="14" ry="4" fill="#9aa0ad"/><ellipse cx="20" cy="27" rx="11" ry="4" fill="#b0b5c0"/><ellipse cx="20" cy="20" rx="8" ry="3.5" fill="#9aa0ad"/><ellipse cx="20" cy="14" rx="5" ry="3" fill="#b0b5c0"/></svg>';
+const GILLI = '<svg viewBox="0 0 40 40"><path d="M4 32 L34 8" stroke="#8b5a2b" stroke-width="5" stroke-linecap="round"/><path d="M22 34 L34 30" stroke="#c97a3c" stroke-width="4" stroke-linecap="round"/></svg>';
+const SETS = {
+  colours: { title: 'Favourite Colours', what: 'colour', kid: '🧒', cats: [['Red', '🔴', 5], ['Green', '🟢', 3], ['Blue', '🔵', 6], ['Yellow', '🟡', 4]],
+    qs: [['A. The most liked colour is ___.', 'most'], ['B. The least liked colour is ___.', 'least'], ['C. Yellow colour is liked more than ___.', 'lessThan:Yellow'], ['D. ___ colour is liked more than green.', 'moreThan:Green']] },
+  fruits: { title: 'Picnic Day', what: 'fruit', kid: '🧒', cats: [['Apple', '🍎', 4], ['Banana', '🍌', 6], ['Orange', '🍊', 3], ['Guava', GUAVA, 4], ['Kiwi', '🥝', 2]],
+    qs: [['A. How many children are there in the picture?', 'total'], ['B. Number of children who like apples is ___.', 'num:Apple'], ['C. The most liked fruit is ___.', 'most'], ['D. The least liked fruit is ___.', 'least'],
+      ['E. Children who like guava are ___ the children who like apple.', 'cmp:Guava:Apple'], ['F. Children who like apple are ___ the children who like banana.', 'cmp:Apple:Banana'], ['G. Children who like orange are ___ the children who like kiwi.', 'cmp:Orange:Kiwi']] },
+  school: { title: 'Coming to School', what: 'way', kid: '🧒', cats: [['On foot', '🚶', 8], ['Autorickshaw', '🛺', 5], ['Bus', '🚌', 7], ['Bike', '🏍️', 3], ['Bicycle', '🚲', 4]],
+    qs: [['A. Most students come to school by ___.', 'most'], ['B. Least students come to school by ___.', 'least'], ['C. Students who come by bus are ___ than those who come by autorickshaw.', 'ml:Bus:Autorickshaw'], ['D. Students who come by bike are ___ than those who come by bicycle.', 'ml:Bike:Bicycle']] },
+  games: { title: 'Games we Play', what: 'game', kid: '🧒', cats: [['Gilli-danda', GILLI, 4], ['Kabaddi', '🤼', 6], ['Pithu', PITHU, 5], ['Football', '⚽', 3], ['Cricket', '🏏', 8]],
+    qs: [['A. The most liked game is ___.', 'most'], ['B. The least liked game is ___.', 'least'], ['C. Pithu is liked more than ___.', 'lessThan:Pithu'], ['D. ___ is liked more than football.', 'moreThan:Football']] },
+};
+const KEY = (location.search.match(/set=(\w+)/) || [])[1] || 'colours', S = SETS[KEY];
+G.init({ title: S.title, subtitle: 'Data Handling · Let us do', back: '../index.html#ch11' });
+G.$('#hint').textContent = 'Count from the picture, fill the table, draw the chart (😊 = 1 child), then answer!';
+const N = Object.fromEntries(S.cats.map(([n, , c]) => [n, c])), total = S.cats.reduce((a, c) => a + c[2], 0);
+const people = G.shuffle(S.cats.flatMap(([n, e, c]) => Array(c).fill([n, e])));
+let phase = 'count', ci = 0, faces = S.cats.map(() => 0), qi = 0;
+G.$('#pic').innerHTML = people.map(([n, e], i) => `<button class="kid" data-i="${i}"><span class="a">${S.kid}</span><span class="b">${e}</span></button>`).join('');
+G.$$('#pic .kid').forEach((b) => (b.onclick = () => { b.classList.toggle('tick'); G.sfx('pop'); }));
+function table() {
+  G.$('#tbl').innerHTML = S.cats.map(([n, e], i) => `<div class="r"><span class="lab"><span>${e}</span>${n}</span>${phase === 'count' ? `<span><span class="m-box ${i === ci ? 'on' : ''}">${i < ci ? N[n] : '?'}</span></span>` : `<span class="faces ${phase === 'chart' ? 'on' : ''}" data-i="${i}">${'<span>😊</span>'.repeat(faces[i])}<b style="margin-left:auto;font-size:1.4rem">${N[n]}</b></span>`}</div>`).join('');
+  G.$$('#tbl .faces').forEach((f) => (f.onclick = () => { if (phase !== 'chart') return; const i = +f.dataset.i; faces[i] = faces[i] >= 12 ? 0 : faces[i] + 1; G.sfx('pop'); table(); }));
+}
+function step() {
+  G.$('#fb').innerHTML = ''; pad.clear(); G.$('#opts').innerHTML = '';
+  if (phase === 'count') {
+    G.progress(G.$('#pg'), 0, 3);
+    if (ci >= S.cats.length) { phase = 'chart'; return step(); }
+    const nm = S.cats[ci][0].toLowerCase();
+    G.$('#q').textContent = KEY === 'school' ? `Count: how many students come ${nm === 'on foot' ? 'on foot' : 'by ' + nm}?` : KEY === 'colours' ? `Count: how many children like ${nm}?` : `Count: how many children like ${KEY === 'fruits' ? nm + 's' : 'to play ' + nm}?`;
+    G.$('#key').textContent = 'Tip: tap each child to tick them as you count.'; G.$('#padbox').style.display = ''; G.$('#chk').style.display = 'none';
+    table(); G.say(G.$('#q').textContent); return;
+  }
+  if (phase === 'chart') {
+    G.progress(G.$('#pg'), 1, 3);
+    G.$('#q').textContent = 'Draw the chart: tap each row to add faces. 😊 = 1 child.'; G.$('#key').textContent = 'Tap more to add a face. After 12 it starts again from 0.';
+    G.$('#padbox').style.display = 'none'; G.$('#chk').style.display = ''; table(); G.say('Now draw faces in the chart. One face for one child.'); return;
+  }
+  G.progress(G.$('#pg'), 2, 3); G.$('#padbox').style.display = 'none'; G.$('#chk').style.display = 'none'; G.$('#key').textContent = '';
+  if (qi >= S.qs.length) { G.end({ title: 'Data detective!', msg: 'Tables and charts help us compare quickly.', onReplay: () => location.reload() }); return; }
+  const [t, kind] = S.qs[qi], names = S.cats.map((c) => c[0]);
+  const mx = Math.max(...Object.values(N)), mn = Math.min(...Object.values(N));
+  let opts, ok;
+  if (kind === 'total') { G.$('#padbox').style.display = ''; G.$('#q').textContent = t; G.say(t); padWant = total; return; }
+  if (kind.startsWith('num:')) { G.$('#padbox').style.display = ''; G.$('#q').textContent = t; G.say(t.replace('___', 'blank')); padWant = N[kind.slice(4)]; return; }
+  if (kind === 'most') { opts = names; ok = (o) => N[o] === mx; }
+  if (kind === 'least') { opts = names; ok = (o) => N[o] === mn; }
+  if (kind.startsWith('lessThan:')) { const x = kind.split(':')[1]; opts = names.filter((n) => n !== x); ok = (o) => N[o] < N[x]; }
+  if (kind.startsWith('moreThan:')) { const x = kind.split(':')[1]; opts = names.filter((n) => n !== x); ok = (o) => N[o] > N[x]; }
+  if (kind.startsWith('cmp:')) { const [, a, b] = kind.split(':'); opts = ['more than', 'less than', 'equal to']; ok = (o) => o === (N[a] > N[b] ? 'more than' : N[a] < N[b] ? 'less than' : 'equal to'); }
+  if (kind.startsWith('ml:')) { const [, a, b] = kind.split(':'); opts = ['more', 'less']; ok = (o) => o === (N[a] > N[b] ? 'more' : 'less'); }
+  G.$('#q').textContent = t; G.say(t.replace('___', 'blank'));
+  G.$('#opts').innerHTML = opts.map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (!ok(b.textContent)) { b.classList.add('wrong'); G.sfx('bad'); G.say('Look at the chart again.'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); right(t.replace('___', b.textContent).replace(/^[A-G]\. /, ''));
+  }));
+}
+let padWant = null;
+function right(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); qi++; setTimeout(step, 2400); }
+G.$('#chk').onclick = () => {
+  const bad = S.cats.findIndex(([n], i) => faces[i] !== N[n]);
+  if (bad >= 0) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 Check the ${S.cats[bad][0]} row: it needs ${N[S.cats[bad][0]]} faces.`); G.say(`Check the ${S.cats[bad][0]} row.`); return; }
+  G.star(2); G.sfx('good'); phase = 'ask'; G.say('Your chart is ready!'); setTimeout(step, 1200);
+};
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2, row: true,
+  onEnter: (v) => {
+    pad.clear();
+    if (phase === 'count') {
+      const [n] = S.cats[ci];
+      if (v !== N[n]) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again. Tap each child as you count.'); return; }
+      G.sfx('good'); G.say(`${v}`); ci++; step(); return;
+    }
+    if (v !== padWant) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again.'); return; }
+    right(`${v}!`);
+  },
+});
+step();
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .tabs { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .tabs .on { background: var(--purple); color: #fff; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 30rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .rows { display: grid; gap: 0.4rem; }
+  .r { display: grid; grid-template-columns: 14rem 4.4rem 1fr 4.4rem 3.4rem; gap: 0.4rem; align-items: center; background: #fff; border-radius: 1rem; border: 0.2rem solid var(--line); padding: 0.3rem 0.5rem; }
+  .r .lab { font-size: 1.5rem; font-weight: 800; }
+  .r input { font-family: var(--head); font-size: 1.4rem; font-weight: 800; width: 100%; border: 0.15rem dashed var(--line); border-radius: 0.6rem; padding: 0.2rem 0.4rem; }
+  .r button { height: 4rem; border: 0; border-radius: 50%; font-size: 2.2rem; font-weight: 800; color: #fff; }
+  .r .p { background: var(--green); } .r .m { background: var(--red); }
+  .r .faces { font-size: 1.8rem; letter-spacing: -0.1rem; overflow: hidden; white-space: nowrap; }
+  .r .n { font-size: 2rem; font-weight: 800; color: var(--purple); text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; }
+  .ans { font-family: var(--read); font-size: 1.5rem; font-weight: 700; background: #f6f1ff; border-radius: 1rem; padding: 0.4rem 0.7rem; text-align: left; border: 0.2rem solid transparent; }
+  .ans b { color: var(--green); visibility: hidden; }
+  .ans.show b { visibility: visible; }
+  .ans.show { border-color: var(--green); background: #e6f8ef; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="tabs" id="tabs"></div>
+  <p class="hint" id="hint" style="margin:0 0 0.4rem"></p>
+  <div class="wrap"><div class="rows" id="rows"></div><div class="card side" id="side"></div></div>
+</main>
+<script src="../assets/common.js"></script>
+<script>
+G.init({ title: 'Class Survey', subtitle: 'Data Handling · Let us do and project work', back: '../index.html#ch11' });
+
+/* The three surveys are from the book: vegetables we like, people living together, and grandparents.
+   The class fills in its own data; the vegetable names can be changed. */
+const SURVEYS = [
+  { id: 'veg', tab: '🥕 Vegetables we like', hint: 'Ask your friends which vegetable they like the most. Tap + for each friend. You can change the vegetable names.', cats: ['Potato', 'Carrot', 'Peas', 'Cauliflower', 'Spinach', 'Okra'], edit: true, unit: 'children',
+    qs: (d, L) => { const nz = L.filter((_, i) => d[i]); const mx = L[d.indexOf(Math.max(...d))], mn = nz.length ? nz.reduce((a, n) => (d[L.indexOf(n)] < d[L.indexOf(a)] ? n : a)) : '—'; return [['Most liked vegetable is', mx], ['Least liked vegetable is', mn], [`${mx} is liked more than`, mn]]; } },
+  { id: 'fam', tab: '👨‍👩‍👧 People at home', hint: 'Ask your friends how many people live in their home. Tap + for each friend’s family.', cats: ['1 person', '2 people', '3 people', '4 people', '5 people', '6 or more'], unit: 'families',
+    qs: (d, L) => { const mx = L[d.indexOf(Math.max(...d))]; const first = d.findIndex((x) => x > 0); return [['Most families have', mx], ['The least number of people living in a home is', first < 0 ? '—' : L[first]], ['Number of families having 4 people is', String(d[3])], ['Number of families having more than 4 people is', String(d[4] + d[5])]]; } },
+  { id: 'gp', tab: '👵👴 Grandparents', hint: 'Project work: visit nearby families. Do grandparents live with them? Tap + for each family.', cats: ['Both grandparents', 'Only grandmother', 'Only grandfather', 'No grandparents'], unit: 'families',
+    qs: (d) => [['How many families did you visit?', String(d.reduce((a, b) => a + b, 0))], ['Families living with both grandparents:', String(d[0])], ['Families living with one grandparent:', String(d[1] + d[2])], ['Families living without grandparents:', String(d[3])]] },
+];
+const data = {}, names = {};
+SURVEYS.forEach((s) => { data[s.id] = s.cats.map(() => 0); names[s.id] = [...s.cats]; });
+let cur = SURVEYS[0];
+G.$('#tabs').innerHTML = SURVEYS.map((s, i) => `<button class="big-btn ghost ${i ? '' : 'on'}" data-i="${i}">${s.tab}</button>`).join('');
+G.$$('#tabs button').forEach((b) => (b.onclick = () => { cur = SURVEYS[+b.dataset.i]; G.$$('#tabs button').forEach((x) => x.classList.toggle('on', x === b)); draw(); G.say(cur.hint); }));
+function draw() {
+  const d = data[cur.id], L = names[cur.id];
+  G.$('#hint').textContent = cur.hint + ' 😊 = 1.';
+  G.$('#rows').innerHTML = L.map((n, i) => `<div class="r"><span class="lab">${cur.edit ? `<input data-i="${i}" value="${n}">` : n}</span><button class="m" data-i="${i}">−</button><span class="faces">${'😊'.repeat(d[i])}</span><button class="p" data-i="${i}">+</button><span class="n">${d[i]}</span></div>`).join('');
+  G.$$('#rows .p').forEach((b) => (b.onclick = () => { d[+b.dataset.i]++; G.sfx('pop'); draw(); }));
+  G.$$('#rows .m').forEach((b) => (b.onclick = () => { const i = +b.dataset.i; if (d[i]) { d[i]--; G.sfx('pop'); draw(); } }));
+  G.$$('#rows input').forEach((inp) => (inp.onchange = () => { L[+inp.dataset.i] = inp.value.trim() || L[+inp.dataset.i]; draw(); }));
+  const total = d.reduce((a, b) => a + b, 0);
+  G.$('#side').innerHTML = `<div style="font-size:1.6rem;font-weight:800;text-align:center">Read the table 📋</div>${total ? cur.qs(d, L).map(([q, a]) => `<button class="ans">${q} <b>${a}</b></button>`).join('') + '<p class="hint" style="margin:0">Say your answer, then tap to check.</p>' : '<p class="hint">Add some answers first!</p>'}<button class="big-btn green" id="fin">🏁 Finish</button>`;
+  G.$$('#side .ans').forEach((b) => (b.onclick = () => { b.classList.add('show'); G.say(b.textContent); G.star(); }));
+  G.$('#fin').onclick = () => G.end({ title: 'Survey done!', msg: 'You collected data and read it from your table!', onReplay: () => location.reload() });
+}
+draw();
+G.say(cur.hint);
+</script>
+</body>
+</html>

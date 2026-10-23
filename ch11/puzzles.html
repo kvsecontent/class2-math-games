@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .menu { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0.5rem; width: 100%; max-width: 120rem; margin-bottom: 0.6rem; }
+  .menu button { min-height: 5.4rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; font-size: 1.1rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .menu button span { font-size: 2.2rem; }
+  .menu button.on { border-color: var(--purple); background: #f6f1ff; }
+  .menu button.done { border-color: var(--green); background: #e6f8ef; }
+  .panel { width: 100%; max-width: 110rem; background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); padding: 0.8rem; min-height: 26rem; display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; text-align: center; }
+  .ws { display: grid; grid-template-columns: repeat(10, 2.8rem); gap: 0.12rem; }
+  .ws button { height: 2.8rem; border: 0; border-radius: 0.4rem; background: #f7f3ea; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; }
+  .ws button.sel { background: #ffd34d; } .ws button.found { background: #a8f0c6; }
+  .words { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+  .words span { font-size: 1.3rem; font-weight: 800; padding: 0.1rem 0.6rem; border-radius: 1rem; background: #f7f3ea; }
+  .words span.got { background: #a8f0c6; text-decoration: line-through; }
+  .balls { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; }
+  .ball { width: 6rem; height: 6rem; border-radius: 50%; border: 0; font-size: 2.2rem; font-weight: 800; color: #fff; background: radial-gradient(circle at 35% 30%, #ffb38a, #e63946); }
+  .ball.on { outline: 0.4rem solid var(--ink); }
+  .arms { position: relative; width: 26rem; height: 19rem; margin-top: 1rem; }
+  .slot { position: absolute; width: 4.6rem; height: 4.6rem; margin: -2.3rem; border-radius: 50%; border: 0.3rem dashed var(--purple); background: #f6f1ff; font-size: 2.4rem; font-weight: 800; }
+  .slot.c { border-color: var(--orange); background: #fff4cc; }
+  .nums { display: flex; gap: 0.5rem; }
+  .nums button { width: 5rem; height: 5rem; border-radius: 1rem; border: 0.25rem solid var(--line); background: #fff; font-size: 2.4rem; font-weight: 800; }
+  .nums button.on { border-color: var(--orange); background: #fff4cc; } .nums button.used { opacity: 0.25; }
+  .cloth { display: flex; gap: 0; }
+  .cloth span { width: 8rem; height: 5rem; background: repeating-linear-gradient(45deg, #ff8a3d 0 0.6rem, #ffb38a 0.6rem 1.2rem); border: 0.15rem solid #c9551b; display: flex; align-items: flex-end; justify-content: center; font-size: 1.1rem; font-weight: 800; }
+  .cloth .cut { width: 4rem; height: 5rem; border: 0; background: none; font-size: 2.4rem; padding: 0; }
+  .cloth .cut.todo { opacity: 0.35; }
+  .calc { display: grid; grid-template-columns: repeat(4, 5.4rem); gap: 0.5rem; }
+  .calc .scr { grid-column: 1 / -1; background: #2b2140; color: #a8f0c6; font-size: 2.2rem; font-family: monospace; text-align: right; padding: 0.4rem 0.8rem; border-radius: 0.8rem; min-height: 3.6rem; overflow: hidden; }
+  .calc button { height: 4.6rem; border-radius: 1rem; border: 0.2rem solid var(--line); background: #fff; font-size: 2.2rem; font-weight: 800; }
+  .calc button:disabled { opacity: 0.25; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <div class="menu" id="menu"></div>
+  <div class="panel" id="panel"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Puzzles', subtitle: 'Data Handling · Puzzles', back: '../index.html#ch11' });
+
+/* Puzzles D, F, J, K, S, T, U and V from the book (the others need the book's pictures). */
+const P = [['🧠', 'Number trick', trick], ['🔤', 'Number names', words], ['🛞', 'Who am I?', riddle], ['⚽', 'Make 30', make30], ['✳️', 'Same total', arms], ['✂️', 'Cut the cloth', cloth], ['✖️', 'Double it', double], ['🧮', 'Calculator', calc]];
+const done = new Set();
+G.$('#menu').innerHTML = P.map(([e, n], i) => `<button data-i="${i}"><span>${e}</span>${n}</button>`).join('');
+G.$$('#menu button').forEach((b) => (b.onclick = () => open(+b.dataset.i)));
+function open(i) { G.$$('#menu button').forEach((b, j) => b.classList.toggle('on', j === i)); G.$('#panel').innerHTML = ''; P[i][2](i); }
+function solved(i, msg) {
+  done.add(i); G.$$('#menu button')[i].classList.add('done'); G.star(2); G.sfx('win'); G.confetti(15);
+  G.$('#panel').insertAdjacentHTML('beforeend', `<div class="feedback good">🎉 ${msg}</div>`); G.say(msg);
+  if (done.size === P.length) setTimeout(() => G.end({ title: 'Puzzle champion!', msg: 'You solved all the puzzles!', onReplay: () => location.reload() }), 2500);
+  else { const nx = P.findIndex((_, j) => !done.has(j)); setTimeout(() => open(nx), 3200); }
+}
+const panel = (h) => (G.$('#panel').innerHTML = h);
+
+/* D. Think of a number, double it, add 8, take away half, take away the number – it is always 4! */
+function trick(i) {
+  panel('<div class="q">Think of a number from 1 to 20. Type it here!</div><div class="row"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="q" id="steps" style="font-size:1.7rem;line-height:1.7"></div>');
+  const pad = M.pad(G.$('#pad'), { show: G.$('#show'), digits: 2, onEnter: (n) => {
+    if (n < 1 || n > 20) { G.say('Choose a number from 1 to 20.'); pad.clear(); return; }
+    const a = n * 2, b = a + 8, c = b - b / 2, d = c - n;
+    const lines = [`Your number: ${n}`, `Double that number: ${n} + ${n} = ${a}`, `Add eight: ${a} + 8 = ${b}`, `Minus half of that number: ${b} − ${b / 2} = ${c}`, `Minus the number you started with: ${c} − ${n} = ${d}`, `Is the number 4? Yes! 🎩`];
+    G.$('#pad').style.display = 'none'; let k = 0;
+    const t = setInterval(() => { G.$('#steps').innerHTML = lines.slice(0, ++k).join('<br>'); G.sfx('pop'); if (k === lines.length) { clearInterval(t); solved(i, 'The answer is always 4! Play this trick with your friends.'); } }, 1100);
+  } });
+  G.say('Think of a number from 1 to 20 and type it.');
+}
+/* F. Find the number names from 11 to 20. Our own word grid. */
+function words(i) {
+  const W = ['eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  let grid, placed;
+  for (let tries = 0; tries < 200; tries++) {
+    grid = Array.from({ length: 10 }, () => Array(10).fill('')); placed = {}; let ok = true;
+    for (const w of W) {
+      let put = false;
+      for (let t = 0; t < 200 && !put; t++) {
+        const down = Math.random() < 0.5, r = M.rnd(0, down ? 10 - w.length : 9), c = M.rnd(0, down ? 9 : 10 - w.length);
+        const cells = [...w].map((_, k) => (down ? [r + k, c] : [r, c + k]));
+        if (cells.every(([y, x], k) => !grid[y][x] || grid[y][x] === w[k])) { cells.forEach(([y, x], k) => (grid[y][x] = w[k])); placed[w] = cells; put = true; }
+      }
+      if (!put) { ok = false; break; }
+    }
+    if (ok) break;
+  }
+  const AB = 'abcdefghijklmnopqrstuvwxyz';
+  grid = grid.map((row) => row.map((ch) => ch || AB[M.rnd(0, 25)]));
+  const found = new Set(); let first = null;
+  panel(`<div class="q">Find the number names from 11 to 20. Tap the first letter, then the last letter.</div><div class="ws" id="ws">${grid.flatMap((row, y) => row.map((ch, x) => `<button data-y="${y}" data-x="${x}">${ch}</button>`)).join('')}</div><div class="words" id="wl">${W.map((w) => `<span data-w="${w}">${w}</span>`).join('')}</div>`);
+  G.$$('#ws button').forEach((b) => (b.onclick = () => {
+    const p = [+b.dataset.y, +b.dataset.x];
+    if (!first) { first = p; b.classList.add('sel'); return; }
+    const hit = W.find((w) => !found.has(w) && [[placed[w][0], placed[w].at(-1)], [placed[w].at(-1), placed[w][0]]].some(([s, e]) => s[0] === first[0] && s[1] === first[1] && e[0] === p[0] && e[1] === p[1]));
+    G.$$('#ws .sel').forEach((x) => x.classList.remove('sel')); first = null;
+    if (!hit) { G.sfx('bad'); return; }
+    found.add(hit); placed[hit].forEach(([y, x]) => G.$(`#ws button[data-y="${y}"][data-x="${x}"]`).classList.add('found'));
+    G.$(`#wl span[data-w="${hit}"]`).classList.add('got'); G.sfx('good'); G.say(hit);
+    if (found.size === W.length) solved(i, 'You found all the number names from eleven to twenty!');
+  }));
+  G.say('Find the number names from eleven to twenty.');
+}
+/* J. Who am I? */
+function riddle(i) {
+  panel(`<div class="q">I am in a bicycle, and in a car and a bus.<br>I make all vehicles run. They can’t move if I am flat.<br><b>What is my shape?</b></div><div class="row" id="o">${G.shuffle(['circle', 'square', 'triangle', 'rectangle']).map((o) => `<button class="choice">${o}</button>`).join('')}</div>`);
+  G.say('I am in a bicycle, and in a car and a bus. I make all vehicles run. They can not move if I am flat. What is my shape?');
+  G.$$('#o .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== 'circle') { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; } b.classList.add('right'); solved(i, 'I am a wheel – a circle!'); }));
+}
+/* K. Which balls make a total of 30? The book's balls: 1, 9, 4, 11, 5, 13, 7, 15. */
+function make30(i) {
+  const B = [1, 9, 4, 11, 5, 13, 7, 15], on = new Set();
+  panel(`<div class="q">Which three balls make a total of 30? ⚽ + ⚽ + ⚽ = 30</div><div class="balls" id="bl">${B.map((n) => `<button class="ball" data-n="${n}">${n}</button>`).join('')}</div><div class="q" id="sum">0</div>`);
+  G.$$('#bl .ball').forEach((b) => (b.onclick = () => {
+    const n = +b.dataset.n; on.has(n) ? on.delete(n) : on.size < 3 && on.add(n); b.classList.toggle('on', on.has(n)); G.sfx('pop');
+    const s = [...on].reduce((a, x) => a + x, 0); G.$('#sum').textContent = [...on].join(' + ') + ' = ' + s;
+    if (on.size === 3) { if (s === 30) solved(i, `${[...on].join(' plus ')} is 30!`); else G.say(`That makes ${s}. Try again.`); }
+  }));
+  G.say('Which three balls make a total of 30?');
+}
+/* S. Arrange 1 to 7 so the three arms have the same total. */
+function arms(i) {
+  const POS = [[15, 13], [15, 6.5], [15, 0], [22, 18], [28, 22], [8, 18], [2, 22]]; // centre, then arm 1 (up), arm 2 (right), arm 3 (left)
+  const val = Array(7).fill(null); let pick = null;
+  const draw = () => {
+    panel(`<div class="q">Put the numbers 1 to 7 in the circles so that all three arms have the same total. The middle circle is in every arm!</div>
+      <div class="arms"><svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 30 26"><path d="M15 13 L15 0 M15 13 L28 22 M15 13 L2 22" stroke="#d6d0c4" stroke-width="0.6"/></svg>${POS.map(([x, y], k) => `<button class="slot ${k ? '' : 'c'}" data-k="${k}" style="left:${(x / 30) * 100}%;top:${(y / 26) * 100}%">${val[k] ?? ''}</button>`).join('')}</div>
+      <div class="nums">${[1, 2, 3, 4, 5, 6, 7].map((n) => `<button data-n="${n}" class="${val.includes(n) ? 'used' : ''} ${pick === n ? 'on' : ''}">${n}</button>`).join('')}</div><div class="q" id="tot"></div>`);
+    G.$$('.nums button').forEach((b) => (b.onclick = () => { pick = +b.dataset.n; if (val.includes(pick)) val[val.indexOf(pick)] = null; draw(); }));
+    G.$$('.slot').forEach((b) => (b.onclick = () => { const k = +b.dataset.k; if (pick == null) { val[k] = null; draw(); return; } val[k] = pick; pick = null; G.sfx('pop'); draw(); check(); }));
+  };
+  const check = () => {
+    if (val.some((v) => v == null)) return;
+    const s = [val[0] + val[1] + val[2], val[0] + val[3] + val[4], val[0] + val[5] + val[6]];
+    G.$('#tot').textContent = `Arm totals: ${s.join(', ')}`;
+    if (s[0] === s[1] && s[1] === s[2]) solved(i, `All three arms make ${s[0]}!`); else { G.sfx('bad'); G.say('The totals are not the same yet. Try swapping numbers.'); }
+  };
+  draw(); G.say('Put 1 to 7 in the circles so that the three arms have the same total.');
+}
+/* T. A 6 metre cloth, cut 1 metre at a time. How many cuts? */
+function cloth(i) {
+  let cuts = 0;
+  const draw = () => { panel(`<div class="q">A cloth is 6 metres long. We cut 1 metre each time. Tap ✂️ to cut! How many cuts do we need?</div><div class="cloth" id="cl">${Array.from({ length: 6 }, (_, k) => `<span>1 m</span>${k < 5 ? `<button class="cut ${k < cuts ? '' : 'todo'}" data-k="${k}">✂️</button>` : ''}`).join('')}</div><div class="q">Cuts: ${cuts}</div><div class="row" id="o"></div>`);
+    G.$$('.cut').forEach((b) => (b.onclick = () => { if (+b.dataset.k === cuts) { cuts++; G.sfx('pop'); draw(); if (cuts === 5) ask(); } }));
+  };
+  const ask = () => { G.$('#o').innerHTML = ['5', '6', '7'].map((o) => `<button class="choice">${o}</button>`).join(''); G.say('How many times did we cut?'); G.$$('#o .choice').forEach((b) => (b.onclick = () => { if (b.textContent !== '5') { b.classList.add('wrong'); G.sfx('bad'); return; } b.classList.add('right'); solved(i, 'Only 5 cuts! The last piece is already 1 metre.'); })); };
+  draw(); G.say('A cloth is 6 metres long. Cut 1 metre each time. How many cuts?');
+}
+/* U. I think of a number and double it. The answer is 18. */
+function double(i) {
+  panel('<div class="q">I think of a number and double it. My answer is 18. What was my number?</div><div class="row"><div class="m-box on" id="show">?</div><div id="pad"></div></div>');
+  const pad = M.pad(G.$('#pad'), { show: G.$('#show'), digits: 2, onEnter: (v) => { pad.clear(); if (v !== 9) { G.sfx('bad'); G.say(`Double ${v} is ${v * 2}. Try again.`); return; } solved(i, '9! Double 9 is 18.'); } });
+  G.say('I think of a number and double it. My answer is 18. What was my number?');
+}
+/* V. Press 10 keys on a calculator to make 28 – here, ten presses of the 1 key. */
+function calc(i) {
+  let expr = '', ones = 0;
+  const draw = () => {
+    let val = ''; try { val = expr && !/[+]$/.test(expr) ? eval(expr) : ''; } catch (e) { val = ''; }
+    panel(`<div class="q">Use the <b>1</b> key exactly 10 times (and + as many times as you like) to make <b>28</b>.</div><div class="calc"><div class="scr">${expr || '0'} ${val !== '' ? '= ' + val : ''}</div>
+      <button data-k="1" ${ones >= 10 ? 'disabled' : ''}>1</button><button data-k="+">+</button><button data-k="C">C</button><button data-k="=">=</button></div><div class="q">1-keys used: ${ones} / 10</div>`);
+    G.$$('.calc button').forEach((b) => (b.onclick = () => {
+      const k = b.dataset.k; G.sfx('pop');
+      if (k === 'C') { expr = ''; ones = 0; }
+      else if (k === '1') { expr += '1'; ones++; }
+      else if (k === '+') { if (expr && !expr.endsWith('+')) expr += '+'; }
+      else if (k === '=') { const v = expr && !expr.endsWith('+') ? eval(expr) : 0; if (v === 28 && ones === 10) { draw(); solved(i, `${expr.replace(/\+/g, ' + ')} = 28!`); return; } G.say(ones !== 10 ? `You used ${ones} ones. Use exactly 10.` : `That makes ${v}. Try again.`); }
+      draw();
+    }));
+  };
+  draw(); G.say('Use the one key exactly ten times to make 28. Hint: you can make 11!');
+}
+open(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Data Handling · Two players', back: '../index.html#ch11' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '🔴', t: 'Red 5, Green 3, Blue 6, Yellow 4. The most liked colour is ____.', o: ['Blue', 'Red', 'Green'] },
+  { e: '🟢', t: 'Red 5, Green 3, Blue 6, Yellow 4. The least liked colour is ____.', o: ['Green', 'Yellow', 'Blue'] },
+  { e: '🟡', t: 'Yellow 4, Green 3. Yellow is liked ____ green.', o: ['more than', 'less than', 'equal to'] },
+  { e: '🍎', t: 'Apple 4, Guava 4. Guava is liked ____ apple.', o: ['equal to', 'more than', 'less than'] },
+  { e: '🍌', t: 'Apple 4, Banana 6. Apple is liked ____ banana.', o: ['less than', 'more than', 'equal to'] },
+  { e: '🥝', t: 'Orange 3, Kiwi 2. Orange is liked ____ kiwi.', o: ['more than', 'less than', 'equal to'] },
+  { e: '🧺', t: 'Apple 4, Banana 6, Orange 3, Guava 4, Kiwi 2. How many children in all?', o: ['19', '16', '20'] },
+  { e: '🚶', t: 'On foot 8, Bus 7, Bike 3. Most students come ____.', o: ['on foot', 'by bus', 'by bike'] },
+  { e: '🏍️', t: 'Bike 3, Bicycle 4. Bike is ____ than bicycle.', o: ['less', 'more'] },
+  { e: '🚌', t: 'Bus 7, Autorickshaw 5. Bus is ____ than autorickshaw.', o: ['more', 'less'] },
+  { e: '😊', t: 'In our chart, one 😊 stands for ____.', o: ['1 child', '2 children', '10 children'] },
+  { e: '😊', t: 'A row has 😊😊😊😊😊. How many children?', o: ['5', '4', '6'] },
+  { e: '🏏', t: 'Cricket 8, Kabaddi 6, Pithu 5. The most liked game is ____.', o: ['Cricket', 'Kabaddi', 'Pithu'] },
+  { e: '⚽', t: 'Football 3, Gilli-danda 4. The least liked of these is ____.', o: ['Football', 'Gilli-danda'] },
+  { e: '📋', t: 'We write data neatly in a ____.', o: ['table', 'kite', 'bag'] },
+  { e: '👨‍👩‍👧', t: 'In a survey we ____ our friends questions.', o: ['ask', 'hide', 'paint'] },
+  { e: '🧠', t: 'Think of a number, double it, add 8, take half away, take the number away. You get ____.', o: ['4', '8', '0'] },
+  { e: '🔤', t: 'Which is the number name for 17?', o: ['seventeen', 'seventy', 'seven'] },
+  { e: '🔤', t: 'Which is the number name for 20?', o: ['twenty', 'twelve', 'two'] },
+  { e: '🛞', t: 'I make all vehicles run. What is my shape?', o: ['circle', 'square', 'triangle'] },
+  { e: '⚽', t: 'Which three balls make 30?', o: ['4 + 11 + 15', '1 + 9 + 13', '5 + 7 + 13'] },
+  { e: '✂️', t: 'A 6 metre cloth is cut into 1 metre pieces. How many cuts?', o: ['5', '6', '7'] },
+  { e: '✖️', t: 'I double a number and get 18. The number is ____.', o: ['9', '36', '16'] },
+  { e: '🧮', t: '11 + 11 + 1 + 1 + 1 + 1 + 1 + 1 = ____', o: ['28', '26', '18'] },
+  { e: '✳️', t: 'Numbers 1 to 7 in three arms with 4 in the middle. Each arm makes ____.', o: ['12', '10', '7'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>
