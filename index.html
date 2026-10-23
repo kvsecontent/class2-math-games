@@ -141,7 +141,37 @@ const CHAPTERS = [
       ]},
     ],
   },
-  ...Array.from({ length: 9 }, (_, i) => ({ n: i + 3, title: 'Coming soon', unit: '', sections: [] })),
+  {
+    n: 3, title: 'Fun with Numbers', unit: 'Number line · skip counting · patterns',
+    sections: [
+      { key: 'count', name: '📿 Count and place', games: [
+        { href: 'ch3/ginladi.html', ic: '📿', t: 'The Ginladi', d: 'Count 100 beads · place 38, 44, 58, 65, 98' },
+        { href: 'ch3/number-strip.html', ic: '🦋', t: 'The Number Strip', d: 'Butterfly, bee, squirrel and frog jump' },
+        { href: 'ch3/ant-line.html', ic: '🐜', t: 'Guess my Place', d: 'Ants on the number line · ant on 65, sugar on 79' },
+      ]},
+      { key: 'play', name: '🎲 Let us play', games: [
+        { href: 'ch3/guess-number.html', ic: '🦉', t: 'Guess my Number', d: 'Is it more than 50? Yes/no questions' },
+        { href: 'ch3/bingo.html', ic: '🎯', t: 'Bingo!', d: 'Two dice, add the dots, cross the sum' },
+      ]},
+      { key: 'tens', name: '🐸 Patterns and skip counting', games: [
+        { href: 'ch3/patterns.html', ic: '🐸', t: 'Jumpy’s Patterns', d: '1, 4, 7 … · 40, 37, 34 … · 100, 80 …' },
+        { href: 'ch3/skip-chart.html', ic: '🔢', t: 'Skip Counting Chart', d: 'Skip in 2s, 3s, 5s, 7s · common numbers' },
+        { href: 'ch3/jump-yes-no.html', ic: '❓', t: 'Jump and Find', d: 'Will you land on 100? · Let us talk' },
+      ]},
+      { key: 'compare', name: '🔲 Number chart', games: [
+        { href: 'ch3/chart-patterns.html', ic: '🟨', t: 'Number Chart Patterns', d: '9, 19, 29 … · 1, 12, 23 …' },
+        { href: 'ch3/number-window.html', ic: '🪟', t: 'The Number Window', d: '1 more, 1 less, 10 more, 10 less' },
+        { href: 'ch3/block-patterns.html', ic: '🧱', t: 'Growing Patterns', d: '1, 3, 6 · 1, 4, 9 · 5, 8' },
+      ]},
+      { key: 'tug', name: '🪢 Tug of War', games: [
+        { href: 'ch3/tug-of-war.html', ic: '🪢', t: 'Tug of War', d: 'Two players – each right answer pulls the rope!' },
+      ]},
+      { key: 'race', name: '🏁 Class challenge', games: [
+        { href: 'ch3/number-race.html', ic: '🏆', t: 'Frog Race', d: 'Team A vs Team B – whole chapter quiz' },
+      ]},
+    ],
+  },
+  ...Array.from({ length: 8 }, (_, i) => ({ n: i + 4, title: 'Coming soon', unit: '', sections: [] })),
 ];
 
 const tabs = document.getElementById('tabs');

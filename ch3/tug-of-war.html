@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/tug.css">
+</head>
+<body>
+<main></main>
+<script src="../assets/common.js"></script>
+<script src="../assets/tug.js"></script>
+<script>
+G.init({ title: 'Tug of War', subtitle: 'Fun with Numbers · Two players', back: '../index.html#ch3' });
+
+/* Questions from the whole chapter (o[0] is the right answer). */
+const BANK = [
+  { e: '📿', t: 'How many beads are there in a ginladi?', o: ['100', '10', '50'] },
+  { e: '📿', t: '3 full rods and 8 beads make ____.', o: ['38', '83', '11'] },
+  { e: '🦋', t: 'The butterfly is on 4. It moves 5 steps forward. Where is it now?', o: ['9', '1', '45'] },
+  { e: '🐿️', t: 'The squirrel is on 10. It jumps 2 steps backward. Where is it now?', o: ['8', '12', '2'] },
+  { e: '🐸', t: 'The frog is on 12. It jumps 7 steps backward. Where is it now?', o: ['5', '19', '7'] },
+  { e: '🐜', t: 'An ant sits halfway between 60 and 70. Which number is it on?', o: ['65', '61', '75'] },
+  { e: '🐸', t: '1, 4, 7, ____', o: ['10', '8', '11'] },
+  { e: '🐸', t: '40, 45, 50, ____', o: ['55', '51', '60'] },
+  { e: '🐸', t: '50, 60, 70, ____', o: ['80', '71', '75'] },
+  { e: '⬅️', t: '40, 37, 34, ____', o: ['31', '33', '30'] },
+  { e: '⬅️', t: '70, 65, 60, ____', o: ['55', '50', '59'] },
+  { e: '⬅️', t: '100, 80, 60, ____', o: ['40', '50', '20'] },
+  { e: '⬅️', t: 'What comes just before 10?', o: ['9', '11', '1'] },
+  { e: '🔢', t: 'Which numbers are common to skips in 2s and 5s?', o: ['10, 20, 30', '2, 4, 6', '5, 15, 25'] },
+  { e: '🔢', t: 'Which numbers are common to skips in 5s and 7s?', o: ['35, 70', '5, 7', '12, 14'] },
+  { e: '🔢', t: 'Which numbers are common to skips in 2s, 3s and 5s?', o: ['30, 60, 90', '10, 20', '6, 12'] },
+  { e: '🐸', t: 'Start from 10 and jump in tens. Will you land on 100?', o: ['Yes', 'No'] },
+  { e: '🐸', t: 'Start from 4 and jump in twos. Will you land on 17?', o: ['No', 'Yes'] },
+  { e: '🐸', t: 'Start from 13 and jump in threes. Will you land on 24?', o: ['No', 'Yes'] },
+  { e: '🐸', t: 'Start from 5 and jump in fives. Will you land on 40?', o: ['Yes', 'No'] },
+  { e: '🗣️', t: 'Rizwan counts from 20 onwards. Will he say 19?', o: ['No', 'Yes'] },
+  { e: '🗣️', t: 'Chavi counts in twos from 10. Will she say 43?', o: ['No', 'Yes'] },
+  { e: '🗣️', t: 'Mala counts backwards from 20 to 0. How many steps?', o: ['20', '10', '19'] },
+  { e: '🗣️', t: 'Viraaj counts backwards in twos from 20 to 0. How many steps?', o: ['10', '20', '2'] },
+  { e: '🪟', t: 'In the number chart, which number is just above 28?', o: ['18', '38', '27'] },
+  { e: '🪟', t: 'In the number chart, which number is just below 28?', o: ['38', '18', '29'] },
+  { e: '🪟', t: 'In the number chart, which number is to the right of 53?', o: ['54', '52', '63'] },
+  { e: '🪟', t: 'In the number chart, which number is to the left of 74?', o: ['73', '75', '64'] },
+  { e: '🟩', t: '1, 12, 23, 34, ____', o: ['45', '35', '44'] },
+  { e: '🧱', t: 'Blocks: 1, 3, 6, ____', o: ['10', '9', '8'] },
+  { e: '🧱', t: 'Blocks: 1, 4, 9, ____', o: ['16', '12', '13'] },
+  { e: '🎲', t: 'Two dice show 3 and 4. What is the sum?', o: ['7', '34', '12'] },
+  { e: '🎲', t: 'In Bingo, which number can never come with two dice?', o: ['1', '7', '12'] },
+];
+
+TUG({ bank: BANK });
+</script>
+</body>
+</html>

@@ -9,10 +9,11 @@ const M = (() => {
   }
 
   /* Big on-screen number pad. Calls onEnter(number) when ✓ is pressed. */
-  function pad(el, { show, onEnter, digits = 3 }) {
+  function pad(el, { show, onEnter, digits = 3, row = false }) {
     let v = '';
     el.classList.add('m-pad');
-    el.innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓'].map((k) => `<button data-k="${k}" class="${k === '✓' ? 'ok' : k === '⌫' ? 'del' : ''}">${k}</button>`).join('');
+    el.classList.toggle('one-row', row); // row: all keys in one line, for pages with wide pictures
+    el.innerHTML = (row ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '⌫', '✓'] : [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓']).map((k) => `<button data-k="${k}" class="${k === '✓' ? 'ok' : k === '⌫' ? 'del' : ''}">${k}</button>`).join('');
     const draw = () => (show.textContent = v || '?');
     el.onclick = (e) => {
       const b = e.target.closest('button');

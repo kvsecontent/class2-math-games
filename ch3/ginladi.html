@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .frame { background: #8b5a2b; border-radius: var(--radius); padding: 0.6rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+  .rod { position: relative; display: flex; align-items: center; gap: 0.15rem; padding: 0 0.6rem; }
+  .rod::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 0.35rem; background: #d9d9d9; z-index: 0; }
+  .bead { position: relative; z-index: 1; width: 4.2rem; height: 2.85rem; border-radius: 50%; border: 0.18rem solid rgba(0, 0, 0, 0.35); padding: 0; font-size: 1.3rem; font-weight: 800; color: #fff; text-shadow: 0 0 0.2rem #000; }
+  .bead.hit { outline: 0.3rem solid #fff; animation: pop 0.4s; }
+  .bead.no { animation: shake 0.4s; }
+  .card-n { position: absolute; top: -1.2rem; left: 50%; transform: translateX(-50%); background: #fff; color: var(--ink); text-shadow: none; border-radius: 0.4rem; padding: 0 0.3rem; font-size: 1.1rem; border: 0.12rem solid var(--ink); }
+  .rod .end { position: relative; z-index: 1; color: #fff; font-weight: 800; font-size: 1.3rem; width: 3rem; text-align: right; }
+  .q { font-family: var(--read); font-size: 1.9rem; font-weight: 700; text-align: center; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .big { font-size: 3.6rem; font-weight: 800; color: var(--purple); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Look at the ginladi (bead counter). Each rod has 10 beads.</p>
+  <div class="wrap">
+    <div class="frame" id="frame"></div>
+    <div class="side card"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="big" id="big"></div><div id="padbox"><div class="m-box on" id="show">?</div><div id="pad" style="margin-top:0.6rem"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'The Ginladi', subtitle: 'Fun with Numbers · Count the beads', back: '../index.html#ch3' });
+
+/* Steps from the book: how many beads, write numbers on blank cards, and place 38, 44, 58, 65, 98. */
+const COLS = ['#e63946', '#2f7de1', '#2bb673', '#ff8a3d', '#8a5cf6', '#ff6fa8', '#13b5b1', '#c9a400', '#8b5a2b', '#555'];
+G.$('#frame').innerHTML = Array.from({ length: 10 }, (_, r) => `<div class="rod">${Array.from({ length: 10 }, (_, c) => `<button class="bead" data-n="${r * 10 + c + 1}" style="background:${COLS[r]}"></button>`).join('')}<span class="end">${(r + 1) * 10}</span></div>`).join('');
+const blanks = () => { const s = new Set(); while (s.size < 3) { const n = M.rnd(11, 99); if (n % 10) s.add(n); } return [...s]; };
+let steps, k;
+function start() {
+  G.$$('.bead').forEach((b) => { b.innerHTML = ''; b.classList.remove('hit'); });
+  steps = [{ type: 'count' }, ...blanks().map((n) => ({ type: 'card', n })), ...[38, 44, 58, 65, 98].map((n) => ({ type: 'place', n }))];
+  k = 0; next();
+}
+function next() {
+  if (k >= steps.length) { G.end({ title: 'Ginladi master!', msg: 'The ginladi has 100 beads – 10 rods of 10.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, steps.length);
+  const st = steps[k]; G.$('#fb').innerHTML = ''; pad.clear();
+  G.$$('.bead.ask').forEach((b) => b.classList.remove('ask'));
+  if (st.type === 'count') { G.$('#q').textContent = 'How many beads are there in the ginladi?'; G.$('#big').textContent = ''; G.$('#padbox').style.display = ''; }
+  if (st.type === 'card') {
+    const b = G.$(`.bead[data-n="${st.n}"]`);
+    b.innerHTML = '<span class="card-n">?</span>';
+    G.$('#q').textContent = 'Count the beads. Which number goes on the blank card?'; G.$('#big').textContent = '🃏'; G.$('#padbox').style.display = '';
+  }
+  if (st.type === 'place') { G.$('#q').textContent = 'Place this number card on the ginladi. Tap the bead!'; G.$('#big').textContent = st.n; G.$('#padbox').style.display = 'none'; }
+  G.say(G.$('#q').textContent + (st.type === 'place' ? ' ' + st.n : ''));
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    const st = steps[k]; pad.clear();
+    if (!st || st.type === 'place') return;
+    const want = st.type === 'count' ? 100 : st.n;
+    if (v !== want) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count again!'); G.say(st.type === 'count' ? 'Count the rods. Each rod has 10 beads.' : 'Count the full rods, then the beads.'); return; }
+    if (st.type === 'card') G.$(`.bead[data-n="${st.n}"] .card-n`).textContent = st.n;
+    good(st.type === 'count' ? '10 rods of 10 beads make 100.' : `${Math.floor(st.n / 10)} tens and ${st.n % 10} more make ${st.n}.`);
+  },
+});
+G.$('#frame').onclick = (e) => {
+  const b = e.target.closest('.bead'), st = steps[k];
+  if (!b || !st || st.type !== 'place') return;
+  const n = +b.dataset.n;
+  if (n !== st.n) { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); G.sfx('bad'); G.say(`That is bead ${n}. Find ${st.n}.`); return; }
+  b.innerHTML = `<span class="card-n">${n}</span>`; b.classList.add('hit');
+  good(`${Math.floor(n / 10)} full rods and ${n % 10} more beads make ${n}.`);
+};
+function good(why) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + why); G.say(why); k++; setTimeout(next, 2800); }
+start();
+</script>
+</body>
+</html>

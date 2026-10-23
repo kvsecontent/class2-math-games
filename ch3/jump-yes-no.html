@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .line { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); width: 100%; max-width: 120rem; padding: 0.4rem; }
+  #nl { width: 100%; display: block; }
+  .q { font-family: var(--read); font-size: 2.4rem; font-weight: 700; margin: 0.5rem 0; max-width: 100rem; min-height: 6rem; }
+  .who { font-size: 1.6rem; font-weight: 800; color: var(--purple); }
+  .choice { font-size: 2.4rem; min-width: 12rem; }
+  .choice.txt { font-family: var(--read); font-size: 1.9rem; min-width: 0; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Jump and find the answers. First say <b>Yes</b> or <b>No</b> – then watch the frog jump to check!</p>
+  <div class="progress" id="pg"></div>
+  <div class="line"><svg id="nl" viewBox="0 0 1200 200"></svg></div>
+  <div class="who" id="who"></div>
+  <div class="q" id="q"></div>
+  <div class="row" id="opts"></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Jump and Find', subtitle: 'Fun with Numbers · Yes or No?', back: '../index.html#ch3' });
+
+/* Jump questions A–E and the "Let us talk" questions are from the book. */
+const QS = [
+  { t: 'If you start from 10 and jump counting in tens, will you land on number 100 at any time?', s: 10, d: 10, to: 100, lo: 0, hi: 100 },
+  { t: 'If you start at 5 and count in fives, will you jump on number 40 at any time?', s: 5, d: 5, to: 40, lo: 0, hi: 50 },
+  { t: 'If you start from 0 and count in fives, will you jump on number 55 at any time?', s: 0, d: 5, to: 55, lo: 0, hi: 60 },
+  { t: 'If you start from 4 and count in twos, will you jump on number 17 at any time?', s: 4, d: 2, to: 17, lo: 0, hi: 20 },
+  { t: 'If you start from 13 and count in threes, will you jump on number 24 at any time?', s: 13, d: 3, to: 24, lo: 10, hi: 30 },
+  { talk: 'Rizwan', t: 'Rizwan is counting numbers from 20 onwards. Will he say the number 19 in his count?', o: ['No – 19 comes before 20.', 'Yes – 19 comes after 20.'], s: 20, d: 1, to: 19, lo: 15, hi: 30 },
+  { talk: 'Chavi', t: 'Chavi is counting numbers in twos from 10 onwards. Will she say 43?', o: ['No – counting in twos from 10 gives 12, 14, 16 … , 42, 44.', 'Yes – 43 comes after 42.'], s: 10, d: 2, to: 43, lo: 10, hi: 50 },
+  { talk: 'Mala', t: 'Mala is counting backwards from 20. How many steps will it take to reach 0?', o: ['20 steps', '10 steps', '2 steps'], s: 20, d: -1, to: 0, lo: 0, hi: 20, count: 20 },
+  { talk: 'Viraaj', t: 'Viraaj is counting backwards in twos from 20. How many steps will it take to reach 0?', o: ['10 steps', '20 steps', '5 steps'], s: 20, d: -2, to: 0, lo: 0, hi: 20, count: 10 },
+];
+const X0 = 50, X1 = 1150, Y = 130;
+let k = 0, Q, lit = [], cur;
+const xOf = (n) => X0 + ((n - Q.lo) / (Q.hi - Q.lo)) * (X1 - X0);
+function draw() {
+  const step = Q.hi - Q.lo <= 30 ? 1 : 5;
+  let h = `<line x1="${X0 - 20}" y1="${Y}" x2="${X1 + 20}" y2="${Y}" stroke="#2b2140" stroke-width="4"/>`;
+  for (let n = Q.lo; n <= Q.hi; n += step) {
+    const x = xOf(n), lab = step === 1 || n % 10 === 0;
+    h += `<line x1="${x}" y1="${Y - 12}" x2="${x}" y2="${Y + 12}" stroke="#2b2140" stroke-width="${lab ? 3 : 2}"/>`;
+    if (lab) h += `<text x="${x}" y="${Y + 44}" font-size="${step === 1 ? 24 : 28}" font-weight="800" text-anchor="middle" fill="${n === Q.to ? '#e63946' : '#2b2140'}">${n}</text>`;
+  }
+  h += `<text x="${xOf(Q.to)}" y="${Y + 76}" font-size="30" text-anchor="middle">🚩</text>`;
+  lit.forEach((n) => (h += `<circle cx="${xOf(n)}" cy="${Y}" r="10" fill="#2bb673"/>`));
+  if (cur !== undefined) h += `<text x="${xOf(cur)}" y="${Y - 20}" font-size="54" text-anchor="middle">🐸</text>`;
+  G.$('#nl').innerHTML = h;
+}
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Great jumping!', msg: 'You can check your answers by jumping on the number line.', onReplay: () => { k = 0; show(); } }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  Q = QS[k]; lit = []; cur = Q.s; draw();
+  G.$('#who').textContent = Q.talk ? `💬 Let us talk – ${Q.talk}` : `🐸 Jump ${'ABCDE'[k]}`;
+  G.$('#q').textContent = Q.t; G.$('#fb').innerHTML = '';
+  const opts = Q.o || ['Yes', 'No'];
+  G.$('#opts').innerHTML = G.shuffle(opts).map((o) => `<button class="choice ${Q.o ? 'txt' : ''}">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => pick(b)));
+  G.say(Q.t);
+}
+async function jump() {
+  let n = Q.s; lit = [n]; cur = n; draw();
+  for (let i = 0; i < 60; i++) {
+    const nx = n + Q.d;
+    if (Q.d > 0 ? nx > Q.hi : nx < Q.lo) break;
+    if (Q.d > 0 ? n >= Q.to : n <= Q.to) break;
+    n = nx; lit.push(n); cur = n; draw(); G.sfx('pop');
+    await new Promise((r) => setTimeout(r, Q.hi - Q.lo > 40 ? 300 : 380));
+  }
+  return lit.includes(Q.to);
+}
+async function pick(b) {
+  G.$$('#opts .choice').forEach((x) => (x.disabled = true));
+  const hit = await jump();
+  const right = Q.o ? b.textContent === Q.o[0] : (b.textContent === 'Yes') === hit;
+  if (!right) {
+    b.classList.add('wrong'); G.sfx('bad');
+    const ans = Q.o ? Q.o[0] : hit ? 'Yes' : 'No';
+    G.feedback(G.$('#fb'), false, `The frog shows: ${ans}`); G.say('Look at the frog. ' + ans.replace('…', ''));
+  } else {
+    b.classList.add('right'); G.star(); G.sfx('good');
+    const msg = Q.count ? `Count the jumps: ${lit.length - 1} steps.` : Q.o ? Q.o[0] : hit ? `Yes! The frog lands on ${Q.to}.` : `No! The frog jumps over ${Q.to}.`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg.replace('…', ''));
+  }
+  k++; setTimeout(show, 4200);
+}
+show();
+</script>
+</body>
+</html>

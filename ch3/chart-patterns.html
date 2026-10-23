@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: auto 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .chart { display: grid; grid-template-columns: repeat(10, 4.6rem); gap: 0.15rem; background: var(--ink); padding: 0.15rem; border-radius: 0.6rem; }
+  .c { height: 3.7rem; background: #fff; font-size: 1.6rem; font-weight: 800; border: 0; padding: 0; }
+  .c.shade { background: #ffd34d; } .c.green { background: #7ddca6; } .c.no { animation: shake 0.4s; background: #ffe1e3; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 2.1rem; font-weight: 700; text-align: center; }
+  .seq { font-size: 2rem; font-weight: 800; color: var(--purple); min-height: 3rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.5rem">Patterns in the number chart. Look at the chart and answer.</p>
+  <div class="wrap">
+    <div class="chart" id="chart"></div>
+    <div class="side card"><div class="progress" id="pg"></div><div class="q" id="q"></div><div class="seq" id="seq"></div>
+      <div id="padbox" class="row"><div class="m-box on" id="show">?</div><div id="pad"></div></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Number Chart Patterns', subtitle: 'Fun with Numbers · Patterns in number chart', back: '../index.html#ch3' });
+
+G.$('#chart').innerHTML = Array.from({ length: 100 }, (_, i) => `<button class="c" data-n="${i + 1}">${i + 1}</button>`).join('');
+/* From the book: what comes just before 10, 20, 30, 40; shade that pattern; then the green numbers 1, 12, 23, … */
+const STEPS = [
+  ...[10, 20, 30, 40].map((t) => ({ t: `Which number comes just before ${t}?`, a: t - 1, shade: true })),
+  { tap: [49, 59, 69, 79, 89, 99], cls: 'shade', t: 'The pattern continues! Tap all the other numbers that come just before a ten.', why: '9, 19, 29, 39 … 99. They all end in 9!' },
+  { tap: [34, 45, 56, 67, 78, 89, 100], cls: 'green', start: [1, 12, 23], t: 'Look at the green numbers: 1, 12, 23. Tap the next green numbers.', why: '1, 12, 23, 34, 45, 56, 67, 78, 89, 100. Each one is 11 more – one down and one to the right!' },
+];
+let k = 0, got;
+function show() {
+  if (k >= STEPS.length) { G.end({ title: 'Pattern finder!', msg: 'The number chart is full of patterns.', onReplay: () => { k = 0; G.$$('.c').forEach((c) => (c.className = 'c')); show(); } }); return; }
+  G.progress(G.$('#pg'), k, STEPS.length);
+  const st = STEPS[k]; got = [];
+  (st.start || []).forEach((n) => G.$(`.c[data-n="${n}"]`).classList.add(st.cls));
+  G.$('#q').textContent = st.t; G.$('#fb').innerHTML = ''; G.$('#seq').textContent = st.start ? st.start.join(', ') + ', …' : '';
+  G.$('#padbox').style.display = st.tap ? 'none' : ''; pad.clear();
+  G.say(st.t);
+}
+function done(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg.replace('…', 'and')); k++; setTimeout(show, 3600); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), digits: 2,
+  onEnter: (v) => {
+    const st = STEPS[k]; pad.clear(); if (!st || st.tap) return;
+    if (v !== st.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Look at the chart again.'); return; }
+    G.$(`.c[data-n="${v}"]`).classList.add('shade');
+    done(`${v} comes just before ${v + 1}.`);
+  },
+});
+G.$('#chart').onclick = (e) => {
+  const c = e.target.closest('.c'), st = STEPS[k]; if (!c || !st || !st.tap) return;
+  const n = +c.dataset.n;
+  if (c.classList.contains(st.cls)) return;
+  if (!st.tap.includes(n)) { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); G.sfx('bad'); G.say(`${n} does not fit the pattern.`); return; }
+  c.classList.add(st.cls); got.push(n); G.sfx('pop'); G.say(String(n), { rate: 1 });
+  G.$('#seq').textContent = (st.start || [9, 19, 29, 39]).concat(st.tap.filter((x) => got.includes(x))).join(', ');
+  if (got.length === st.tap.length) done(st.why);
+};
+show();
+</script>
+</body>
+</html>

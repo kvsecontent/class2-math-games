@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .line { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); width: 100%; max-width: 120rem; padding: 0.4rem; }
+  #nl { width: 100%; display: block; cursor: pointer; }
+  .q { font-family: var(--read); font-size: 2.4rem; font-weight: 700; margin: 0.8rem 0 0.4rem; }
+  .low { display: flex; gap: 1.4rem; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Guess my place! Ants are sitting on the number line. Find their numbers.</p>
+  <div class="progress" id="pg"></div>
+  <div class="line"><svg id="nl" viewBox="0 0 1200 230"></svg></div>
+  <div class="q" id="q"></div>
+  <div class="low"><div id="padbox" class="row"><div class="m-box on" id="show">?</div><div id="pad"></div></div></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Guess my Place', subtitle: 'Fun with Numbers · The number line', back: '../index.html#ch3' });
+
+/* From the book: three ants on a number line, then draw an ant on 65 and a sugar cube on 79.
+   Where the three ants sit is new each time. */
+const A = 20, B = 80, X0 = 50, X1 = 1150, Y = 150;
+const xOf = (n) => X0 + ((n - A) / (B - A)) * (X1 - X0);
+const ant = (x, col) => `<g transform="translate(${x} ${Y - 30})"><ellipse cx="-16" cy="0" rx="12" ry="9" fill="${col}"/><circle cx="0" cy="-2" r="7" fill="${col}"/><circle cx="13" cy="-5" r="8" fill="${col}"/>
+  <path d="M-6 4 L-14 18 M0 5 L0 19 M5 4 L13 18 M18 -11 L26 -24 M14 -12 L16 -26" stroke="${col}" stroke-width="3" fill="none"/><circle cx="16" cy="-7" r="2" fill="#fff"/></g>`;
+const sugar = (x) => `<g transform="translate(${x} ${Y - 34})"><rect x="-14" y="-14" width="28" height="28" fill="#fff" stroke="#2b2140" stroke-width="3"/><path d="M-14 -14 L-6 -22 L22 -22 L14 -14 M14 14 L22 6 L22 -22" fill="#f1f1f1" stroke="#2b2140" stroke-width="3"/></g>`;
+let steps, k, marks;
+function base() {
+  let h = `<line x1="${X0 - 30}" y1="${Y}" x2="${X1 + 30}" y2="${Y}" stroke="#2b2140" stroke-width="4"/><path d="M${X1 + 30} ${Y - 10} L${X1 + 46} ${Y} L${X1 + 30} ${Y + 10} Z M${X0 - 30} ${Y - 10} L${X0 - 46} ${Y} L${X0 - 30} ${Y + 10} Z" fill="#2b2140"/>`;
+  for (let n = A; n <= B; n++) {
+    const x = xOf(n), big = n % 10 === 0, mid = n % 5 === 0;
+    h += `<line x1="${x}" y1="${Y - (big ? 18 : mid ? 13 : 8)}" x2="${x}" y2="${Y + (big ? 18 : mid ? 13 : 8)}" stroke="#2b2140" stroke-width="${big ? 4 : 2}"/>`;
+    if (big) h += `<text x="${x}" y="${Y + 52}" font-size="32" font-weight="800" text-anchor="middle" fill="#2b2140">${n}</text>`;
+  }
+  return h + marks.join('');
+}
+function draw() { G.$('#nl').innerHTML = base(); }
+function start() {
+  const taken = [65, 79], pos = [];
+  while (pos.length < 3) { const n = M.rnd(22, 78); if (n % 10 && [...taken, ...pos].every((t) => Math.abs(t - n) >= 4)) pos.push(n); }
+  const [a, b, c] = pos;
+  marks = [ant(xOf(a), '#2b2140'), ant(xOf(b), '#e63946'), ant(xOf(c), '#8b5a2b')];
+  steps = [{ t: 'Black ant is sitting on the number ___.', a }, { t: 'Red ant is sitting on the number ___.', a: b }, { t: 'Brown ant is sitting on the number ___.', a: c },
+    { t: 'Draw an ant on number 65. Tap the number line!', tap: 65, put: (x) => ant(x, '#2bb673') }, { t: 'Draw a sugar cube on number 79. Tap the number line!', tap: 79, put: sugar }];
+  let m; do m = M.rnd(23, 77); while (![...taken, ...pos].every((t) => Math.abs(t - m) >= 4)); steps.push({ t: `Put an ant on number ${m}.`, tap: m, put: (x) => ant(x, '#8a5cf6') });
+  k = 0; draw(); next();
+}
+function next() {
+  if (k >= steps.length) { G.end({ title: 'Number line explorer!', msg: 'You found every place on the number line.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, steps.length);
+  const st = steps[k];
+  G.$('#q').innerHTML = st.t.replace('___', '<span class="m-box on" style="height:3.6rem;font-size:2.2rem">?</span>');
+  G.$('#padbox').style.visibility = st.tap ? 'hidden' : '';
+  G.$('#fb').innerHTML = ''; pad.clear();
+  G.say(st.t.replace('___', 'blank'));
+}
+function good(msg) { G.star(); G.sfx('good'); G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(msg); k++; setTimeout(next, 2400); }
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), row: true, digits: 2,
+  onEnter: (v) => {
+    const st = steps[k]; pad.clear(); if (!st || st.tap) return;
+    if (v !== st.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the small lines from the nearest ten.'); G.say('Count the small lines from the nearest ten.'); return; }
+    G.$('#q .m-box').textContent = v; G.$('#q .m-box').className = 'm-box good';
+    good(`${st.t.split(' is')[0]} is on ${v}.`);
+  },
+});
+G.$('#nl').addEventListener('click', (e) => {
+  const st = steps[k]; if (!st || !st.tap) return;
+  const r = G.$('#nl').getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * 1200;
+  const n = Math.round(A + ((x - X0) / (X1 - X0)) * (B - A));
+  if (n !== st.tap) { G.sfx('bad'); G.feedback(G.$('#fb'), false, `🙂 That is ${n}. Find ${st.tap}.`); G.say(`That is ${n}. Find ${st.tap}.`); return; }
+  marks.push(st.put(xOf(n))); draw();
+  good(`Yes! That is ${n}.`);
+});
+start();
+</script>
+</body>
+</html>

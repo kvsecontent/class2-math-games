@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr 22rem; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: center; }
+  .win { display: grid; grid-template-columns: repeat(3, 8.4rem); grid-template-rows: repeat(3, 7.4rem); gap: 0.4rem; justify-content: center; }
+  .w { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 0.3rem solid var(--ink); border-radius: 0.8rem; background: #fff; font-size: 3rem; font-weight: 800; }
+  .w small { font-size: 1.1rem; color: var(--muted); }
+  .w.mid { background: #ffd34d; }
+  .w.on { border-color: var(--orange); background: #fff4cc; box-shadow: 0 0 0 0.3rem #ffd34d; }
+  .w.good { border-color: var(--green); background: #d9f7e8; }
+  .w.blank { visibility: hidden; }
+  .mini { display: grid; grid-template-columns: repeat(10, 2.9rem); gap: 0.1rem; background: var(--ink); padding: 0.1rem; border-radius: 0.4rem; }
+  .mini span { height: 2.2rem; background: #fff; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .mini span.hl { background: #ffd34d; } .mini span.mid { background: var(--orange); color: #fff; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .q { font-family: var(--read); font-size: 1.7rem; font-weight: 700; text-align: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Lakshanya's number window! Put the centre of the window on a number. What is on the top, below, right and left?</p>
+  <div class="progress" id="pg"></div>
+  <div class="wrap">
+    <div class="mini" id="mini"></div>
+    <div class="win" id="win"></div>
+    <div class="side card"><div class="q" id="q"></div><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'The Number Window', subtitle: 'Fun with Numbers · 1 more, 1 less, 10 more, 10 less', back: '../index.html#ch3' });
+
+/* 28, 53, 26 and 74 are from the book. Then windows with one number given and the rest missing. */
+const POS = { top: [0, 1, -10, '10 less', 'top'], left: [1, 0, -1, '1 less', 'left'], right: [1, 2, 1, '1 more', 'right'], bottom: [2, 1, 10, '10 more', 'below'] };
+const ORDER = ['top', 'bottom', 'right', 'left'];
+let rounds, r, c, mid, fills;
+G.$('#mini').innerHTML = Array.from({ length: 100 }, (_, i) => `<span data-n="${i + 1}">${i + 1}</span>`).join('');
+const okMid = () => { let n; do n = M.rnd(12, 89); while (n % 10 === 0 || n % 10 === 1); return n; };
+function start() { rounds = [28, 53, 26, 74].map((n) => ({ mid: n })).concat([0, 1, 2].map(() => ({ mid: okMid(), givenOnly: G.shuffle(ORDER)[0] }))); r = 0; next(); }
+function next() {
+  if (r >= rounds.length) { G.end({ title: 'Window wizard!', msg: 'Up is 10 less, down is 10 more, left is 1 less, right is 1 more.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), r, rounds.length);
+  const R = rounds[r]; mid = R.mid; c = 0;
+  // for "missing numbers" rounds the centre is also hidden and one side is given
+  fills = R.givenOnly ? ['mid', ...ORDER.filter((p) => p !== R.givenOnly)] : [...ORDER];
+  const cell = (p) => {
+    if (p === 'mid') return `<div class="w mid" data-p="mid" style="grid-area:2/2">${R.givenOnly ? '?' : mid}<small>${R.givenOnly ? 'centre' : 'centre'}</small></div>`;
+    const [row, col, d, lab] = POS[p], given = R.givenOnly === p;
+    return `<div class="w ${given ? 'good' : ''}" data-p="${p}" style="grid-area:${row + 1}/${col + 1}">${given ? mid + d : '?'}<small>${lab}</small></div>`;
+  };
+  G.$('#win').innerHTML = cell('mid') + ORDER.map(cell).join('');
+  G.$$('#mini span').forEach((s) => s.className = '');
+  G.$(`#mini span[data-n="${mid}"]`).classList.add('mid');
+  G.$('#mini').style.visibility = R.givenOnly ? 'hidden' : '';
+  G.$('#fb').innerHTML = ''; mark();
+}
+const val = (p) => (p === 'mid' ? mid : mid + POS[p][2]);
+function mark() {
+  const p = fills[c];
+  G.$$('#win .w').forEach((w) => w.classList.toggle('on', w.dataset.p === p));
+  const R = rounds[r];
+  const q = p === 'mid' ? 'Fill the missing numbers. First, which number is in the centre?' : `The centre is ${mid}. Which number will be on the ${POS[p][4]}?`;
+  G.$('#q').textContent = q; G.say(q);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'),
+  onEnter: (v) => {
+    pad.clear(); const p = fills[c];
+    if (v !== val(p)) { G.sfx('bad'); G.feedback(G.$('#fb'), false, p === 'mid' ? '🙂 Use the given number.' : `🙂 ${POS[p][4]} is ${POS[p][3]}.`); G.say(p === 'mid' ? 'Use the number you can see.' : `The ${POS[p][4]} is ${POS[p][3]}.`); return; }
+    const w = G.$(`#win .w[data-p="${p}"]`); w.firstChild.textContent = v; w.classList.add('good'); w.classList.remove('on');
+    G.$(`#mini span[data-n="${v}"]`)?.classList.add(p === 'mid' ? 'mid' : 'hl');
+    G.sfx('good'); G.$('#fb').innerHTML = '';
+    if (++c < fills.length) { mark(); return; }
+    G.star(); G.feedback(G.$('#fb'), true, '🎉 ' + G.praise()); G.say(`${mid - 10} on top, ${mid + 10} below, ${mid - 1} on the left and ${mid + 1} on the right.`);
+    r++; setTimeout(next, 4200);
+  },
+});
+start();
+</script>
+</body>
+</html>

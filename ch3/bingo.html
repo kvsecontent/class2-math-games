@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .top { display: flex; gap: 1.2rem; align-items: center; justify-content: center; margin-bottom: 0.8rem; min-height: 7rem; }
+  .die { width: 6rem; height: 6rem; border-radius: 1.1rem; background: #fff; border: 0.3rem solid var(--ink); font-size: 4.8rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .die.roll { animation: shake 0.25s 3; }
+  .sum { font-size: 4rem; font-weight: 800; color: var(--purple); min-width: 10rem; }
+  .boards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; width: 100%; max-width: 110rem; }
+  .bd { background: #fff; border: 0.3rem solid var(--line); border-radius: var(--radius); padding: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+  .bd h3 { margin: 0; font-size: 2rem; }
+  .grid { display: grid; grid-template-columns: repeat(4, 6.6rem); gap: 0.4rem; }
+  .cell { position: relative; height: 5.6rem; border-radius: 0.9rem; border: 0.25rem solid var(--ink); background: #f6f1ff; font-size: 2.8rem; font-weight: 800; }
+  .cell.x { background: #d9f7e8; color: #9aa0ad; }
+  .cell.x::after { content: '✘'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4.4rem; color: var(--red); }
+  .cell.no { animation: shake 0.4s; }
+  .bd.win { border-color: var(--green); box-shadow: 0 0 0 0.5rem #a8f0c6; }
+  .tip { font-size: 1.2rem; color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" id="hint">Bingo! Tap a box to change its number (2 to 12). Numbers can repeat. Then press <b>Start</b>.</p>
+  <div class="top" id="top"><button class="big-btn green" id="go">▶ Start</button></div>
+  <div class="boards" id="boards"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Bingo!', subtitle: 'Fun with Numbers · Let us play', back: '../index.html#ch3' });
+
+/* The book's game: a 3 × 4 grid with numbers 2–12, two dice, cross the sum. */
+const FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+const B = [{ name: 'Team A', col: 'var(--blue)', v: [] }, { name: 'Team B', col: 'var(--red)', v: [] }];
+let playing = false, sum = 0, crossed = [new Set(), new Set()], rolled = false;
+function fill(b) { B[b].v = Array.from({ length: 12 }, () => M.rnd(2, 12)); }
+function draw() {
+  G.$('#boards').innerHTML = B.map((bd, b) => `<div class="bd" data-b="${b}"><h3 style="color:${bd.col}">${bd.name}</h3><div class="grid">${bd.v.map((n, i) => `<button class="cell ${crossed[b].has(i) ? 'x' : ''}" data-i="${i}">${n}</button>`).join('')}</div>
+    ${playing ? `<div class="tip">${crossed[b].size} / 12 crossed</div>` : `<button class="big-btn ghost" data-fill="${b}">🎲 Fill for me</button>`}</div>`).join('');
+}
+B.forEach((_, b) => fill(b));
+draw();
+G.$('#boards').onclick = (e) => {
+  const f = e.target.closest('[data-fill]');
+  if (f) { fill(+f.dataset.fill); draw(); G.sfx('pop'); return; }
+  const c = e.target.closest('.cell'); if (!c) return;
+  const b = +c.closest('.bd').dataset.b, i = +c.dataset.i;
+  if (!playing) { B[b].v[i] = B[b].v[i] >= 12 ? 2 : B[b].v[i] + 1; draw(); G.sfx('pop'); return; }
+  if (!rolled || crossed[b].has(i)) return;
+  if (B[b].v[i] !== sum) { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); G.sfx('bad'); G.say(`That is ${B[b].v[i]}. We need ${sum}.`); return; }
+  if (crossed[b].lastRoll === rollId) { G.say('Only one box each roll!'); return; }
+  crossed[b].add(i); crossed[b].lastRoll = rollId; G.sfx('good'); draw();
+  if (crossed[b].size === 12) { G.$(`.bd[data-b="${b}"]`).classList.add('win'); playing = false; G.star(3); setTimeout(() => G.end({ title: `🏆 Bingo! ${B[b].name} wins!`, msg: 'Which sums came most often? Did 7 come a lot?', onReplay: () => location.reload() }), 1000); }
+};
+let rollId = 0;
+G.$('#go').onclick = () => {
+  playing = true; draw();
+  G.$('#hint').innerHTML = 'Roll the dice and say the sum. If your grid has that number, tap it to cross it out (one box each roll).';
+  G.$('#top').innerHTML = '<div class="die" id="d1">⚀</div><div class="die" id="d2">⚀</div><div class="sum" id="sum"></div><button class="big-btn orange" id="roll">🎲 Roll</button>';
+  G.$('#roll').onclick = roll;
+  G.say('Roll the dice!');
+};
+function roll() {
+  const a = M.rnd(1, 6), c = M.rnd(1, 6);
+  rolled = false; G.$$('.die').forEach((d) => { d.classList.remove('roll'); void d.offsetWidth; d.classList.add('roll'); });
+  let k = 0;
+  const t = setInterval(() => {
+    G.$('#d1').textContent = FACES[M.rnd(1, 6)]; G.$('#d2').textContent = FACES[M.rnd(1, 6)]; G.sfx('pop');
+    if (++k > 6) { clearInterval(t); G.$('#d1').textContent = FACES[a]; G.$('#d2').textContent = FACES[c]; sum = a + c; rollId++; rolled = true; G.$('#sum').textContent = `= ${sum}`; G.say(`${a} and ${c} make ${sum}.`); }
+  }, 90);
+}
+</script>
+</body>
+</html>

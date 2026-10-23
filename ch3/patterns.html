@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .line { background: #fff; border-radius: var(--radius); border: 0.25rem solid var(--line); width: 100%; max-width: 120rem; padding: 0.4rem; }
+  #nl { width: 100%; display: block; }
+  .seq { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; align-items: center; margin: 0.8rem 0; font-size: 3rem; font-weight: 800; }
+  .seq .m-box { height: 4.4rem; min-width: 5.4rem; }
+  .low { display: flex; gap: 1.4rem; align-items: center; justify-content: center; }
+  .dir { font-size: 1.8rem; font-weight: 800; color: var(--purple); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Look! How Jumpy the frog is jumping. Find the pattern and fill the next numbers.</p>
+  <div class="progress" id="pg"></div>
+  <div class="dir" id="dir"></div>
+  <div class="line"><svg id="nl" viewBox="0 0 1200 210"></svg></div>
+  <div class="seq" id="seq"></div>
+  <div class="low"><div class="m-box on" id="show">?</div><div id="pad"></div><div class="feedback" id="fb" style="min-width:24rem"></div></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Jumpy’s Patterns', subtitle: 'Fun with Numbers · Patterns forward and backward', back: '../index.html#ch3' });
+
+/* Patterns from the book (forward A–C, backward, backward A–D, and 100, 90, 80, 70, 60). */
+const PAT = [
+  { given: [1, 4, 7], more: 4 }, { given: [40, 45, 50], more: 5 }, { given: [50, 60], more: 3 },
+  { given: [10, 9, 8], more: 4 }, { given: [40, 37, 34], more: 4 }, { given: [70, 65, 60], more: 4 },
+  { given: [100, 90], more: 3 }, { given: [100, 80], more: 3 }, { given: [100, 90, 80, 70, 60], more: 2 },
+];
+const X0 = 50, X1 = 1150, Y = 140;
+let k, seq, at, lo, hi;
+function xOf(n) { return X0 + ((n - lo) / (hi - lo)) * (X1 - X0); }
+function draw() {
+  const step = hi - lo <= 25 ? 1 : 5;
+  let h = `<line x1="${X0 - 20}" y1="${Y}" x2="${X1 + 20}" y2="${Y}" stroke="#2b2140" stroke-width="4"/>`;
+  for (let n = lo; n <= hi; n += step) {
+    const x = xOf(n), lab = step === 1 || n % 10 === 0;
+    h += `<line x1="${x}" y1="${Y - 12}" x2="${x}" y2="${Y + 12}" stroke="#2b2140" stroke-width="${lab ? 3 : 2}"/>`;
+    if (lab) h += `<text x="${x}" y="${Y + 46}" font-size="${step === 1 ? 26 : 30}" font-weight="800" text-anchor="middle" fill="#2b2140">${n}</text>`;
+  }
+  for (let i = 1; i < at; i++) {
+    const a = xOf(seq[i - 1]), b = xOf(seq[i]), m = (a + b) / 2, up = Math.min(90, Math.abs(b - a) * 0.6 + 20);
+    h += `<path d="M${a} ${Y - 14} Q${m} ${Y - 14 - up} ${b} ${Y - 14}" fill="none" stroke="#2bb673" stroke-width="5" stroke-dasharray="10 6"/>`;
+  }
+  seq.slice(0, at).forEach((n) => (h += `<circle cx="${xOf(n)}" cy="${Y}" r="9" fill="#ff8a3d"/>`));
+  h += `<text x="${xOf(seq[at - 1])}" y="${Y - 22}" font-size="54" text-anchor="middle">🐸</text>`;
+  G.$('#nl').innerHTML = h;
+}
+function start() { k = 0; next(); }
+function next() {
+  if (k >= PAT.length) { G.end({ title: 'Pattern pro!', msg: 'You can jump forward and backward in patterns.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, PAT.length);
+  const P = PAT[k], d = P.given[1] - P.given[0];
+  seq = [...P.given]; for (let i = 0; i < P.more; i++) seq.push(seq[seq.length - 1] + d);
+  lo = Math.min(...seq); hi = Math.max(...seq);
+  if (hi - lo <= 25) { lo = Math.max(0, lo - 1); hi = hi + 1; } else { lo = Math.floor(lo / 10) * 10; hi = Math.ceil(hi / 10) * 10; }
+  at = P.given.length;
+  G.$('#dir').textContent = d > 0 ? `➡️ Jumping forward` : `⬅️ Jumping backward`;
+  showSeq(); draw(); pad.clear(); G.$('#fb').innerHTML = '';
+  G.say(`${P.given.join(', ')}. What comes next?`);
+}
+function showSeq() {
+  G.$('#seq').innerHTML = seq.map((n, i) => (i < at ? `<span>${n}</span>` : `<span class="m-box ${i === at ? 'on' : ''}">?</span>`)).join('<span>,</span>');
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), row: true,
+  onEnter: (v) => {
+    pad.clear();
+    if (v !== seq[at]) { G.sfx('bad'); const d = seq[1] - seq[0]; G.feedback(G.$('#fb'), false, `🙂 Jumpy jumps ${Math.abs(d)} ${d > 0 ? 'forward' : 'back'} each time.`); G.say(`Look. Jumpy jumps ${Math.abs(d)} ${d > 0 ? 'forward' : 'backward'} each time.`); return; }
+    at++; G.sfx('good'); showSeq(); draw(); G.$('#fb').innerHTML = '';
+    if (at < seq.length) { G.say(String(v), { rate: 1 }); return; }
+    G.star(); const d = seq[1] - seq[0];
+    const msg = `${d > 0 ? 'Add' : 'Take away'} ${Math.abs(d)} each time!`;
+    G.feedback(G.$('#fb'), true, '🎉 ' + msg); G.say(seq.join(', ') + '. ' + msg);
+    k++; setTimeout(next, 3800);
+  },
+});
+start();
+</script>
+</body>
+</html>

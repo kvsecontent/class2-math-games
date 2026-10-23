@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .strip { position: relative; display: grid; grid-template-columns: repeat(20, 1fr); width: 100%; max-width: 120rem; margin-top: 5rem; }
+  .cell { height: 5.4rem; border: 0.2rem solid var(--ink); margin-left: -0.2rem; background: #fff; font-size: 2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .cell:nth-child(odd) { background: #fff8ec; }
+  .cell.no { animation: shake 0.4s; background: #ffe1e3; }
+  .cell.hit { background: #d9f7e8; }
+  .spot { position: absolute; bottom: 100%; width: 5%; text-align: center; font-size: 3.4rem; line-height: 1; transition: left 0.45s; pointer-events: none; }
+  .spot.flower { font-size: 2.6rem; }
+  .q { font-family: var(--read); font-size: 2.4rem; font-weight: 700; margin: 1.2rem 0 0.6rem; min-height: 6rem; max-width: 100rem; }
+  .low { display: flex; gap: 1.6rem; align-items: center; justify-content: center; }
+  .moves { font-size: 2rem; font-weight: 800; min-height: 2.6rem; color: var(--purple); }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Look at the number strip and fill in the blanks. Watch the animals jump!</p>
+  <div class="progress" id="pg"></div>
+  <div class="strip" id="strip"></div>
+  <div class="q" id="q"></div>
+  <div class="moves" id="moves"></div>
+  <div class="low"><div id="padbox" class="row"><div class="m-box on" id="show">?</div><div id="pad"></div></div></div>
+  <div class="feedback" id="fb"></div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'The Number Strip', subtitle: 'Fun with Numbers · Steps forward and backward', back: '../index.html#ch3' });
+
+/* The four animals and their moves are from the book (squirrel: 2 back, 5 forward, 3 back;
+   frog: 2 forward, 7 back, 3 back). Where they start and where the flowers are is our choice. */
+G.$('#strip').innerHTML = Array.from({ length: 20 }, (_, i) => `<button class="cell" data-n="${i + 1}">${i + 1}</button>`).join('');
+const place = (el, n) => (el.style.left = (n - 1) * 5 + '%');
+function spot(e, cls = '') { const s = document.createElement('div'); s.className = 'spot ' + cls; s.textContent = e; G.$('#strip').append(s); return s; }
+let rounds, k, cur, who;
+
+function make() {
+  const b = M.rnd(2, 7), pink = b + M.rnd(4, 9);
+  const h = M.rnd(1, 5), red = h + M.rnd(3, 7), yel = red + M.rnd(3, 6);
+  const sq = M.rnd(4, 14), fr = M.rnd(10, 18);
+  return [
+    { e: '🦋', s: b, fl: [['🌸', pink]], ask: [{ t: 'The butterfly moves ___ steps forward to reach the pink flower.', a: pink - b, to: pink }] },
+    { e: '🐝', s: h, fl: [['🌺', red], ['🌼', yel]], ask: [{ t: 'The honey bee moves ___ steps forward to reach the red flower.', a: red - h, to: red }, { t: 'Then it moves ___ steps forward to reach the yellow flower.', a: yel - red, to: yel }] },
+    { e: '🐿️', s: sq, moves: [-2, 5, -3], ask: [{ t: 'The squirrel jumps 2 steps backward, 5 steps forward and again 3 steps backward. It will reach ___.', a: sq, to: sq, tap: true }] },
+    { e: '🐸', s: fr, moves: [2, -7, -3], ask: [{ t: 'The frog jumps 2 steps forward, 7 steps backward and again 3 steps backward to reach ___.', a: fr - 8, to: fr - 8, tap: true }] },
+  ];
+}
+function start() { rounds = make(); k = 0; next(); }
+function next() {
+  if (k >= rounds.length) { G.end({ title: 'Super jumper!', msg: 'Forward means bigger numbers. Backward means smaller numbers.', onReplay: start }); return; }
+  G.progress(G.$('#pg'), k, rounds.length);
+  G.$$('.spot').forEach((s) => s.remove()); G.$$('.cell').forEach((c) => c.classList.remove('hit', 'no'));
+  const R = rounds[k];
+  (R.fl || []).forEach(([e, n]) => place(spot(e, 'flower'), n));
+  who = spot(R.e); place(who, R.s); cur = 0;
+  G.$('#moves').textContent = `${R.e} starts at ${R.s}.`;
+  ask();
+}
+function ask() {
+  const R = rounds[k], A = R.ask[cur];
+  G.$('#q').innerHTML = A.t.replace('___', '<span class="m-box on" style="height:3.6rem;min-width:4rem;font-size:2.2rem">?</span>');
+  G.$('#padbox').style.display = A.tap ? 'none' : '';
+  G.$('#fb').innerHTML = ''; pad.clear();
+  G.say(A.t.replace('___', 'blank') + (A.tap ? ' Tap the number.' : ''));
+}
+async function hop(path) { for (const n of path) { place(who, n); G.sfx('pop'); await new Promise((r) => setTimeout(r, 500)); } }
+async function right(A) {
+  const R = rounds[k];
+  G.$('#q .m-box').textContent = A.a; G.$('#q .m-box').className = 'm-box good';
+  G.star(); G.sfx('good');
+  // show the jumps
+  let p = A.to - (A.tap ? 0 : A.a), path = [];
+  if (R.moves) { p = R.s; for (const m of R.moves) { const d = Math.sign(m); for (let i = 0; i < Math.abs(m); i++) { p += d; path.push(p); } } }
+  else for (let i = 1; i <= A.a; i++) path.push(p + i);
+  G.feedback(G.$('#fb'), true, '🎉 ' + G.praise());
+  await hop(path);
+  G.$(`.cell[data-n="${A.to}"]`).classList.add('hit');
+  G.say(A.t.replace('___', A.a));
+  setTimeout(() => { if (++cur < R.ask.length) ask(); else { k++; next(); } }, 2600);
+}
+const pad = M.pad(G.$('#pad'), {
+  show: G.$('#show'), row: true, digits: 2,
+  onEnter: (v) => { const A = rounds[k].ask[cur]; pad.clear(); if (A.tap) return; if (v !== A.a) { G.sfx('bad'); G.feedback(G.$('#fb'), false, '🙂 Count the steps again!'); return; } right(A); },
+});
+G.$('#strip').onclick = (e) => {
+  const c = e.target.closest('.cell'); const A = rounds[k]?.ask[cur];
+  if (!c || !A || !A.tap || G.$('#q .m-box.good')) return;
+  if (+c.dataset.n !== A.a) { c.classList.remove('no'); void c.offsetWidth; c.classList.add('no'); G.sfx('bad'); G.say('Try again. Count each jump.'); return; }
+  right(A);
+};
+start();
+</script>
+</body>
+</html>

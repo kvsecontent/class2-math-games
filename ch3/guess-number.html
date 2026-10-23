@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .owl { font-size: 4rem; line-height: 1; }
+  .left { display: flex; flex-direction: column; gap: 0.8rem; align-items: center; }
+  .asks { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; width: 100%; }
+  .asks button { font-size: 1.4rem; min-height: 3.4rem; padding: 0.3rem 0.6rem; }
+  .log { display: flex; flex-direction: column; gap: 0.4rem; max-height: calc(100vh - 16rem); overflow: auto; }
+  .log div { font-family: var(--read); font-size: 1.7rem; font-weight: 700; background: #fff; border-radius: 1rem; padding: 0.3rem 0.8rem; border: 0.2rem solid var(--line); text-align: left; display: flex; justify-content: space-between; gap: 1rem; }
+  .log b.y { color: var(--green); } .log b.n { color: var(--red); }
+  .left2 { font-size: 1.6rem; font-weight: 800; color: var(--muted); }
+  .row2 { display: flex; gap: 1rem; align-items: center; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint">Guess my number! I am thinking of a number from 1 to 100. Ask me yes/no questions. You can ask up to 10 questions.</p>
+  <div class="wrap">
+    <div class="card left">
+      <div class="row2"><span class="owl">🦉</span><span class="left2" id="left"></span></div>
+      <div class="row2"><div class="m-box on" id="show">?</div><div id="pad"></div></div>
+      <div class="asks">
+        <button class="big-btn" id="more">Is it more than <span class="v">?</span>?</button>
+        <button class="big-btn" id="less">Is it less than <span class="v">?</span>?</button>
+        <button class="big-btn orange" id="same">Are the two digits the same?</button>
+        <button class="big-btn orange" id="zero">Does it have 0 as a digit?</button>
+        <button class="big-btn green" id="guess" style="grid-column:1/-1">🎯 Is it <span class="v">?</span>?</button>
+      </div>
+    </div>
+    <div class="card"><div class="log" id="log"></div></div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Guess my Number', subtitle: 'Fun with Numbers · Let us play', back: '../index.html#ch3' });
+
+/* The game from the book: yes/no questions, at most 10 questions. */
+let secret, asked, over;
+function start() {
+  secret = M.rnd(1, 100); asked = 0; over = false;
+  G.$('#log').innerHTML = '<div>🦉 I am thinking of a number. Ask me!</div>';
+  upd(); pad.clear();
+  G.say('I am thinking of a number from 1 to 100. Ask me questions!');
+}
+function upd() { G.$('#left').textContent = `Questions left: ${10 - asked}`; G.$$('.v').forEach((s) => (s.textContent = pad.value || '?')); }
+function log(q, yes) {
+  G.$('#log').insertAdjacentHTML('beforeend', `<div><span>${q}</span><b class="${yes ? 'y' : 'n'}">${yes ? 'Yes' : 'No'}</b></div>`);
+  G.$('#log').scrollTop = 1e6;
+  G.say(q + ' ' + (yes ? 'Yes!' : 'No.'));
+}
+function use(q, yes) {
+  if (over) return;
+  if (asked >= 10) { G.say('No more questions! Make your guess.'); return; }
+  asked++; log(q, yes); pad.clear(); upd();
+}
+const pad = M.pad(G.$('#pad'), { show: G.$('#show'), onEnter: () => {} });
+G.$('#pad').addEventListener('click', () => setTimeout(upd, 0));
+const num = () => { const v = pad.value; if (v === '') { G.say('First type a number.'); return null; } return +v; };
+G.$('#more').onclick = () => { const n = num(); if (n !== null) use(`Is it more than ${n}?`, secret > n); };
+G.$('#less').onclick = () => { const n = num(); if (n !== null) use(`Is it less than ${n}?`, secret < n); };
+G.$('#same').onclick = () => use('Are the two digits the same?', secret > 10 && secret < 100 && secret % 11 === 0);
+G.$('#zero').onclick = () => use('Does it have 0 as a digit?', String(secret).includes('0'));
+G.$('#guess').onclick = () => {
+  const n = num(); if (n === null || over) return;
+  if (n === secret) {
+    over = true; G.star(3);
+    G.$('#log').insertAdjacentHTML('beforeend', `<div><span>🎯 Is it ${n}?</span><b class="y">YES!</b></div>`);
+    G.end({ title: `It was ${secret}!`, msg: `You found my number with ${asked} question${asked === 1 ? '' : 's'}.`, onReplay: start });
+    return;
+  }
+  asked++; log(`Is it ${n}?`, false); pad.clear(); upd();
+  if (asked >= 10) { over = true; G.$('#log').insertAdjacentHTML('beforeend', `<div><span>🦉 My number was <b>${secret}</b>.</span></div>`); G.say(`My number was ${secret}. Play again!`); setTimeout(() => G.end({ title: `My number was ${secret}`, msg: 'Try again! Ask “more than” and “less than” to get closer.', onReplay: start }), 2500); }
+};
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: auto 1fr; gap: 1.2rem; width: 100%; max-width: 120rem; align-items: start; }
+  .chart { display: grid; grid-template-columns: repeat(10, 4.6rem); gap: 0.15rem; background: var(--ink); padding: 0.15rem; border-radius: 0.6rem; }
+  .c { position: relative; height: 3.7rem; background: #fff; font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 0; padding: 0; }
+  .c i { position: absolute; width: 1.1rem; height: 1.1rem; border-radius: 50%; display: none; }
+  .c i.k2 { left: 0.2rem; top: 0.2rem; background: var(--blue); } .c i.k3 { right: 0.2rem; top: 0.2rem; background: var(--orange); }
+  .c i.k5 { left: 0.2rem; bottom: 0.2rem; background: var(--green); } .c i.k7 { right: 0.2rem; bottom: 0.2rem; background: var(--pink); }
+  .c.s2 i.k2, .c.s3 i.k3, .c.s5 i.k5, .c.s7 i.k7 { display: block; }
+  .c.glow { background: #ffd34d; }
+  .side { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+  .skips { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .skips button { font-size: 1.4rem; min-height: 3.6rem; padding: 0.2rem 0.6rem; }
+  .q { font-family: var(--read); font-size: 2rem; font-weight: 700; text-align: center; }
+  .choice { font-size: 1.6rem; min-width: 0; min-height: 3.8rem; padding: 0.3rem 0.8rem; }
+</style>
+</head>
+<body>
+<main class="stage center">
+  <p class="hint" style="margin-bottom:0.3rem">Skip counting on the number chart. Tap a button to jump in 2s, 3s, 5s or 7s. The coloured dots show where you land.</p>
+  <div class="wrap">
+    <div class="chart" id="chart"></div>
+    <div class="side card">
+      <div class="skips">
+        <button class="big-btn" id="b2">● Skip in 2s</button><button class="big-btn orange" id="b3">● Skip in 3s</button>
+        <button class="big-btn green" id="b5">● Skip in 5s</button><button class="big-btn" style="background:var(--pink)" id="b7">● Skip in 7s</button>
+      </div>
+      <div class="progress" id="pg"></div>
+      <div class="q" id="q"></div>
+      <div class="row" id="opts"></div>
+      <div class="feedback" id="fb"></div>
+    </div>
+  </div>
+</main>
+<script src="../assets/common.js"></script>
+<script src="../assets/math.js"></script>
+<script>
+G.init({ title: 'Skip Counting Chart', subtitle: 'Fun with Numbers · Let us do', back: '../index.html#ch3' });
+
+G.$('#chart').innerHTML = Array.from({ length: 100 }, (_, i) => `<button class="c" data-n="${i + 1}">${i + 1}<i class="k2"></i><i class="k3"></i><i class="k5"></i><i class="k7"></i></button>`).join('');
+let busy = false;
+function skip(s) {
+  if (busy) return; busy = true;
+  G.$$('.c').forEach((c) => c.classList.remove('s' + s, 'glow'));
+  let n = s;
+  const t = setInterval(() => {
+    if (n > 100) { clearInterval(t); busy = false; G.say(`I skipped in ${s}s.`); return; }
+    G.$(`.c[data-n="${n}"]`).classList.add('s' + s); G.tone(500 + n * 4, 0, 0.06, 'sine', 0.12); n += s;
+  }, s === 2 ? 70 : 110);
+}
+[2, 3, 5, 7].forEach((s) => (G.$('#b' + s).onclick = () => skip(s)));
+
+/* Questions B–D from the book, plus two of our own. */
+const QS = [
+  { t: 'Skip in 2s and in 5s. Which numbers have both dots?', need: [2, 5], o: ['10, 20, 30 … 100', '2, 4, 6, 8', '5, 15, 25, 35'] },
+  { t: 'Which numbers are common to the skips in 2s, 3s and 5s?', need: [2, 3, 5], o: ['30, 60, 90', '10, 20, 30', '15, 45, 75'] },
+  { t: 'Which numbers are common to the skips in 5s and 7s?', need: [5, 7], o: ['35, 70', '5, 7', '12, 24'] },
+  { t: 'When we skip in 5s, the numbers end in…', need: [5], o: ['0 or 5', '1 or 2', '3 or 8'] },
+  { t: 'When we skip in 2s, which number do we land on?', need: [2], o: ['48', '37', '51'] },
+];
+let k = 0;
+function show() {
+  if (k >= QS.length) { G.end({ title: 'Skip counting star!', msg: '2s, 3s, 5s and 7s – you found the common numbers!', onReplay: () => { k = 0; G.$$('.c').forEach((c) => (c.className = 'c')); show(); } }); return; }
+  G.progress(G.$('#pg'), k, QS.length);
+  const q = QS[k];
+  G.$('#q').innerHTML = q.t + `<br><small style="color:var(--muted);font-size:1.3rem">Tip: tap ${q.need.map((s) => 'Skip in ' + s + 's').join(' and ')} first.</small>`;
+  G.$('#fb').innerHTML = '';
+  G.$('#opts').innerHTML = G.shuffle(q.o).map((o) => `<button class="choice">${o}</button>`).join('');
+  G.$$('#opts .choice').forEach((b) => (b.onclick = () => {
+    if (b.textContent !== q.o[0]) { b.classList.add('wrong'); G.sfx('bad'); setTimeout(() => b.classList.remove('wrong'), 500); return; }
+    b.classList.add('right'); G.star(); G.sfx('good');
+    G.$$('.c').forEach((c) => c.classList.toggle('glow', q.need.every((s) => +c.dataset.n % s === 0)));
+    G.feedback(G.$('#fb'), true, '🎉 ' + q.o[0]); G.say('Yes! ' + q.o[0].replace('…', 'and so on, up to'));
+    k++; setTimeout(show, 3600);
+  }));
+  G.say(q.t);
+}
+show();
+</script>
+</body>
+</html>
